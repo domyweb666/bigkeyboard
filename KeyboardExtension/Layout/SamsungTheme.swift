@@ -15,13 +15,18 @@ enum SamsungTheme {
 
     // 鍵帽字：三星字大
     static let keyFontSize: CGFloat = 26
-    static let functionFontSize: CGFloat = 20
+    static let functionFontSize: CGFloat = 19
+    static let hintFontSize: CGFloat = 11
+    static let previewFontSize: CGFloat = 40
+
+    static let longPressSeconds: TimeInterval = 0.4
 
     static let background = UIColor(red: 0.878, green: 0.871, blue: 0.847, alpha: 1) // #E0DED8
     static let keyWhite = UIColor.white
     static let keyGray = UIColor(red: 0.78, green: 0.76, blue: 0.73, alpha: 1)
     static let keyPressed = UIColor(red: 0.90, green: 0.89, blue: 0.87, alpha: 1)
     static let keyText = UIColor.black
+    static let hintText = UIColor(white: 0.55, alpha: 1)
 
     static func keyboardHeight(for screen: UIScreen) -> CGFloat {
         (screen.bounds.height * keyboardHeightRatio).rounded()

@@ -3,8 +3,24 @@ import UIKit
 /// 把一張鍵位表（資料）渲染成按鍵。所有鍵面共用這一份程式。
 final class KeyboardView: UIView {
     var onKey: ((KeySpec) -> Void)?
+    var onLongKey: ((KeySpec) -> Void)?
+
+    /// shift 狀態（只影響英文字母的顯示與送出）
+    enum ShiftState {
+        case off
+        case once
+        case locked
+    }
+
+    var shift: ShiftState = .off {
+        didSet {
+            applyShiftAppearance()
+        }
+    }
 
     private let rowsStack = UIStackView()
+    private let bubble = KeyPreviewBubble()
+    private var buttons: [KeyButton] = []
     private var specs: [KeyButton: KeySpec] = [:]
 
     override init(frame: CGRect) {
@@ -14,6 +30,7 @@ final class KeyboardView: UIView {
         rowsStack.distribution = .fillEqually
         rowsStack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(rowsStack)
+        addSubview(bubble)
         NSLayoutConstraint.activate([
             rowsStack.topAnchor.constraint(equalTo: topAnchor, constant: SamsungTheme.rowGap),
             rowsStack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -SamsungTheme.rowGap),
@@ -29,6 +46,7 @@ final class KeyboardView: UIView {
 
     func load(_ rows: [KeyRow]) {
         rowsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        buttons.removeAll()
         specs.removeAll()
         for row in rows {
             let rowStack = UIStackView()
@@ -36,11 +54,10 @@ final class KeyboardView: UIView {
             rowStack.spacing = SamsungTheme.keyGap
             rowStack.alignment = .fill
             let total = row.reduce(0) { $0 + $1.width }
+            let gaps = SamsungTheme.keyGap * CGFloat(row.count - 1)
             for spec in row {
                 let b = makeButton(spec)
                 rowStack.addArrangedSubview(b)
-                // 寬度照相對權重分配；扣掉間距後的可用寬度 × 權重比例
-                let gaps = SamsungTheme.keyGap * CGFloat(row.count - 1)
                 b.widthAnchor.constraint(
                     equalTo: rowStack.widthAnchor,
                     multiplier: spec.width / total,
@@ -49,20 +66,49 @@ final class KeyboardView: UIView {
             }
             rowsStack.addArrangedSubview(rowStack)
         }
+        bringSubviewToFront(bubble)
+        applyShiftAppearance()
     }
 
     private func makeButton(_ spec: KeySpec) -> KeyButton {
         let b = KeyButton()
         b.label.text = spec.label
-        b.label.font = .systemFont(ofSize: spec.isFunction ? SamsungTheme.functionFontSize : SamsungTheme.keyFontSize)
+        let fontSize = spec.isFunction ? SamsungTheme.functionFontSize : SamsungTheme.keyFontSize
+        b.label.font = .systemFont(ofSize: fontSize)
+        b.hintLabel.text = spec.alt
         b.normalColor = spec.isFunction ? SamsungTheme.keyGray : SamsungTheme.keyWhite
-        b.addTarget(self, action: #selector(tapped(_:)), for: .touchUpInside)
+        b.onTap = { [weak self] in self?.onKey?(spec) }
+        if spec.alt != nil {
+            b.onLongPress = { [weak self] in self?.onLongKey?(spec) }
+        }
+        if !spec.isFunction, !spec.label.isEmpty {
+            b.onPressChanged = { [weak self, weak b] pressed in
+                guard let self, let b else { return }
+                if pressed {
+                    let f = b.convert(b.bounds, to: self)
+                    bubble.show(text: b.label.text ?? "", above: f)
+                } else {
+                    bubble.hide()
+                }
+            }
+        }
         specs[b] = spec
+        buttons.append(b)
         return b
     }
 
-    @objc private func tapped(_ sender: KeyButton) {
-        guard let spec = specs[sender] else { return }
-        onKey?(spec)
+    private func applyShiftAppearance() {
+        for b in buttons {
+            guard let spec = specs[b] else { continue }
+            switch spec.action {
+            case let .letter(c):
+                b.label.text = shift == .off ? c : c.uppercased()
+            case .shift:
+                b.label.text = shift == .locked ? "⇪" : "⇧"
+                b.normalColor = shift == .off ? SamsungTheme.keyGray : SamsungTheme.keyWhite
+            default:
+                break
+            }
+        }
     }
 }
