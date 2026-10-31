@@ -29,8 +29,11 @@ jobs:
           swiftformat --lint App
           swiftlint lint --strict App
 
-      - name: 產生 Xcode 專案
-        run: xcodegen generate
+      - name: 產生 Xcode 專案（build 號 = 這次 run 的編號）
+        run: |
+          sed -i '' "s/CURRENT_PROJECT_VERSION: .*/CURRENT_PROJECT_VERSION: ${GITHUB_RUN_NUMBER}/" project.yml
+          grep CURRENT_PROJECT_VERSION project.yml
+          xcodegen generate
 
       - name: 放置 App Store Connect 金鑰
         run: |
@@ -66,7 +69,6 @@ jobs:
             -destination 'generic/platform=iOS' \
             -archivePath "$HOME/build/BigKeyboard.xcarchive" \
             DEVELOPMENT_TEAM="${APPLE_TEAM_ID}" \
-            CURRENT_PROJECT_VERSION="${GITHUB_RUN_NUMBER}" \
             -allowProvisioningUpdates \
             -authenticationKeyPath "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
             -authenticationKeyID "${ASC_KEY_ID}" \
