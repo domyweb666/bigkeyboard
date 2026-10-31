@@ -1,0 +1,8 @@
+#!/bin/sh
+# 擋金鑰與憑證進 repo（Windows 也能跑，純 shell）
+bad=$(git diff --cached --name-only | grep -Ei '\.(p8|p12|mobileprovision|cer)$|secret|private[_-]?key' || true)
+if [ -n "$bad" ]; then
+  echo "❌ 這些檔案看起來是金鑰或憑證，不准進 repo："
+  echo "$bad"
+  exit 1
+fi

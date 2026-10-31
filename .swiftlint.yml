@@ -1,0 +1,11 @@
+disabled_rules:
+  - line_length
+  - trailing_comma
+  - identifier_name
+opt_in_rules:
+  - force_unwrapping
+  - unused_import
+force_unwrapping: error
+excluded:
+  - .build
+  - Packages
