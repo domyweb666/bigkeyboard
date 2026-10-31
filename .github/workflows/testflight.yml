@@ -1,0 +1,64 @@
+name: TestFlight
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安裝工具
+        run: brew install xcodegen swiftformat swiftlint
+
+      - name: 口吻檢查（不過就不編）
+        run: |
+          swiftformat --lint App
+          swiftlint lint --strict App
+
+      - name: 產生 Xcode 專案
+        run: xcodegen generate
+
+      - name: 放置 App Store Connect 金鑰
+        run: |
+          mkdir -p "$HOME/private_keys"
+          printf '%s' "${{ secrets.ASC_PRIVATE_KEY }}" > "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          sed "s/__TEAM_ID__/${APPLE_TEAM_ID}/" ExportOptions.plist > "$HOME/ExportOptions.plist"
+
+      - name: 封存（自動簽章）
+        run: |
+          xcodebuild archive \
+            -project BigKeyboard.xcodeproj \
+            -scheme BigKeyboard \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$HOME/build/BigKeyboard.xcarchive" \
+            DEVELOPMENT_TEAM="${APPLE_TEAM_ID}" \
+            CURRENT_PROJECT_VERSION="${GITHUB_RUN_NUMBER}" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
+            -authenticationKeyID "${ASC_KEY_ID}" \
+            -authenticationKeyIssuerID "${ASC_ISSUER_ID}" \
+            | xcpretty && exit "${PIPESTATUS[0]}"
+
+      - name: 上傳 TestFlight
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath "$HOME/build/BigKeyboard.xcarchive" \
+            -exportOptionsPlist "$HOME/ExportOptions.plist" \
+            -exportPath "$HOME/build/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
+            -authenticationKeyID "${ASC_KEY_ID}" \
+            -authenticationKeyIssuerID "${ASC_ISSUER_ID}"
+
+      - name: 清掉金鑰
+        if: always()
+        run: rm -rf "$HOME/private_keys"
