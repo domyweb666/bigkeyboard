@@ -45,8 +45,7 @@ jobs:
             -allowProvisioningUpdates \
             -authenticationKeyPath "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
             -authenticationKeyID "${ASC_KEY_ID}" \
-            -authenticationKeyIssuerID "${ASC_ISSUER_ID}" \
-            | xcpretty && exit "${PIPESTATUS[0]}"
+            -authenticationKeyIssuerID "${ASC_ISSUER_ID}"
 
       - name: 上傳 TestFlight
         run: |
