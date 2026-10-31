@@ -1,0 +1,31 @@
+name: ASC 狀態查詢
+
+on:
+  workflow_dispatch:
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+    steps:
+      - name: 問 Apple 每個 build 的狀態
+        run: |
+          pip install -q pyjwt cryptography requests
+          python3 - <<'PY'
+          import os, time, jwt, requests
+          tok = jwt.encode({"iss": os.environ["ASC_ISSUER_ID"], "iat": int(time.time()), "exp": int(time.time())+600, "aud": "appstoreconnect-v1"},
+                           os.environ["ASC_PRIVATE_KEY"], algorithm="ES256", headers={"kid": os.environ["ASC_KEY_ID"], "typ": "JWT"})
+          H = {"Authorization": f"Bearer {tok}"}
+          apps = requests.get("https://api.appstoreconnect.apple.com/v1/apps?filter[bundleId]=org.domyweb.bigkeyboard", headers=H).json()["data"]
+          app_id = apps[0]["id"]
+          r = requests.get(f"https://api.appstoreconnect.apple.com/v1/builds?filter[app]={app_id}&sort=-uploadedDate&limit=10&fields[builds]=version,processingState,uploadedDate,expired,usesNonExemptEncryption", headers=H).json()
+          for b in r["data"]:
+              a = b["attributes"]; print(f"build {a['version']:>4} | {a['processingState']:<10} | 上傳 {a['uploadedDate']} | 過期 {a['expired']} | 加密問題未答: {a['usesNonExemptEncryption'] is None}")
+          g = requests.get(f"https://api.appstoreconnect.apple.com/v1/betaGroups?filter[app]={app_id}&fields[betaGroups]=name,isInternalGroup,hasAccessToAllBuilds", headers=H).json()
+          for x in g["data"]:
+              a = x["attributes"]; print("群組:", a["name"], "| 內部:", a["isInternalGroup"], "| 自動拿所有 build:", a["hasAccessToAllBuilds"])
+          if not g["data"]: print("⚠ 沒有任何測試群組")
+          PY
