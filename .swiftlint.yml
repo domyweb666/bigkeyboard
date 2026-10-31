@@ -9,3 +9,4 @@ force_unwrapping: error
 excluded:
   - .build
   - Packages
+  - KeyboardExtension/Engine/Vendor

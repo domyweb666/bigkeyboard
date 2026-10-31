@@ -36,7 +36,9 @@ targets:
     type: app-extension
     platform: iOS
     sources:
-      - KeyboardExtension
+      - path: KeyboardExtension
+        excludes:
+          - "Engine/Vendor/McBopomofo/LICENSE.txt"
     info:
       path: KeyboardExtension/Info.plist
       properties:
@@ -56,3 +58,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: org.domyweb.bigkeyboard.keyboard
         TARGETED_DEVICE_FAMILY: "1"
         SKIP_INSTALL: true
+        SWIFT_OBJC_BRIDGING_HEADER: KeyboardExtension/Engine/Bridge/BridgingHeader.h
+        HEADER_SEARCH_PATHS: $(SRCROOT)/KeyboardExtension/Engine/Vendor/McBopomofo
+        CLANG_CXX_LANGUAGE_STANDARD: c++17
+        CLANG_CXX_LIBRARY: libc++
+        GCC_WARN_INHIBIT_ALL_WARNINGS: "YES"

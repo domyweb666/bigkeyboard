@@ -1,68 +1,70 @@
 import UIKit
 
-/// 鍵盤殼：iOS 叫起鍵盤時的入口。片 3：高度、底色、工具列空帶。鍵仍只有「ㄅ」與地球鍵。
+/// 鍵盤殼。片 4：四顆鍵（ㄋ ㄧ ˇ 空白）＋候選字列，接小麥引擎。
 final class KeyboardViewController: UIInputViewController {
-    private let toolbar = UIView()
+    private let candidateBar = CandidateBar()
     private let keyArea = UIView()
-    private let nextKeyboardButton = UIButton(type: .system)
-    private let bopomofoKey = UIButton(type: .system)
     private var heightConstraint: NSLayoutConstraint?
+    private var engine: BopomofoEngine?
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = SamsungTheme.background
 
-        toolbar.backgroundColor = .clear
-        keyArea.backgroundColor = .clear
+        if let path = Bundle.main.path(forResource: "mcbopomofo-data", ofType: "txt") {
+            engine = BopomofoEngine(dataPath: path)
+        }
 
-        bopomofoKey.setTitle("ㄅ", for: .normal)
-        bopomofoKey.titleLabel?.font = .systemFont(ofSize: 32)
-        bopomofoKey.setTitleColor(SamsungTheme.keyText, for: .normal)
-        bopomofoKey.backgroundColor = SamsungTheme.keyWhite
-        bopomofoKey.layer.cornerRadius = 8
-        bopomofoKey.addTarget(self, action: #selector(bopomofoTapped), for: .touchUpInside)
+        candidateBar.onSelect = { [weak self] i in self?.select(i) }
 
-        nextKeyboardButton.setTitle("🌐", for: .normal)
-        nextKeyboardButton.titleLabel?.font = .systemFont(ofSize: 24)
-        nextKeyboardButton.backgroundColor = SamsungTheme.keyGray
-        nextKeyboardButton.layer.cornerRadius = 8
-        nextKeyboardButton.addTarget(self, action: #selector(handleInputModeList(from:with:)), for: .allTouchEvents)
-
-        for v in [toolbar, keyArea] {
+        for v in [candidateBar, keyArea] {
             v.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview(v)
         }
-        for b in [bopomofoKey, nextKeyboardButton] {
-            b.translatesAutoresizingMaskIntoConstraints = false
-            keyArea.addSubview(b)
+
+        let keys: [(String, CGFloat)] = [("ㄋ", 1), ("ㄧ", 1), ("ˇ", 1), (" ", 3)]
+        let row = UIStackView()
+        row.axis = .horizontal
+        row.spacing = 6
+        row.distribution = .fillProportionally
+        row.translatesAutoresizingMaskIntoConstraints = false
+        keyArea.addSubview(row)
+        for (title, weight) in keys {
+            let b = UIButton(type: .system)
+            b.setTitle(title == " " ? "" : title, for: .normal)
+            b.titleLabel?.font = .systemFont(ofSize: 28)
+            b.setTitleColor(SamsungTheme.keyText, for: .normal)
+            b.backgroundColor = SamsungTheme.keyWhite
+            b.layer.cornerRadius = 8
+            b.accessibilityLabel = title == " " ? "空白" : title
+            b.addAction(UIAction { [weak self] _ in self?.keyTapped(title) }, for: .touchUpInside)
+            row.addArrangedSubview(b)
+            b.widthAnchor.constraint(equalTo: row.widthAnchor, multiplier: weight / 6.6).isActive = true
         }
 
         NSLayoutConstraint.activate([
-            toolbar.topAnchor.constraint(equalTo: view.topAnchor),
-            toolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            toolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            toolbar.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: SamsungTheme.toolbarHeightRatio),
+            candidateBar.topAnchor.constraint(equalTo: view.topAnchor),
+            candidateBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            candidateBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            candidateBar.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: SamsungTheme.toolbarHeightRatio),
 
-            keyArea.topAnchor.constraint(equalTo: toolbar.bottomAnchor),
+            keyArea.topAnchor.constraint(equalTo: candidateBar.bottomAnchor),
             keyArea.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             keyArea.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             keyArea.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
-            bopomofoKey.centerXAnchor.constraint(equalTo: keyArea.centerXAnchor),
-            bopomofoKey.centerYAnchor.constraint(equalTo: keyArea.centerYAnchor),
-            bopomofoKey.widthAnchor.constraint(equalToConstant: 80),
-            bopomofoKey.heightAnchor.constraint(equalToConstant: 60),
-
-            nextKeyboardButton.leadingAnchor.constraint(equalTo: keyArea.leadingAnchor, constant: 12),
-            nextKeyboardButton.bottomAnchor.constraint(equalTo: keyArea.bottomAnchor, constant: -12),
-            nextKeyboardButton.widthAnchor.constraint(equalToConstant: 60),
-            nextKeyboardButton.heightAnchor.constraint(equalToConstant: 44),
+            row.centerYAnchor.constraint(equalTo: keyArea.centerYAnchor),
+            row.leadingAnchor.constraint(equalTo: keyArea.leadingAnchor, constant: 8),
+            row.trailingAnchor.constraint(equalTo: keyArea.trailingAnchor, constant: -8),
+            row.heightAnchor.constraint(equalToConstant: 60),
         ])
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         applyHeight()
+        engine?.clear()
+        refreshBar()
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -70,12 +72,6 @@ final class KeyboardViewController: UIInputViewController {
         coordinator.animate(alongsideTransition: { _ in self.applyHeight() })
     }
 
-    override func viewWillLayoutSubviews() {
-        nextKeyboardButton.isHidden = !needsInputModeSwitchKey
-        super.viewWillLayoutSubviews()
-    }
-
-    /// 高度約束：對 inputView 自己加，iOS 會照這個撐鍵盤。要在 view 進 window 後設才有效。
     private func applyHeight() {
         guard let screen = view.window?.windowScene?.screen ?? view.window?.screen else { return }
         let h = SamsungTheme.keyboardHeight(for: screen)
@@ -89,7 +85,30 @@ final class KeyboardViewController: UIInputViewController {
         }
     }
 
-    @objc private func bopomofoTapped() {
-        textDocumentProxy.insertText("ㄅ")
+    // MARK: - 鍵 → 引擎 → 輸入框
+
+    private func keyTapped(_ title: String) {
+        guard let engine else { return }
+        if title == " " {
+            if engine.candidates.isEmpty {
+                textDocumentProxy.insertText(" ")
+            } else {
+                select(0)
+            }
+            return
+        }
+        _ = engine.feedSymbol(title)
+        refreshBar()
+    }
+
+    private func select(_ index: Int) {
+        guard let engine else { return }
+        let text = engine.selectCandidate(at: UInt(index))
+        if !text.isEmpty { textDocumentProxy.insertText(text) }
+        refreshBar()
+    }
+
+    private func refreshBar() {
+        candidateBar.update(composing: engine?.composing ?? "", candidates: engine?.candidates ?? [])
     }
 }
