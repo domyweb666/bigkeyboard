@@ -5,7 +5,7 @@ final class KeyboardView: UIView {
     var onKey: ((KeySpec) -> Void)?
 
     private let rowsStack = UIStackView()
-    private var specs: [UIButton: KeySpec] = [:]
+    private var specs: [KeyButton: KeySpec] = [:]
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -51,32 +51,18 @@ final class KeyboardView: UIView {
         }
     }
 
-    private func makeButton(_ spec: KeySpec) -> UIButton {
-        let b = UIButton(type: .custom)
-        b.setTitle(spec.label, for: .normal)
-        let fontSize = spec.isFunction ? SamsungTheme.functionFontSize : SamsungTheme.keyFontSize
-        b.titleLabel?.font = .systemFont(ofSize: fontSize)
-        b.setTitleColor(SamsungTheme.keyText, for: .normal)
-        b.backgroundColor = spec.isFunction ? SamsungTheme.keyGray : SamsungTheme.keyWhite
-        b.layer.cornerRadius = SamsungTheme.keyCornerRadius
+    private func makeButton(_ spec: KeySpec) -> KeyButton {
+        let b = KeyButton()
+        b.label.text = spec.label
+        b.label.font = .systemFont(ofSize: spec.isFunction ? SamsungTheme.functionFontSize : SamsungTheme.keyFontSize)
+        b.normalColor = spec.isFunction ? SamsungTheme.keyGray : SamsungTheme.keyWhite
         b.addTarget(self, action: #selector(tapped(_:)), for: .touchUpInside)
-        b.addTarget(self, action: #selector(pressed(_:)), for: .touchDown)
-        b.addTarget(self, action: #selector(released(_:)), for: [.touchUpInside, .touchUpOutside, .touchCancel])
         specs[b] = spec
         return b
     }
 
-    @objc private func tapped(_ sender: UIButton) {
+    @objc private func tapped(_ sender: KeyButton) {
         guard let spec = specs[sender] else { return }
         onKey?(spec)
-    }
-
-    @objc private func pressed(_ sender: UIButton) {
-        sender.backgroundColor = SamsungTheme.keyPressed
-    }
-
-    @objc private func released(_ sender: UIButton) {
-        guard let spec = specs[sender] else { return }
-        sender.backgroundColor = spec.isFunction ? SamsungTheme.keyGray : SamsungTheme.keyWhite
     }
 }

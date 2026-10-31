@@ -53,19 +53,19 @@ final class CandidateBar: UIView {
         composingLabel.text = composing
         stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         for (i, c) in candidates.enumerated() {
-            let b = UIButton(type: .system)
-            b.setTitle(c, for: .normal)
-            b.titleLabel?.font = .systemFont(ofSize: 24)
-            b.setTitleColor(SamsungTheme.keyText, for: .normal)
-            b.contentEdgeInsets = UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 10)
+            let b = KeyButton()
+            b.label.text = c
+            b.label.font = .systemFont(ofSize: 24)
+            b.normalColor = .clear
             b.tag = i
             b.addTarget(self, action: #selector(tapped(_:)), for: .touchUpInside)
+            b.widthAnchor.constraint(equalTo: b.label.widthAnchor, constant: 20).isActive = true
             stack.addArrangedSubview(b)
         }
         scroll.setContentOffset(.zero, animated: false)
     }
 
-    @objc private func tapped(_ sender: UIButton) {
+    @objc private func tapped(_ sender: KeyButton) {
         onSelect?(sender.tag)
     }
 }
