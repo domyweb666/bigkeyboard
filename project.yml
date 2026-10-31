@@ -29,3 +29,30 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.domyweb.bigkeyboard
         TARGETED_DEVICE_FAMILY: "1"
+    dependencies:
+      - target: KeyboardExtension
+        embed: true
+  KeyboardExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - KeyboardExtension
+    info:
+      path: KeyboardExtension/Info.plist
+      properties:
+        CFBundleDisplayName: 三星風鍵盤
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.keyboard-service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).KeyboardViewController
+          NSExtensionAttributes:
+            PrimaryLanguage: zh-Hant
+            IsASCIICapable: false
+            PrefersRightToLeft: false
+            RequestsOpenAccess: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.domyweb.bigkeyboard.keyboard
+        TARGETED_DEVICE_FAMILY: "1"
+        SKIP_INSTALL: true

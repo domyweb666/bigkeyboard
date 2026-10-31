@@ -26,8 +26,8 @@ jobs:
 
       - name: 口吻檢查（不過就不編）
         run: |
-          swiftformat --lint App
-          swiftlint lint --strict App
+          swiftformat --lint App KeyboardExtension
+          swiftlint lint --strict App KeyboardExtension
 
       - name: 產生 Xcode 專案（build 號 = 這次 run 的編號）
         run: |
