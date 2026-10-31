@@ -68,20 +68,20 @@ enum FunctionKeys {
 // MARK: - 注音（標準排法，照三星截圖；右上角小字＝長按）
 
 enum BopomofoLayout {
-    private static func zip(_ symbols: [String], _ alts: [String?]) -> KeyRow {
+    private static func keys(_ symbols: [String], _ alts: [String?]) -> KeyRow {
         symbols.enumerated().map { i, s in
             KeySpec(s, .bopomofo(s), alt: i < alts.count ? alts[i] : nil)
         }
     }
 
     static let rows: [KeyRow] = [
-        zip(["ㄅ", "ㄉ", "ˇ", "ˋ", "ㄓ", "ˊ", "˙", "ㄚ", "ㄞ", "ㄢ", "ㄦ"],
+        keys(["ㄅ", "ㄉ", "ˇ", "ˋ", "ㄓ", "ˊ", "˙", "ㄚ", "ㄞ", "ㄢ", "ㄦ"],
             ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", nil]),
-        zip(["ㄆ", "ㄊ", "ㄍ", "ㄐ", "ㄔ", "ㄗ", "ㄧ", "ㄛ", "ㄟ", "ㄣ"],
+        keys(["ㄆ", "ㄊ", "ㄍ", "ㄐ", "ㄔ", "ㄗ", "ㄧ", "ㄛ", "ㄟ", "ㄣ"],
             ["+", "×", "÷", "=", "/", "_", "<", ">", "[", "]"]),
-        zip(["ㄇ", "ㄋ", "ㄎ", "ㄑ", "ㄕ", "ㄘ", "ㄨ", "ㄜ", "ㄠ", "ㄤ"],
+        keys(["ㄇ", "ㄋ", "ㄎ", "ㄑ", "ㄕ", "ㄘ", "ㄨ", "ㄜ", "ㄠ", "ㄤ"],
             ["!", "@", "#", "¥", "%", "&", "*", "(", ")", nil]),
-        zip(["ㄈ", "ㄌ", "ㄏ", "ㄒ", "ㄖ", "ㄙ", "ㄩ", "ㄝ", "ㄡ", "ㄥ"],
+        keys(["ㄈ", "ㄌ", "ㄏ", "ㄒ", "ㄖ", "ㄙ", "ㄩ", "ㄝ", "ㄡ", "ㄥ"],
             [nil, "-", "'", "\"", ":", ";", ",", "?", nil, nil])
             + [FunctionKeys.backspace],
         [
