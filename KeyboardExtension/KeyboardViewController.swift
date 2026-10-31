@@ -46,7 +46,10 @@ final class KeyboardViewController: UIInputViewController {
             candidateBar.topAnchor.constraint(equalTo: view.topAnchor),
             candidateBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             candidateBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            candidateBar.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: SamsungTheme.toolbarHeightRatio),
+            candidateBar.heightAnchor.constraint(
+                equalTo: view.heightAnchor,
+                multiplier: SamsungTheme.toolbarHeightRatio
+            ),
 
             keyArea.topAnchor.constraint(equalTo: candidateBar.bottomAnchor),
             keyArea.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -104,7 +107,9 @@ final class KeyboardViewController: UIInputViewController {
     private func select(_ index: Int) {
         guard let engine else { return }
         let text = engine.selectCandidate(at: UInt(index))
-        if !text.isEmpty { textDocumentProxy.insertText(text) }
+        if !text.isEmpty {
+            textDocumentProxy.insertText(text)
+        }
         refreshBar()
     }
 

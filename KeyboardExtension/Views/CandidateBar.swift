@@ -45,7 +45,9 @@ final class CandidateBar: UIView {
     }
 
     @available(*, unavailable)
-    required init?(coder _: NSCoder) { fatalError("not used") }
+    required init?(coder _: NSCoder) {
+        fatalError("not used")
+    }
 
     func update(composing: String, candidates: [String]) {
         composingLabel.text = composing
