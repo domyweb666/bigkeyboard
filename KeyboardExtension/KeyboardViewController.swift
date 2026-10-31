@@ -1,9 +1,9 @@
 import UIKit
 
-/// 鍵盤殼。片 4：四顆鍵（ㄋ ㄧ ˇ 空白）＋候選字列，接小麥引擎。
+/// 鍵盤殼。片 5：注音全鍵面（資料驅動）＋候選字列，接小麥引擎。
 final class KeyboardViewController: UIInputViewController {
     private let candidateBar = CandidateBar()
-    private let keyArea = UIView()
+    private let keyboardView = KeyboardView()
     private var heightConstraint: NSLayoutConstraint?
     private var engine: BopomofoEngine?
 
@@ -16,30 +16,12 @@ final class KeyboardViewController: UIInputViewController {
         }
 
         candidateBar.onSelect = { [weak self] i in self?.select(i) }
+        keyboardView.onKey = { [weak self] spec in self?.handle(spec) }
+        keyboardView.load(BopomofoLayout.rows)
 
-        for v in [candidateBar, keyArea] {
+        for v in [candidateBar, keyboardView] {
             v.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview(v)
-        }
-
-        let keys: [(String, CGFloat)] = [("ㄋ", 1), ("ㄧ", 1), ("ˇ", 1), (" ", 3)]
-        let row = UIStackView()
-        row.axis = .horizontal
-        row.spacing = 6
-        row.distribution = .fillProportionally
-        row.translatesAutoresizingMaskIntoConstraints = false
-        keyArea.addSubview(row)
-        for (title, weight) in keys {
-            let b = UIButton(type: .system)
-            b.setTitle(title == " " ? "" : title, for: .normal)
-            b.titleLabel?.font = .systemFont(ofSize: 28)
-            b.setTitleColor(SamsungTheme.keyText, for: .normal)
-            b.backgroundColor = SamsungTheme.keyWhite
-            b.layer.cornerRadius = 8
-            b.accessibilityLabel = title == " " ? "空白" : title
-            b.addAction(UIAction { [weak self] _ in self?.keyTapped(title) }, for: .touchUpInside)
-            row.addArrangedSubview(b)
-            b.widthAnchor.constraint(equalTo: row.widthAnchor, multiplier: weight / 6.6).isActive = true
         }
 
         NSLayoutConstraint.activate([
@@ -51,15 +33,10 @@ final class KeyboardViewController: UIInputViewController {
                 multiplier: SamsungTheme.toolbarHeightRatio
             ),
 
-            keyArea.topAnchor.constraint(equalTo: candidateBar.bottomAnchor),
-            keyArea.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            keyArea.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            keyArea.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-
-            row.centerYAnchor.constraint(equalTo: keyArea.centerYAnchor),
-            row.leadingAnchor.constraint(equalTo: keyArea.leadingAnchor, constant: 8),
-            row.trailingAnchor.constraint(equalTo: keyArea.trailingAnchor, constant: -8),
-            row.heightAnchor.constraint(equalToConstant: 60),
+            keyboardView.topAnchor.constraint(equalTo: candidateBar.bottomAnchor),
+            keyboardView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            keyboardView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            keyboardView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
     }
 
@@ -90,18 +67,39 @@ final class KeyboardViewController: UIInputViewController {
 
     // MARK: - 鍵 → 引擎 → 輸入框
 
-    private func keyTapped(_ title: String) {
+    private func handle(_ spec: KeySpec) {
         guard let engine else { return }
-        if title == " " {
+        switch spec.action {
+        case let .bopomofo(symbol):
+            _ = engine.feedSymbol(symbol)
+        case let .text(s):
+            commitFirstCandidateIfComposing()
+            textDocumentProxy.insertText(s)
+        case .space:
             if engine.candidates.isEmpty {
                 textDocumentProxy.insertText(" ")
             } else {
                 select(0)
             }
-            return
+        case .newline:
+            commitFirstCandidateIfComposing()
+            textDocumentProxy.insertText("\n")
+        case .backspace:
+            if !engine.backspace() {
+                textDocumentProxy.deleteBackward()
+            }
+        case .placeholder:
+            break
         }
-        _ = engine.feedSymbol(title)
         refreshBar()
+    }
+
+    private func commitFirstCandidateIfComposing() {
+        guard let engine, !engine.candidates.isEmpty else { return }
+        let text = engine.selectCandidate(at: 0)
+        if !text.isEmpty {
+            textDocumentProxy.insertText(text)
+        }
     }
 
     private func select(_ index: Int) {
