@@ -32,6 +32,25 @@ jobs:
           printf '%s' "${{ secrets.ASC_PRIVATE_KEY }}" > "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
           sed "s/__TEAM_ID__/${APPLE_TEAM_ID}/" ExportOptions.plist > "$HOME/ExportOptions.plist"
 
+      - name: 金鑰自檢（直接問 Apple）
+        run: |
+          pip3 install -q pyjwt cryptography requests
+          python3 - <<'PY'
+          import os, time, jwt, requests
+          key = open(os.path.expanduser(f"~/private_keys/AuthKey_{os.environ['ASC_KEY_ID']}.p8")).read()
+          print("金鑰檔行數:", len(key.strip().splitlines()), "| 以 BEGIN PRIVATE KEY 開頭:", key.strip().startswith("-----BEGIN PRIVATE KEY-----"))
+          token = jwt.encode({"iss": os.environ["ASC_ISSUER_ID"], "iat": int(time.time()), "exp": int(time.time())+600, "aud": "appstoreconnect-v1"},
+                             key, algorithm="ES256", headers={"kid": os.environ["ASC_KEY_ID"], "typ": "JWT"})
+          r = requests.get("https://api.appstoreconnect.apple.com/v1/apps?fields[apps]=bundleId,name", headers={"Authorization": f"Bearer {token}"})
+          print("Apple 回應:", r.status_code)
+          if r.status_code != 200:
+              print(r.text[:800]); raise SystemExit("金鑰被 Apple 拒絕：請檢查 Key ID / Issuer ID / .p8 內容，以及金鑰是 Team Key 且角色為 Admin")
+          apps = [(a["attributes"]["name"], a["attributes"]["bundleId"]) for a in r.json()["data"]]
+          print("這把金鑰看得到的 app:", apps)
+          if not any(b == "org.domyweb.bigkeyboard" for _, b in apps):
+              raise SystemExit("App Store Connect 還沒有 bundle ID 為 org.domyweb.bigkeyboard 的 app 紀錄")
+          PY
+
       - name: 封存（自動簽章）
         run: |
           xcodebuild archive \
