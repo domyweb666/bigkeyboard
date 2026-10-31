@@ -19,7 +19,7 @@ targets:
     info:
       path: App/Info.plist
       properties:
-        CFBundleDisplayName: 三星風鍵盤
+        CFBundleDisplayName: 豆鍵
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen: {}
@@ -42,7 +42,7 @@ targets:
     info:
       path: KeyboardExtension/Info.plist
       properties:
-        CFBundleDisplayName: 三星風鍵盤
+        CFBundleDisplayName: 豆鍵
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:

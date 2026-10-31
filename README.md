@@ -1,4 +1,4 @@
-# bigkeyboard — 三星風鍵盤
+# bigkeyboard — 豆鍵
 
 多米自用的 iOS 第三方鍵盤。沒有 Mac：Windows 寫 → 推上 main → GitHub Actions 編譯簽章上傳 TestFlight → iPhone 從 TestFlight 安裝。
 
