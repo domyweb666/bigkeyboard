@@ -2,8 +2,8 @@ import UIKit
 
 /// 三星鍵盤的尺寸與配色，照截圖量出來的常數。寫死，不做設定項。
 enum SamsungTheme {
-    /// 鍵盤總高度佔螢幕高度的比例（含工具列帶）
-    static let keyboardHeightRatio: CGFloat = 0.42
+    /// 鍵盤總高度佔螢幕高度的比例（含工具列帶；不含系統在下方另加的地球／麥克風排，iOS 26 仍會給第三方鍵盤那一排）
+    static let keyboardHeightRatio: CGFloat = 0.36
     /// 工具列帶（之後放候選字）佔鍵盤總高的比例
     static let toolbarHeightRatio: CGFloat = 0.11
 
