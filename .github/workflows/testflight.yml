@@ -34,8 +34,8 @@ jobs:
 
       - name: 金鑰自檢（直接問 Apple）
         run: |
-          pip3 install -q pyjwt cryptography requests
-          python3 - <<'PY'
+          python3 -m venv "$HOME/venv" && "$HOME/venv/bin/pip" install -q pyjwt cryptography requests
+          "$HOME/venv/bin/python" - <<'PY'
           import os, time, jwt, requests
           key = open(os.path.expanduser(f"~/private_keys/AuthKey_{os.environ['ASC_KEY_ID']}.p8")).read()
           print("金鑰檔行數:", len(key.strip().splitlines()), "| 以 BEGIN PRIVATE KEY 開頭:", key.strip().startswith("-----BEGIN PRIVATE KEY-----"))
