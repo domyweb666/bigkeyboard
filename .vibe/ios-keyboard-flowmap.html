@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ios-keyboard flowmap（待掛點版）</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0d1117; --node:#161b22; --border:#30363d; --fg:#c9d1d9; --dim:#8b949e;
+          --ok:#3fb950; --err:#f85149; --retry:#d29922; --cond:#58a6ff; --hl:#f0883e; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family:'JetBrains Mono','Fira Code',monospace; font-size:13px; }
+  header { display:flex; align-items:center; gap:16px; padding:12px 20px; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--bg); z-index:5; }
+  header h1 { font-size:15px; margin:0; font-weight:600; }
+  header .tag { color:var(--dim); font-size:12px; }
+  header button { margin-left:auto; background:var(--node); color:var(--fg); border:1px solid var(--border); padding:6px 12px; border-radius:6px; cursor:pointer; font-family:inherit; font-size:12px; }
+  header button:hover { border-color:var(--cond); }
+  .legend { display:flex; gap:14px; padding:8px 20px; color:var(--dim); font-size:11px; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+  .legend span::before { content:""; display:inline-block; width:18px; height:2px; margin-right:6px; vertical-align:middle; }
+  .legend .s::before{background:var(--ok)} .legend .f::before{background:var(--err)} .legend .r::before{background:var(--retry); border-top:2px dashed var(--retry); height:0} .legend .c::before{background:var(--cond)}
+  .legend .p::before{ width:14px; height:10px; border:1px dashed var(--dim); background:none; }
+  #canvas { overflow:auto; padding:20px; }
+  svg { display:block; min-width:1180px; }
+  .node rect { fill:var(--node); stroke:var(--border); stroke-width:1.5; rx:8; cursor:pointer; transition:stroke .15s; }
+  .node.pending rect { stroke-dasharray:5 4; }
+  .node.start rect, .node.end rect { rx:22; }
+  .node.decision rect { stroke:var(--cond); }
+  .node.error rect { stroke:var(--err); }
+  .node:hover rect, .node.active rect { stroke:var(--hl); stroke-width:2; }
+  .node.highlight rect { stroke:var(--hl); stroke-width:2.5; fill:#2a1f14; }
+  .node text { fill:var(--fg); font-size:12px; pointer-events:none; }
+  .node text.sub { fill:var(--dim); font-size:10px; }
+  .node text.danger { fill:var(--retry); font-size:10px; }
+  .edge { fill:none; stroke-width:1.5; }
+  .edge.success{stroke:var(--ok)} .edge.failure{stroke:var(--err)} .edge.retry{stroke:var(--retry); stroke-dasharray:6 4} .edge.conditional{stroke:var(--cond)}
+  .edge-label { font-size:10px; fill:var(--dim); }
+  .edge-label.success{fill:var(--ok)} .edge-label.failure{fill:var(--err)} .edge-label.retry{fill:var(--retry)} .edge-label.conditional{fill:var(--cond)}
+  #panel { position:fixed; top:0; right:-420px; width:400px; height:100vh; background:#010409; border-left:1px solid var(--border); padding:20px; overflow:auto; transition:right .2s; z-index:10; }
+  #panel.open { right:0; }
+  #panel h2 { font-size:14px; margin:0 0 6px; }
+  #panel .close { position:absolute; top:14px; right:16px; background:none; border:none; color:var(--dim); cursor:pointer; font-size:16px; }
+  #panel .k { color:var(--dim); font-size:11px; margin-top:14px; text-transform:uppercase; letter-spacing:.05em; }
+  #panel p { margin:4px 0; line-height:1.55; }
+  #panel .file { display:inline-block; margin:4px 4px 0 0; padding:3px 8px; border:1px solid var(--border); border-radius:4px; cursor:pointer; color:var(--cond); font-size:11px; }
+  #panel .file:hover { border-color:var(--cond); }
+  #panel .file.pending { color:var(--dim); border-style:dashed; cursor:default; }
+  #panel .resp { color:var(--dim); font-size:11px; margin:2px 0 0 4px; }
+  .edge-list li { margin:3px 0; font-size:11px; }
+  details { margin:20px; border:1px solid var(--border); border-radius:8px; padding:12px 16px; color:var(--dim); }
+  details summary { cursor:pointer; color:var(--fg); }
+  details pre { white-space:pre-wrap; font-size:11px; }
+  .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--node); border:1px solid var(--ok); color:var(--ok); padding:8px 14px; border-radius:6px; opacity:0; transition:opacity .2s; pointer-events:none; }
+  .toast.show { opacity:1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>ios-keyboard · flowmap</h1>
+  <span class="tag">待掛點版 · 2026-10-31 · 節點 16 · 邊 23</span>
+  <button id="copy">複製 JSON</button>
+</header>
+<div class="legend">
+  <span class="s">成功 / 主幹</span><span class="f">失敗 / 拒絕</span><span class="r">回頭 / 迴圈</span><span class="c">條件分支</span><span class="p">虛線框 = 尚未掛檔案</span><span>⚠ = 危險方塊</span>
+</div>
+<div id="canvas"><svg id="svg"></svg></div>
+
+<aside id="panel">
+  <button class="close" id="close">✕</button>
+  <div id="panel-body"></div>
+</aside>
+<div class="toast" id="toast">已複製</div>
+
+<details>
+<summary>🤖 給 Claude Code 的讀圖說明</summary>
+<pre>這份 HTML 包含一個 &lt;script id="flowmap-data" type="application/json"&gt; 區塊。
+讀取方式：document.getElementById('flowmap-data').textContent，然後 JSON.parse()。
+
+重要欄位：
+- nodes[].trigger_condition：這個狀態的觸發條件
+- nodes[].file_responsibilities：每個檔案在此節點的具體職責（本版尚未對應，實作後由 vibe-health-check / vibe-integrate 重跑掛點模式補上）
+- nodes[].planned_files：規劃中的檔案（尚未存在，只是計畫）
+- file_index：反查表，給你一個檔名，告訴你它出現在哪些節點（本版為空）
+- edges[].type：success / failure / retry / conditional，代表分支語意
+- nodes[].danger：true 表示此節點黑箱驗不全，動它要特別小心
+
+當你修改一個檔案時，先查 file_index 找到它涉及的所有節點，
+再看每個節點的 edges 確認你的修改是否影響到下游分支。
+此圖為鎖定基準：任何偏離此圖的架構改動，必須先回 .vibe/架構藍圖.md 改圖並經使用者確認。</pre>
+</details>
+
+<script id="flowmap-data" type="application/json">
+{
+  "project": "ios-keyboard",
+  "generated_at": "2026-10-31T13:25:00+08:00",
+  "status": "pending-hooks",
+  "nodes": [
+    {"id":"n00","label":"使用者點任一 app 的輸入框","description":"iOS 把鍵盤 extension 叫起來。這是唯一入口。","trigger_condition":"輸入框取得焦點且目前選用的鍵盤是本鍵盤","files":[],"planned_files":["KeyboardExtension/KeyboardViewController.swift"],"file_responsibilities":{},"type":"start","danger":false},
+    {"id":"n01","label":"密碼欄位？","description":"系統對 secure text field 強制切回原生鍵盤，本鍵盤不會出現。","trigger_condition":"textDocumentProxy 的 isSecureTextEntry 為 true","files":[],"planned_files":[],"file_responsibilities":{},"type":"decision","danger":false},
+    {"id":"n02","label":"交回原生鍵盤","description":"不處理。產品定稿明確不做。","trigger_condition":"n01 = 是","files":[],"planned_files":[],"file_responsibilities":{},"type":"end","danger":false},
+    {"id":"n03","label":"載入鍵盤：設高度、讀上次模式、畫版面","description":"對 inputView 加高度約束（照三星比例）；讀取上次停留的模式（預設注音）；載入引擎與詞庫到記憶體。","trigger_condition":"n01 = 否","files":[],"planned_files":["KeyboardExtension/KeyboardViewController.swift","KeyboardExtension/Layout/KeyboardLayout.swift","KeyboardExtension/Layout/SamsungTheme.swift"],"file_responsibilities":{},"type":"process","danger":false},
+    {"id":"n04","label":"目前模式","description":"四種互斥模式：注音 / 英文 / 符號頁 / 數字鍵盤。每種模式對應一張鍵面。","trigger_condition":"載入完成，或使用者按了模式切換鍵（中文／ABC／!#1／123／符）","files":[],"planned_files":["KeyboardExtension/Layout/KeyboardLayout.swift"],"file_responsibilities":{},"type":"decision","danger":false},
+    {"id":"n05","label":"注音鍵面（41 鍵＋數字列）","description":"標準注音排法：ㄅㄉˇˋㄓˊ˙ㄚㄞㄢㄦ / ㄆㄊㄍㄐㄔㄗㄧㄛㄟㄣ / ㄇㄋㄎㄑㄕㄘㄨㄜㄠㄤ / ㄈㄌㄏㄒㄖㄙㄩㄝㄡㄥ。工具列那排顯示候選字。鍵距緊、字大。","trigger_condition":"n04 = 注音","files":[],"planned_files":["KeyboardExtension/Layout/BopomofoLayout.swift","KeyboardExtension/Views/KeyView.swift","KeyboardExtension/Views/CandidateBar.swift"],"file_responsibilities":{},"type":"process","danger":false},
+    {"id":"n06","label":"英文鍵面（QWERTY＋數字列）","description":"按鍵直接送字母到輸入框；shift 切大小寫；鍵帽右上角有長按符號提示。沒有自動更正、沒有預測字。","trigger_condition":"n04 = 英文","files":[],"planned_files":["KeyboardExtension/Layout/EnglishLayout.swift","KeyboardExtension/Views/KeyView.swift"],"file_responsibilities":{},"type":"process","danger":false},
+    {"id":"n07","label":"符號頁 1/2 與 2/2","description":"兩頁符號，1/2 與 2/2 互翻；中文模式送全形標點（，。「」），英文模式送半形。","trigger_condition":"n04 = 符號","files":[],"planned_files":["KeyboardExtension/Layout/SymbolLayout.swift"],"file_responsibilities":{},"type":"process","danger":false},
+    {"id":"n08","label":"數字鍵盤（4×4）","description":"左欄 _ @ : 符，右欄 ⌫ . , ↵，中間 1–9、0。","trigger_condition":"n04 = 數字","files":[],"planned_files":["KeyboardExtension/Layout/NumpadLayout.swift"],"file_responsibilities":{},"type":"process","danger":false},
+    {"id":"n09","label":"按下任一鍵：預覽泡泡＋判斷按法","description":"手指按下即顯示放大的鍵帽泡泡；放開後判斷是「點一下」還是「長按（≥ 0.4s）」。","trigger_condition":"任一鍵面上的鍵收到 touch down","files":[],"planned_files":["KeyboardExtension/Views/KeyView.swift","KeyboardExtension/Views/KeyPreviewBubble.swift"],"file_responsibilities":{},"type":"decision","danger":false},
+    {"id":"n10","label":"長按：送出鍵帽右上角的替代符號","description":"注音層長按送數字或符號；英文層長按送符號。送出後回到該鍵面。","trigger_condition":"n09 判定為長按","files":[],"planned_files":["KeyboardExtension/Views/KeyView.swift"],"file_responsibilities":{},"type":"process","danger":false},
+    {"id":"n11","label":"注音組字器收字","description":"把聲母／韻母／聲調塞進組字器（Tekkon 或等價物）。組字器判斷這個注音能不能接在目前未送出的注音後面。","trigger_condition":"n09 判定為點一下，且目前是注音鍵面，且按的是注音符號鍵","files":[],"planned_files":["KeyboardExtension/Engine/BopomofoComposer.swift","Packages/Tekkon（外部，開源）"],"file_responsibilities":{},"type":"process","danger":true},
+    {"id":"n12","label":"組合合法？","description":"例如「ㄓ」後面接「ㄅ」不合法。","trigger_condition":"組字器回報結果","files":[],"planned_files":["KeyboardExtension/Engine/BopomofoComposer.swift"],"file_responsibilities":{},"type":"decision","danger":false},
+    {"id":"n13","label":"引擎斷詞 → 候選字列","description":"把目前累積的注音串交給引擎（Megrez 或等價物＋詞庫），算出候選字／詞，依機率排序，顯示在工具列那排。這是「候選字選不到」風險的所在。","trigger_condition":"n12 = 合法，或使用者按了刪除後注音串仍非空","files":[],"planned_files":["KeyboardExtension/Engine/InputEngine.swift","KeyboardExtension/Engine/Dictionary.sqlite 或 .txt（外部詞庫）","Packages/Megrez（外部，開源）","KeyboardExtension/Views/CandidateBar.swift"],"file_responsibilities":{},"type":"process","danger":true},
+    {"id":"n14","label":"選字並送出","description":"點候選字、或按空白鍵選第一個候選。把選中的字送進輸入框（textDocumentProxy.insertText），清空注音串，候選列恢復成空。","trigger_condition":"候選列有內容，且使用者點了候選字或按了空白鍵","files":[],"planned_files":["KeyboardExtension/Views/CandidateBar.swift","KeyboardExtension/KeyboardViewController.swift"],"file_responsibilities":{},"type":"process","danger":false},
+    {"id":"n15","label":"刪除鍵","description":"注音串非空 → 只刪最後一個注音符號，重算候選；注音串為空 → 刪輸入框前一個字元。","trigger_condition":"任一鍵面按下 ⌫","files":[],"planned_files":["KeyboardExtension/KeyboardViewController.swift","KeyboardExtension/Engine/BopomofoComposer.swift"],"file_responsibilities":{},"type":"decision","danger":false}
+  ],
+  "edges": [
+    {"from":"n00","to":"n01","label":"extension 啟動","type":"success"},
+    {"from":"n01","to":"n02","label":"isSecureTextEntry = true","type":"failure"},
+    {"from":"n01","to":"n03","label":"isSecureTextEntry = false","type":"success"},
+    {"from":"n03","to":"n04","label":"高度約束生效、引擎載入完成","type":"success"},
+    {"from":"n04","to":"n05","label":"mode = bopomofo（預設）","type":"conditional"},
+    {"from":"n04","to":"n06","label":"mode = english","type":"conditional"},
+    {"from":"n04","to":"n07","label":"mode = symbol","type":"conditional"},
+    {"from":"n04","to":"n08","label":"mode = numpad","type":"conditional"},
+    {"from":"n05","to":"n09","label":"touch down","type":"success"},
+    {"from":"n06","to":"n09","label":"touch down","type":"success"},
+    {"from":"n07","to":"n09","label":"touch down","type":"success"},
+    {"from":"n08","to":"n09","label":"touch down","type":"success"},
+    {"from":"n09","to":"n10","label":"按住 ≥ 0.4s 且該鍵有替代符號","type":"conditional"},
+    {"from":"n09","to":"n11","label":"點一下 且 注音鍵面 且 注音符號鍵","type":"conditional"},
+    {"from":"n09","to":"n04","label":"點一下 且 模式切換鍵 → 換鍵面","type":"retry"},
+    {"from":"n09","to":"n14","label":"點一下 且 英文/符號/數字鍵 → 直接 insertText","type":"conditional"},
+    {"from":"n09","to":"n15","label":"點一下 且 ⌫","type":"conditional"},
+    {"from":"n10","to":"n14","label":"替代符號 insertText","type":"success"},
+    {"from":"n11","to":"n12","label":"組字器回報","type":"success"},
+    {"from":"n12","to":"n13","label":"合法","type":"success"},
+    {"from":"n12","to":"n05","label":"不合法 → 忽略此次按鍵","type":"failure"},
+    {"from":"n13","to":"n14","label":"點候選字 或 空白鍵","type":"success"},
+    {"from":"n14","to":"n04","label":"送出完成 → 回目前鍵面","type":"retry"},
+    {"from":"n15","to":"n13","label":"注音串非空 → 刪一個注音、重算","type":"retry"},
+    {"from":"n15","to":"n04","label":"注音串為空 → deleteBackward → 回鍵面","type":"retry"}
+  ],
+  "file_index": {}
+}
+</script>
+
+<script>
+const data = JSON.parse(document.getElementById('flowmap-data').textContent);
+// 手算分層佈局（top-down，分支向右）
+const pos = {
+  n00:[40,20],  n01:[40,110], n02:[340,110],
+  n03:[40,200], n04:[40,300],
+  n05:[40,410], n06:[320,410], n07:[600,410], n08:[880,410],
+  n09:[320,530],
+  n10:[40,650], n11:[320,650], n15:[640,650],
+  n12:[320,760], n13:[320,870],
+  n14:[40,870]
+};
+const W=250, H=70;
+const svg = document.getElementById('svg');
+svg.setAttribute('viewBox','0 0 1180 980'); svg.setAttribute('height',980);
+const ns='http://www.w3.org/2000/svg';
+function el(t,a){const e=document.createElementNS(ns,t);for(const k in a)e.setAttribute(k,a[k]);return e;}
+// defs arrow
+const defs=el('defs',{});
+for(const [t,c] of [['success','#3fb950'],['failure','#f85149'],['retry','#d29922'],['conditional','#58a6ff']]){
+  const m=el('marker',{id:'arr-'+t,viewBox:'0 0 10 10',refX:9,refY:5,markerWidth:7,markerHeight:7,orient:'auto-start-reverse'});
+  m.appendChild(el('path',{d:'M0,0 L10,5 L0,10 z',fill:c})); defs.appendChild(m);
+}
+svg.appendChild(defs);
+const edgeLayer=el('g',{}), nodeLayer=el('g',{}); svg.appendChild(edgeLayer); svg.appendChild(nodeLayer);
+const center=id=>{const [x,y]=pos[id];return [x+W/2,y+H/2];};
+// edges
+data.edges.forEach((e,i)=>{
+  const [x1,y1]=pos[e.from],[x2,y2]=pos[e.to];
+  let sx,sy,ex,ey,d;
+  const back = y2 < y1 - 10; // 回頭邊
+  if(back){ // 從右側出、繞到目標右側
+    sx=x1+W; sy=y1+H/2; ex=x2+W; ey=y2+H/2;
+    const bend = Math.max(sx,ex)+40+ (i%3)*14;
+    d=`M${sx},${sy} C${bend},${sy} ${bend},${ey} ${ex},${ey}`;
+  } else if (Math.abs(y2-y1)<10){ // 同層水平
+    sx=x1+W; sy=y1+H/2; ex=x2; ey=y2+H/2; d=`M${sx},${sy} L${ex},${ey}`;
+  } else { // 往下
+    sx=x1+W/2; sy=y1+H; ex=x2+W/2; ey=y2;
+    const my=(sy+ey)/2; d=`M${sx},${sy} C${sx},${my} ${ex},${my} ${ex},${ey}`;
+  }
+  const p=el('path',{d,class:'edge '+e.type,'marker-end':`url(#arr-${e.type})`});
+  edgeLayer.appendChild(p);
+  const len=p.getTotalLength(); const pt=p.getPointAtLength(len*0.5);
+  const t=el('text',{x:pt.x+6,y:pt.y-4,class:'edge-label '+e.type}); t.textContent=e.label; edgeLayer.appendChild(t);
+});
+// nodes
+function wrap(s,n){const out=[];let cur='';for(const ch of s){cur+=ch;if(cur.length>=n){out.push(cur);cur='';}}if(cur)out.push(cur);return out.slice(0,2);}
+data.nodes.forEach(n=>{
+  const [x,y]=pos[n.id];
+  const g=el('g',{class:`node ${n.type} ${n.files.length?'':'pending'}`,'data-id':n.id,transform:`translate(${x},${y})`});
+  g.appendChild(el('rect',{width:W,height:H}));
+  const lines=wrap(n.label,16);
+  lines.forEach((l,i)=>{const t=el('text',{x:12,y:24+i*16});t.textContent=l;g.appendChild(t);});
+  const sub=el('text',{x:12,y:H-10,class:n.danger?'danger':'sub'});
+  sub.textContent=(n.danger?'⚠ 危險方塊 · ':'')+n.id+(n.files.length?'':' · 待掛點'); g.appendChild(sub);
+  g.addEventListener('click',()=>openPanel(n.id));
+  nodeLayer.appendChild(g);
+});
+// panel
+const panel=document.getElementById('panel'), body=document.getElementById('panel-body');
+function openPanel(id){
+  const n=data.nodes.find(x=>x.id===id);
+  document.querySelectorAll('.node').forEach(g=>g.classList.toggle('active',g.dataset.id===id));
+  const outs=data.edges.filter(e=>e.from===id), ins=data.edges.filter(e=>e.to===id);
+  const lab=i=>data.nodes.find(x=>x.id===i).label;
+  body.innerHTML=`
+    <h2>${n.label}</h2><div class="k">${n.id} · ${n.type}${n.danger?' · ⚠ 危險方塊':''}</div>
+    <div class="k">做什麼</div><p>${n.description}</p>
+    <div class="k">觸發條件</div><p>${n.trigger_condition}</p>
+    <div class="k">掛點檔案</div><p>${n.files.length?n.files.map(f=>`<span class="file" data-f="${f}">${f}</span>`).join(''):'<span class="file pending">[尚未對應]</span>'}</p>
+    <div class="k">規劃中的檔案（尚未存在）</div><p>${n.planned_files.length?n.planned_files.map(f=>`<span class="file pending">${f}</span>`).join(''):'—'}</p>
+    <div class="k">進來的邊</div><ul class="edge-list">${ins.map(e=>`<li><span class="edge-label ${e.type}">●</span> ${lab(e.from)} — ${e.label}</li>`).join('')||'<li>—</li>'}</ul>
+    <div class="k">出去的邊</div><ul class="edge-list">${outs.map(e=>`<li><span class="edge-label ${e.type}">●</span> ${e.label} → ${lab(e.to)}</li>`).join('')||'<li>—</li>'}</ul>`;
+  body.querySelectorAll('.file[data-f]').forEach(s=>s.addEventListener('click',()=>highlightFile(s.dataset.f)));
+  panel.classList.add('open');
+}
+function highlightFile(f){
+  const ids=data.file_index[f]||[];
+  document.querySelectorAll('.node').forEach(g=>g.classList.toggle('highlight',ids.includes(g.dataset.id)));
+}
+document.getElementById('close').onclick=()=>{panel.classList.remove('open');document.querySelectorAll('.node').forEach(g=>g.classList.remove('active','highlight'));};
+document.getElementById('copy').onclick=async()=>{
+  try{await navigator.clipboard.writeText(document.getElementById('flowmap-data').textContent.trim());}catch(e){}
+  const t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1200);
+};
+</script>
+</body>
+</html>
