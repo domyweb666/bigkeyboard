@@ -54,7 +54,8 @@ final class KeyboardView: UIView {
     private func makeButton(_ spec: KeySpec) -> UIButton {
         let b = UIButton(type: .custom)
         b.setTitle(spec.label, for: .normal)
-        b.titleLabel?.font = .systemFont(ofSize: spec.isFunction ? SamsungTheme.functionFontSize : SamsungTheme.keyFontSize)
+        let fontSize = spec.isFunction ? SamsungTheme.functionFontSize : SamsungTheme.keyFontSize
+        b.titleLabel?.font = .systemFont(ofSize: fontSize)
         b.setTitleColor(SamsungTheme.keyText, for: .normal)
         b.backgroundColor = spec.isFunction ? SamsungTheme.keyGray : SamsungTheme.keyWhite
         b.layer.cornerRadius = SamsungTheme.keyCornerRadius
