@@ -2,6 +2,11 @@ name: ASC 狀態查詢
 
 on:
   workflow_dispatch:
+    inputs:
+      revoke_dev_certs:
+        description: "撤銷所有「開發」憑證（runner 每次都是新機器，舊的開發憑證已無用）"
+        type: boolean
+        default: false
 
 jobs:
   status:
@@ -10,6 +15,7 @@ jobs:
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+      REVOKE: ${{ inputs.revoke_dev_certs }}
     steps:
       - name: 問 Apple 每個 build 的狀態
         run: |
@@ -28,4 +34,12 @@ jobs:
           for x in g["data"]:
               a = x["attributes"]; print("群組:", a["name"], "| 內部:", a["isInternalGroup"], "| 自動拿所有 build:", a["hasAccessToAllBuilds"])
           if not g["data"]: print("⚠ 沒有任何測試群組")
+          c = requests.get("https://api.appstoreconnect.apple.com/v1/certificates?fields[certificates]=certificateType,name,expirationDate,displayName&limit=50", headers=H).json()
+          for x in c["data"]:
+              a = x["attributes"]; print("憑證:", a["certificateType"], "|", a.get("displayName") or a.get("name"), "| 到期", a["expirationDate"][:10], "| id", x["id"])
+          if os.environ.get("REVOKE") == "true":
+              for x in c["data"]:
+                  if x["attributes"]["certificateType"] in ("DEVELOPMENT", "IOS_DEVELOPMENT"):
+                      d = requests.delete(f"https://api.appstoreconnect.apple.com/v1/certificates/{x['id']}", headers=H)
+                      print("撤銷開發憑證", x["id"], "→", d.status_code)
           PY
