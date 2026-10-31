@@ -20,6 +20,8 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: 三星風鍵盤
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         ITSAppUsesNonExemptEncryption: false
