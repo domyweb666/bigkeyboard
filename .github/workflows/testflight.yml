@@ -5,6 +5,11 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# 連推多次只編最後一次，省 macOS 分鐘數
+concurrency:
+  group: testflight-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: macos-15
