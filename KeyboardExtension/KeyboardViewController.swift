@@ -397,8 +397,8 @@ final class KeyboardViewController: UIInputViewController {
     }
 
     private func updateAutoCapitalization() {
-        guard mode == .english, keyboardView.shift != .locked else { return }
-        guard let type = textDocumentProxy.autocapitalizationType, type != .none else { return }
+        guard mode == .english, keyboardView.shift != .locked, let type = textDocumentProxy.autocapitalizationType,
+              type != .none else { return }
         let before = textDocumentProxy.documentContextBeforeInput ?? ""
         let trimmed = before.trimmingCharacters(in: .whitespaces)
         let atSentenceStart = trimmed.isEmpty
