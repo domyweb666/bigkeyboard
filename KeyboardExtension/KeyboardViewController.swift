@@ -101,6 +101,15 @@ final class KeyboardViewController: UIInputViewController {
         refreshBar()
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        // 系統在螢幕左右邊緣做手勢判斷，會把觸控延後送來：最左、最右那欄鍵慢半拍，快打時像沒按到。關掉延後
+        for recognizer in view.window?.gestureRecognizers ?? [] {
+            recognizer.delaysTouchesBegan = false
+            recognizer.delaysTouchesEnded = false
+        }
+    }
+
     override func textDidChange(_ textInput: UITextInput?) {
         super.textDidChange(textInput)
         // 換到另一個輸入框時：深淺色、換行鍵文字跟著它

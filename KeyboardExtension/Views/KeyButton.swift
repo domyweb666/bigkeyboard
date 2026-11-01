@@ -25,6 +25,8 @@ final class KeyButton: UIControl {
     private var longPressTimer: Timer?
     private var repeatTimer: Timer?
     private var longPressFired = false
+    /// 快打時被下一顆鍵搶先送出了，放開時不再送一次
+    private var firedEarly = false
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -113,6 +115,7 @@ final class KeyButton: UIControl {
 
     @objc private func touchDown() {
         longPressFired = false
+        firedEarly = false
         onPressChanged?(true)
         if let onRepeat {
             onRepeat()
@@ -153,16 +156,27 @@ final class KeyButton: UIControl {
         repeatTimer?.invalidate()
     }
 
-    @objc private func touchUpInside() {
+    /// 快打時下一顆鍵已經按下：這顆現在就算按完（不等手指放開）
+    func fireNow() {
+        guard isTracking, onRepeat == nil, !longPressFired, !firedEarly else { return }
+        firedEarly = true
         stopTimers()
         onPressChanged?(false)
-        if onRepeat == nil, !longPressFired {
+        onTap?()
+    }
+
+    @objc private func touchUpInside() {
+        stopTimers()
+        guard !firedEarly, !longPressFired else { return }
+        onPressChanged?(false)
+        if onRepeat == nil {
             onTap?()
         }
     }
 
     @objc private func touchEnded() {
         stopTimers()
+        guard !firedEarly, !longPressFired else { return }
         onPressChanged?(false)
     }
 }

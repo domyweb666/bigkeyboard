@@ -6,11 +6,17 @@ final class CandidateBar: UIView {
     var onSelect: ((Int) -> Void)?
     var onToggleExpand: (() -> Void)?
 
+    /// 一列最多放幾個。每打一個注音這列就重建一次，常見的音候選有上百個，全放打字會卡；更多的按 ⌄ 展開看
+    private static let maxShown = 30
+
+    /// 套淡出遮罩用的外框（遮罩不能直接套在會捲動的 scroll 上，會跟著內容跑）
+    private let clip = UIView()
     private let scroll = UIScrollView()
     private let stack = UIStackView()
     private let expandButton = KeyButton()
     private let divider = UIView()
-    /// 右端淡出：讓人看得出候選還能往右滑，最後一個字也不會被分隔線硬切一半
+    /// 右端淡出：讓人看得出候選還能往右滑，最後一個字也不會被分隔線硬切一半。
+    /// 用遮罩讓字本身漸漸透明，不是蓋一層底色上去：鍵盤底是透明的，蓋什麼顏色都會穿幫
     private let fade = CAGradientLayer()
     private let fadeWidth: CGFloat = 36
 
@@ -18,12 +24,13 @@ final class CandidateBar: UIView {
         super.init(frame: frame)
         fade.startPoint = CGPoint(x: 0, y: 0.5)
         fade.endPoint = CGPoint(x: 1, y: 0.5)
-        updateFadeColors()
+        fade.colors = [UIColor.black.cgColor, UIColor.black.cgColor, UIColor.clear.cgColor]
         stack.axis = .horizontal
         stack.spacing = 2
         stack.alignment = .fill
         scroll.showsHorizontalScrollIndicator = false
         scroll.addSubview(stack)
+        clip.addSubview(scroll)
 
         expandButton.normalColor = .clear
         expandButton.layer.shadowOpacity = 0
@@ -32,17 +39,23 @@ final class CandidateBar: UIView {
 
         divider.backgroundColor = SamsungTheme.hintText.withAlphaComponent(0.4)
 
-        for v in [scroll, expandButton, divider] {
+        for v in [clip, expandButton, divider] {
             v.translatesAutoresizingMaskIntoConstraints = false
             addSubview(v)
         }
+        scroll.translatesAutoresizingMaskIntoConstraints = false
         stack.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
-            scroll.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 4),
-            scroll.trailingAnchor.constraint(equalTo: divider.leadingAnchor),
-            scroll.topAnchor.constraint(equalTo: topAnchor),
-            scroll.bottomAnchor.constraint(equalTo: bottomAnchor),
+            clip.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 4),
+            clip.trailingAnchor.constraint(equalTo: divider.leadingAnchor),
+            clip.topAnchor.constraint(equalTo: topAnchor),
+            clip.bottomAnchor.constraint(equalTo: bottomAnchor),
+
+            scroll.leadingAnchor.constraint(equalTo: clip.leadingAnchor),
+            scroll.trailingAnchor.constraint(equalTo: clip.trailingAnchor),
+            scroll.topAnchor.constraint(equalTo: clip.topAnchor),
+            scroll.bottomAnchor.constraint(equalTo: clip.bottomAnchor),
 
             divider.trailingAnchor.constraint(equalTo: expandButton.leadingAnchor),
             divider.widthAnchor.constraint(equalToConstant: 1),
@@ -60,7 +73,6 @@ final class CandidateBar: UIView {
             stack.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor, constant: -4),
             stack.heightAnchor.constraint(equalTo: scroll.frameLayoutGuide.heightAnchor, constant: -8),
         ])
-        layer.addSublayer(fade)
     }
 
     @available(*, unavailable)
@@ -70,33 +82,30 @@ final class CandidateBar: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        let f = scroll.frame
+        // 先排好 scroll 裡面，才量得到這一列候選實際多寬
+        scroll.layoutIfNeeded()
+        updateFade()
+    }
+
+    /// 候選放不下才淡出；放得下就整列清楚
+    private func updateFade() {
+        let w = clip.bounds.width
+        guard w > fadeWidth, stack.frame.width > w else {
+            clip.layer.mask = nil
+            return
+        }
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        fade.frame = CGRect(x: f.maxX - fadeWidth, y: f.minY, width: fadeWidth, height: f.height)
+        fade.frame = clip.bounds
+        fade.locations = [0, NSNumber(value: Double((w - fadeWidth) / w)), 1]
         CATransaction.commit()
-        updateFadeVisibility()
-    }
-
-    override func traitCollectionDidChange(_ previous: UITraitCollection?) {
-        super.traitCollectionDidChange(previous)
-        updateFadeColors()
-    }
-
-    private func updateFadeColors() {
-        let bg = SamsungTheme.background.resolvedColor(with: traitCollection)
-        fade.colors = [bg.withAlphaComponent(0).cgColor, bg.cgColor]
-    }
-
-    /// 候選放得下就不淡出
-    private func updateFadeVisibility() {
-        fade.isHidden = stack.frame.width <= scroll.frame.width
+        clip.layer.mask = fade
     }
 
     /// highlightFirst：第一個是「按空白會送出的那個」時打亮（組字中）；聯想詞不打亮
     func update(candidates: [String], highlightFirst: Bool, expanded: Bool) {
         stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        for (i, c) in candidates.enumerated() {
+        for (i, c) in candidates.prefix(Self.maxShown).enumerated() {
             let b = KeyButton()
             b.label.text = c
             b.label.font = .systemFont(ofSize: SamsungTheme.candidateFontSize)

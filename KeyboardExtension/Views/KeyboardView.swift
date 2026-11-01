@@ -24,6 +24,8 @@ final class KeyboardView: UIView {
     private let bubble = KeyPreviewBubble()
     private var buttons: [KeyButton] = []
     private var specs: [KeyButton: KeySpec] = [:]
+    /// 目前按著還沒放開的那顆（快打時判斷「上一顆還沒放、下一顆已按下」）
+    private weak var heldKey: KeyButton?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -44,6 +46,25 @@ final class KeyboardView: UIView {
     @available(*, unavailable)
     required init?(coder _: NSCoder) {
         fatalError("not used")
+    }
+
+    /// 整塊鍵盤區沒有死角：按在鍵與鍵、排與排之間的縫，或最外圈的邊上，都算離手指最近的那顆鍵。
+    /// 只放大單顆鍵的 point(inside:) 不夠：排與排之間的縫不屬於任何一排，觸控根本到不了鍵
+    override func hitTest(_ location: CGPoint, with _: UIEvent?) -> UIView? {
+        guard !isHidden, isUserInteractionEnabled, bounds.contains(location) else { return nil }
+        var nearest: KeyButton?
+        var nearestDistance = CGFloat.greatestFiniteMagnitude
+        for b in buttons {
+            let f = b.convert(b.bounds, to: self)
+            let dx = max(f.minX - location.x, 0, location.x - f.maxX)
+            let dy = max(f.minY - location.y, 0, location.y - f.maxY)
+            let d = dx * dx + dy * dy
+            if d < nearestDistance {
+                nearestDistance = d
+                nearest = b
+            }
+        }
+        return nearest ?? self
     }
 
     func load(_ rows: [KeyRow]) {
@@ -102,9 +123,7 @@ final class KeyboardView: UIView {
         let showsBubble = !spec.isFunction && !spec.label.isEmpty
         b.onPressChanged = { [weak self, weak b] pressed in
             guard let self, let b else { return }
-            if pressed {
-                onAnyPress?()
-            }
+            trackHeld(b, pressed: pressed)
             guard showsBubble else { return }
             if pressed {
                 let f = b.convert(b.bounds, to: self)
@@ -116,6 +135,30 @@ final class KeyboardView: UIView {
         specs[b] = spec
         buttons.append(b)
         return b
+    }
+
+    /// 記住按著的那顆。快打時上一顆還沒放開、下一顆已經按下：上一顆先算按完，送字順序才不會顛倒
+    private func trackHeld(_ b: KeyButton, pressed: Bool) {
+        guard pressed else {
+            if heldKey === b {
+                heldKey = nil
+            }
+            return
+        }
+        if let held = heldKey, held !== b, let s = specs[held], Self.firesEarlyOnRollover(s) {
+            held.fireNow()
+        }
+        heldKey = b
+        onAnyPress?()
+    }
+
+    /// 被下一顆鍵搶先時可以提早送出的鍵：送字的鍵和 shift（按住 shift 再按字母＝大寫）。
+    /// 切鍵面的鍵不提早，免得鍵面換掉時下一顆鍵還按在舊鍵面上
+    private static func firesEarlyOnRollover(_ spec: KeySpec) -> Bool {
+        switch spec.action {
+        case .bopomofo, .letter, .text, .space, .shift: true
+        default: false
+        }
     }
 
     /// 換行鍵依輸入框顯示「搜尋」「傳送」等字；nil 表示一般換行（顯示圖示）

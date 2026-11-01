@@ -122,6 +122,8 @@ extension KeyboardViewController {
             expanded: expanded
         )
         candidateGrid.isHidden = !expanded || mode != .bopomofo
+        // 鍵盤底是透明的：展開候選時把鍵藏起來，不然會從候選後面透出來
+        keyboardView.isHidden = !candidateGrid.isHidden
         if expanded {
             candidateGrid.update(items)
         }

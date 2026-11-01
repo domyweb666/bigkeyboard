@@ -49,7 +49,8 @@ targets:
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).KeyboardViewController
           NSExtensionAttributes:
-            PrimaryLanguage: zh-Hant
+            # 多語言：切換鍵盤選單只顯示「豆鍵」，不帶「中文」小字
+            PrimaryLanguage: mul
             IsASCIICapable: false
             PrefersRightToLeft: false
             RequestsOpenAccess: false
