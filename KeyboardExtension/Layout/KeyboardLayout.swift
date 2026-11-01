@@ -27,12 +27,11 @@ struct KeySpec {
         case toggleLanguage // 注音 ⇄ 英文（鍵上寫的是要去的那個語言；系統底排的地球是切換鍵盤，不能跟它用同一個圖示）
         case switchMode(KeyboardMode) // 去符號頁／數字鍵盤
         case backToLanguage // 從符號頁／數字鍵盤回到原本的語言鍵面
+        case spacer // 不是鍵：只佔寬度，把一排左右錯開半顆（跟三星一樣）
     }
 
     let label: String
     let action: Action
-    /// 長按送出的替代字；nil 表示這顆鍵沒有
-    let alt: String?
     /// 相對寬度，1 = 一般鍵
     let width: CGFloat
     let isFunction: Bool
@@ -51,7 +50,6 @@ struct KeySpec {
     init(
         _ label: String,
         _ action: Action,
-        alt: String? = nil,
         width: CGFloat = 1,
         function: Bool = false,
         icon: String? = nil,
@@ -63,7 +61,6 @@ struct KeySpec {
     ) {
         self.label = label
         self.action = action
-        self.alt = alt
         self.width = width
         isFunction = function
         self.icon = icon
@@ -74,15 +71,8 @@ struct KeySpec {
         self.isTone = isTone
     }
 
-    /// 右上角小字
-    var hint: String? {
-        alt ?? longHint
-    }
-
-    /// 長按時實際送出的字
-    var altText: String? {
-        alt
-    }
+    /// 半顆鍵寬的空位
+    static let halfGap = KeySpec("", .spacer, width: 0.5)
 }
 
 typealias KeyRow = [KeySpec]
@@ -118,7 +108,7 @@ enum FunctionKeys {
     }
 }
 
-// MARK: - 注音（標準排法，照三星截圖；右上角小字＝長按）
+// MARK: - 注音（標準排法，照三星截圖：第 2、3 排左右各縮半顆，⌫ 跟字鍵一樣寬）
 
 enum BopomofoLayout {
     private static let tones: Set<String> = ["ˇ", "ˋ", "ˊ", "˙"]
@@ -141,36 +131,23 @@ enum BopomofoLayout {
         return nil
     }
 
-    private static func keys(_ symbols: [String], _ alts: [String?]) -> KeyRow {
-        symbols.enumerated().map { i, s in
-            KeySpec(
-                s,
-                .bopomofo(s),
-                alt: i < alts.count ? alts[i] : nil,
-                tint: tint(s),
-                isTone: tones.contains(s)
-            )
+    private static func keys(_ symbols: [String]) -> KeyRow {
+        symbols.map { s in
+            KeySpec(s, .bopomofo(s), tint: tint(s), isTone: tones.contains(s))
         }
     }
 
+    /// 左右各留半顆空位：鍵跟第一排一樣寬，位置錯開半顆
+    private static func staggered(_ symbols: [String]) -> KeyRow {
+        [KeySpec.halfGap] + keys(symbols) + [KeySpec.halfGap]
+    }
+
     static let rows: [KeyRow] = [
-        keys(
-            ["ㄅ", "ㄉ", "ˇ", "ˋ", "ㄓ", "ˊ", "˙", "ㄚ", "ㄞ", "ㄢ", "ㄦ"],
-            ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", nil]
-        ),
-        keys(
-            ["ㄆ", "ㄊ", "ㄍ", "ㄐ", "ㄔ", "ㄗ", "ㄧ", "ㄛ", "ㄟ", "ㄣ"],
-            ["+", "×", "÷", "=", "/", "_", "<", ">", "[", "]"]
-        ),
-        keys(
-            ["ㄇ", "ㄋ", "ㄎ", "ㄑ", "ㄕ", "ㄘ", "ㄨ", "ㄜ", "ㄠ", "ㄤ"],
-            ["!", "@", "#", "¥", "%", "&", "*", "(", ")", nil]
-        ),
-        keys(
-            ["ㄈ", "ㄌ", "ㄏ", "ㄒ", "ㄖ", "ㄙ", "ㄩ", "ㄝ", "ㄡ", "ㄥ"],
-            [nil, "-", "'", "\"", ":", ";", ",", "?", nil, nil]
-        )
-            + [FunctionKeys.backspace()],
+        keys(["ㄅ", "ㄉ", "ˇ", "ˋ", "ㄓ", "ˊ", "˙", "ㄚ", "ㄞ", "ㄢ", "ㄦ"]),
+        staggered(["ㄆ", "ㄊ", "ㄍ", "ㄐ", "ㄔ", "ㄗ", "ㄧ", "ㄛ", "ㄟ", "ㄣ"]),
+        staggered(["ㄇ", "ㄋ", "ㄎ", "ㄑ", "ㄕ", "ㄘ", "ㄨ", "ㄜ", "ㄠ", "ㄤ"]),
+        keys(["ㄈ", "ㄌ", "ㄏ", "ㄒ", "ㄖ", "ㄙ", "ㄩ", "ㄝ", "ㄡ", "ㄥ"])
+            + [FunctionKeys.backspace(width: 1)],
         [
             FunctionKeys.symbols("符"),
             FunctionKeys.toEnglish,
@@ -182,23 +159,21 @@ enum BopomofoLayout {
     ]
 }
 
-// MARK: - 英文（QWERTY＋常駐數字列，照三星截圖）
+// MARK: - 英文（QWERTY＋常駐數字列，照三星截圖；a 那排左右各縮半顆）
 
 enum EnglishLayout {
-    private static func letters(_ s: String, _ alts: [String]) -> KeyRow {
-        Array(s).enumerated().map { i, c in
-            KeySpec(String(c), .letter(String(c)), alt: i < alts.count ? alts[i] : nil)
-        }
+    private static func letters(_ s: String) -> KeyRow {
+        s.map { KeySpec(String($0), .letter(String($0))) }
     }
 
     static let rows: [KeyRow] = [
         ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"].map {
             KeySpec($0, .text($0), tint: SamsungTheme.keyTone)
         },
-        letters("qwertyuiop", ["+", "×", "÷", "=", "/", "_", "<", ">", "[", "]"]),
-        letters("asdfghjkl", ["!", "@", "#", "$", "%", "&", "*", "(", ")"]),
+        letters("qwertyuiop"),
+        [KeySpec.halfGap] + letters("asdfghjkl") + [KeySpec.halfGap],
         [KeySpec("⇧", .shift, width: 1.4, function: true, icon: "shift")]
-            + letters("zxcvbnm", ["-", "'", "\"", ":", ";", ",", "?"])
+            + letters("zxcvbnm")
             + [FunctionKeys.backspace(width: 1.4)],
         [
             FunctionKeys.symbols("!#1"),

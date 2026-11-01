@@ -79,7 +79,12 @@ final class KeyboardView: UIView {
             let total = row.reduce(0) { $0 + $1.width }
             let gaps = SamsungTheme.keyGap * CGFloat(row.count - 1)
             for spec in row {
-                let b = makeButton(spec)
+                // 空位不是鍵：按在上面由 hitTest 算給最近的鍵
+                let b: UIView = if case .spacer = spec.action {
+                    UIView()
+                } else {
+                    makeButton(spec)
+                }
                 rowStack.addArrangedSubview(b)
                 b.widthAnchor.constraint(
                     equalTo: rowStack.widthAnchor,
@@ -102,7 +107,7 @@ final class KeyboardView: UIView {
             let fontSize = spec.isFunction ? SamsungTheme.functionFontSize : SamsungTheme.keyFontSize
             b.label.font = .systemFont(ofSize: fontSize)
         }
-        b.hintLabel.text = spec.hint
+        b.hintLabel.text = spec.longHint
         if spec.isFunction {
             // 灰色功能鍵上灰字對比不夠，改用主字色
             b.hintLabel.textColor = SamsungTheme.keyText
@@ -117,7 +122,7 @@ final class KeyboardView: UIView {
         } else {
             b.onTap = { [weak self] in self?.onKey?(spec) }
         }
-        if spec.alt != nil || spec.longAction != nil {
+        if spec.longAction != nil {
             b.onLongPress = { [weak self] in self?.onLongKey?(spec) }
         }
         let showsBubble = !spec.isFunction && !spec.label.isEmpty

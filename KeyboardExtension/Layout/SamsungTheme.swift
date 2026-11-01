@@ -3,9 +3,9 @@ import UIKit
 /// 鍵盤的尺寸與配色常數。尺寸照三星截圖量；配色 2026-11-02 起改成跟 iOS 系統鍵盤底色搭的冷灰系。寫死，不做設定項。
 enum SamsungTheme {
     /// 鍵盤總高度佔螢幕高度的比例（含工具列帶；不含系統在下方另加的地球／麥克風排）
-    static let keyboardHeightRatio: CGFloat = 0.36
-    /// 工具列帶（候選字）佔鍵盤總高的比例
-    static let toolbarHeightRatio: CGFloat = 0.11
+    static let keyboardHeightRatio: CGFloat = 0.37
+    /// 工具列帶（候選字）佔鍵盤總高的比例。候選字放大時加高這排，鍵區 0.37 × 0.866 跟原本 0.36 × 0.89 一樣大
+    static let toolbarHeightRatio: CGFloat = 0.134
 
     // 鍵距：三星比 iOS 原生緊
     static let keyGap: CGFloat = 5
@@ -21,7 +21,8 @@ enum SamsungTheme {
     /// 聲調 ˇ ˋ ˊ ˙ 筆畫細，同字級在窄鍵上只剩一個點，放大加粗
     static let toneFontSize: CGFloat = 34
     static let previewFontSize: CGFloat = 40
-    static let candidateFontSize: CGFloat = 22
+    /// 候選字跟系統注音差不多大，比較好點，也不容易誤按到第一排的鍵
+    static let candidateFontSize: CGFloat = 27
     static let iconPointSize: CGFloat = 20
 
     static let longPressSeconds: TimeInterval = 0.4

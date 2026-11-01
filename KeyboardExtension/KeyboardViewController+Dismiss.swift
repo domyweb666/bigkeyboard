@@ -15,7 +15,8 @@ extension KeyboardViewController: UIGestureRecognizerDelegate {
         grabber.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(grabber)
         NSLayoutConstraint.activate([
-            grabber.topAnchor.constraint(equalTo: view.topAnchor, constant: 2),
+            // 貼齊最上緣：再上面那條灰帶是系統畫的，擴充畫不到
+            grabber.topAnchor.constraint(equalTo: view.topAnchor),
             grabber.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             grabber.widthAnchor.constraint(equalToConstant: 36),
             grabber.heightAnchor.constraint(equalToConstant: 5),
