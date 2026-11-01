@@ -92,7 +92,7 @@ private:
         return false;
     }
 
-    // "ㄅㄨ-ㄧㄠˋ" → {"ㄅㄨ-ㄧㄠˋ","ㄅㄨˊ-ㄧㄠˋ","ㄅㄨˇ-ㄧㄠˋ","ㄅㄨˋ-ㄧㄠˋ","˙ㄅㄨ-ㄧㄠˋ"}
+    // "ㄅㄨ-ㄧㄠˋ" → {"ㄅㄨ-ㄧㄠˋ","ㄅㄨˊ-ㄧㄠˋ","ㄅㄨˇ-ㄧㄠˋ","ㄅㄨˋ-ㄧㄠˋ","ㄅㄨ˙-ㄧㄠˋ"}（詞庫的輕聲寫在後面）
     static std::vector<std::string> expand(const std::string &reading) {
         std::vector<std::string> syllables;
         size_t start = 0;
@@ -109,7 +109,7 @@ private:
             if (hasTone(syl)) {
                 variants = {syl};
             } else {
-                variants = {syl, syl + "ˊ", syl + "ˇ", syl + "ˋ", "˙" + syl};
+                variants = {syl, syl + "ˊ", syl + "ˇ", syl + "ˋ", syl + "˙"};
             }
             std::vector<std::string> next;
             for (const auto &prefix : results) {
@@ -144,6 +144,7 @@ struct CachedCandidate {
     std::vector<CachedCandidate> _candidateCache;
     std::unique_ptr<McBopomofo::AssociatedPhrasesV2> _associated;
     std::string _lastSelectedReading;
+    NSUInteger _defaultCandidateCount;
 }
 
 - (nullable instancetype)initWithDataPath:(NSString *)dataPath associatedPath:(nullable NSString *)associatedPath {
@@ -172,6 +173,7 @@ struct CachedCandidate {
 
 - (void)rebuildCandidates {
     _candidateCache.clear();
+    _defaultCandidateCount = 0;
     BOOL tentative = !_buffer->isEmpty();
     if (tentative) {
         _grid->setCursor(_grid->length());
@@ -179,12 +181,24 @@ struct CachedCandidate {
     }
     if (_grid->length() == 0) return;
 
-    // 第一個候選：整句最佳走法的第一個節點（通常就是整個詞）
+    // 第一個候選：整句最佳走法串起來（兩段以上才有，跟系統注音一樣一次送整句）
     auto walk = _grid->walk();
+    if (walk.nodes.size() >= 2) {
+        std::string value;
+        std::string reading;
+        for (const auto &n : walk.nodes) {
+            value += n->value();
+            if (!reading.empty()) reading += "-";
+            reading += n->currentUnigram().rawValue();
+        }
+        _candidateCache.push_back({value, _grid->length(), reading});
+    }
+    // 接著：整句的第一段（通常就是第一個詞）
     if (!walk.nodes.empty()) {
         const auto &n = walk.nodes.front();
         _candidateCache.push_back({n->value(), n->spanningLength(), n->currentUnigram().rawValue()});
     }
+    _defaultCandidateCount = _candidateCache.size();
     // 其餘：從第 0 個音起算、所有可能的字與詞
     for (const auto &c : _grid->candidatesAt(0)) {
         size_t span = splitUTF8(c.value).size();
@@ -219,9 +233,16 @@ struct CachedCandidate {
 }
 
 - (NSString *)composing {
+    // 音與音之間空一格，看得出斷在哪裡
     std::string s;
-    for (const auto &r : _grid->readings()) s += r;
-    s += _buffer->composedString();
+    for (const auto &r : _grid->readings()) {
+        if (!s.empty()) s += " ";
+        s += r;
+    }
+    if (!_buffer->isEmpty()) {
+        if (!s.empty()) s += " ";
+        s += _buffer->composedString();
+    }
     return [NSString stringWithUTF8String:s.c_str()];
 }
 
@@ -313,6 +334,10 @@ struct CachedCandidate {
         list.emplace_back(std::string(words[i].UTF8String), -0.0001 * static_cast<double>(list.size()));
     }
     _toneLM->setUserPhrases(std::move(phrases));
+}
+
+- (NSUInteger)defaultCandidateCount {
+    return _defaultCandidateCount;
 }
 
 - (NSString *)lastSelectedReading {

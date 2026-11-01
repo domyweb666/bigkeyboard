@@ -11,11 +11,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// 送一個注音符號（如「ㄋ」「ˇ」）進組字器。回傳 NO 表示這個符號接不上目前的注音、已被忽略。
 - (BOOL)feedSymbol:(NSString *)symbol;
 
-/// 目前正在組、尚未送出的注音（如「ㄋㄧˇ」）。空字串表示沒有在組。
+/// 目前正在組、尚未送出的注音（如「ㄋㄧˇ ㄏㄠˇ」，音與音之間空一格）。空字串表示沒有在組。
 @property (nonatomic, readonly) NSString *composing;
 
 /// 目前注音對應的候選字，依機率高到低。沒在組字時為空陣列。
 @property (nonatomic, readonly) NSArray<NSString *> *candidates;
+
+/// 候選最前面有幾個是引擎自己的猜測（整句、整句的第一段）。選這幾個不算改過候選，自動學詞要用。
+@property (nonatomic, readonly) NSUInteger defaultCandidateCount;
 
 /// 選第 index 個候選字：回傳要送進輸入框的字，並清空組字狀態。index 越界回傳空字串。
 - (NSString *)selectCandidateAtIndex:(NSUInteger)index;

@@ -95,9 +95,11 @@ extension KeyboardViewController {
 
     func selectCandidate(_ index: Int) {
         guard let engine else { return }
+        // 選之前先記下：前幾個是引擎自己猜的（整句、第一段），選它們不算改過候選
+        let isDefault = index < Int(engine.defaultCandidateCount)
         let text = engine.selectCandidate(at: UInt(index))
         guard !text.isEmpty else { return }
-        notePick(text, reading: engine.lastSelectedReading, index: index)
+        notePick(text, reading: engine.lastSelectedReading, isDefault: isDefault)
         commit(text)
         if engine.composing.isEmpty {
             finishLearningSession()

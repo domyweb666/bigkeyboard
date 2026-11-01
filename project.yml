@@ -61,8 +61,8 @@ targets:
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).KeyboardViewController
           NSExtensionAttributes:
-            # 多語言：切換鍵盤選單只顯示「豆鍵」，不帶「中文」小字
-            PrimaryLanguage: mul
+            # 改 mul 拿不掉小字，只會變「多種語言」；用 zh-Hant 顯示「中文」，系統聽寫也維持中文
+            PrimaryLanguage: zh-Hant
             IsASCIICapable: false
             PrefersRightToLeft: false
             # 字典要讓鍵盤寫進 App 共用的資料夾，iOS 規定要開「允許完全取用」；鍵盤仍然不連網

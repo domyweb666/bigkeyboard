@@ -8,7 +8,7 @@ struct LearningSession {
     }
 
     var pieces: [Piece] = []
-    /// 有沒有選過不是第一個的候選（全選第一個表示引擎本來就猜對，不用學）
+    /// 有沒有選過引擎猜的以外的候選（全選引擎猜的表示本來就猜對，不用學）
     var choseNonDefault = false
     /// 選過字之後又打了或刪了注音（這段就不是單純的一個詞）
     var typedAfterPick = false
@@ -34,10 +34,10 @@ extension KeyboardViewController {
         }
     }
 
-    /// 選字時記下來：選了不是第一個的多字詞，馬上記一次
-    func notePick(_ text: String, reading: String, index: Int) {
+    /// 選字時記下來：選了引擎猜的以外的多字詞，馬上記一次
+    func notePick(_ text: String, reading: String, isDefault: Bool) {
         learning.pieces.append(.init(text: text, reading: reading))
-        guard index > 0 else { return }
+        guard !isDefault else { return }
         learning.choseNonDefault = true
         if text.count >= 2 {
             learn(text, reading: reading)
