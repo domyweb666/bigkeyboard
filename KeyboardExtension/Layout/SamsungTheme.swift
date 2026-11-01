@@ -26,12 +26,26 @@ enum SamsungTheme {
     /// 刪除鍵按住後的連刪間隔
     static let repeatInterval: TimeInterval = 0.08
 
-    static let background = UIColor(red: 0.878, green: 0.871, blue: 0.847, alpha: 1) // #E0DED8
-    static let keyWhite = UIColor.white
-    static let keyGray = UIColor(red: 0.78, green: 0.76, blue: 0.73, alpha: 1)
-    static let keyPressed = UIColor(red: 0.90, green: 0.89, blue: 0.87, alpha: 1)
-    static let keyText = UIColor.black
-    static let hintText = UIColor(white: 0.55, alpha: 1)
+    // 顏色：淺色照三星截圖；深色跟系統（或輸入框要求深色鍵盤時）切換
+    static let background = dynamic(light: rgb(0xE0DED8), dark: rgb(0x1C1C1E))
+    static let keyWhite = dynamic(light: .white, dark: rgb(0x3A3A3C))
+    static let keyGray = dynamic(light: rgb(0xC7C2BA), dark: rgb(0x2A2A2C))
+    static let keyPressed = dynamic(light: rgb(0xE6E3DE), dark: rgb(0x55555A))
+    static let keyText = dynamic(light: .black, dark: .white)
+    static let hintText = dynamic(light: UIColor(white: 0.55, alpha: 1), dark: UIColor(white: 0.62, alpha: 1))
+
+    private static func dynamic(light: UIColor, dark: UIColor) -> UIColor {
+        UIColor { $0.userInterfaceStyle == .dark ? dark : light }
+    }
+
+    private static func rgb(_ hex: Int) -> UIColor {
+        UIColor(
+            red: CGFloat((hex >> 16) & 0xFF) / 255,
+            green: CGFloat((hex >> 8) & 0xFF) / 255,
+            blue: CGFloat(hex & 0xFF) / 255,
+            alpha: 1
+        )
+    }
 
     static func keyboardHeight(for screen: UIScreen) -> CGFloat {
         (screen.bounds.height * keyboardHeightRatio).rounded()

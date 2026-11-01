@@ -110,6 +110,20 @@ final class KeyboardView: UIView {
         return b
     }
 
+    /// 換行鍵依輸入框顯示「搜尋」「傳送」等字；nil 表示一般換行（顯示圖示）
+    func setReturnLabel(_ text: String?) {
+        for b in buttons {
+            guard let spec = specs[b], case .newline = spec.action else { continue }
+            if let text {
+                b.setIcon(nil)
+                b.label.text = text
+            } else {
+                b.setIcon(spec.icon)
+                b.label.text = spec.label
+            }
+        }
+    }
+
     private func applyShiftAppearance() {
         for b in buttons {
             guard let spec = specs[b] else { continue }

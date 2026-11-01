@@ -97,7 +97,14 @@ final class KeyboardViewController: UIInputViewController {
         associations = []
         expanded = false
         updateAutoCapitalization()
+        applyHostTraits()
         refreshBar()
+    }
+
+    override func textDidChange(_ textInput: UITextInput?) {
+        super.textDidChange(textInput)
+        // 換到另一個輸入框時：深淺色、換行鍵文字跟著它
+        applyHostTraits()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -172,6 +179,7 @@ final class KeyboardViewController: UIInputViewController {
         expanded = false
         keyboardView.shift = .off
         updateAutoCapitalization()
+        keyboardView.setReturnLabel(Self.returnLabel(for: textDocumentProxy.returnKeyType))
         refreshBar()
     }
 

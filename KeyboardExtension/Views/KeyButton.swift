@@ -77,6 +77,13 @@ final class KeyButton: UIControl {
         fatalError("not used")
     }
 
+    override func traitCollectionDidChange(_ previous: UITraitCollection?) {
+        super.traitCollectionDidChange(previous)
+        if layer.shadowOpacity > 0 {
+            layer.shadowOpacity = traitCollection.userInterfaceStyle == .dark ? 0.35 : 0.12
+        }
+    }
+
     override func layoutSubviews() {
         super.layoutSubviews()
         layer.shadowPath = UIBezierPath(roundedRect: bounds, cornerRadius: layer.cornerRadius).cgPath
