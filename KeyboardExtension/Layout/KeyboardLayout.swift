@@ -129,9 +129,15 @@ enum BopomofoLayout {
 
     /// 聲母白、介音淡藍、韻母淡暖、聲調淡灰
     private static func tint(_ s: String) -> UIColor? {
-        if tones.contains(s) { return SamsungTheme.keyTone }
-        if medials.contains(s) { return SamsungTheme.keyMedial }
-        if finals.contains(s) { return SamsungTheme.keyFinal }
+        if tones.contains(s) {
+            return SamsungTheme.keyTone
+        }
+        if medials.contains(s) {
+            return SamsungTheme.keyMedial
+        }
+        if finals.contains(s) {
+            return SamsungTheme.keyFinal
+        }
         return nil
     }
 
