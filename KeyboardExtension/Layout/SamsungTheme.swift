@@ -17,9 +17,14 @@ enum SamsungTheme {
     static let keyFontSize: CGFloat = 26
     static let functionFontSize: CGFloat = 19
     static let hintFontSize: CGFloat = 11
+    static let footFontSize: CGFloat = 11
     static let previewFontSize: CGFloat = 40
+    static let candidateFontSize: CGFloat = 22
+    static let iconPointSize: CGFloat = 20
 
     static let longPressSeconds: TimeInterval = 0.4
+    /// 刪除鍵按住後的連刪間隔
+    static let repeatInterval: TimeInterval = 0.08
 
     static let background = UIColor(red: 0.878, green: 0.871, blue: 0.847, alpha: 1) // #E0DED8
     static let keyWhite = UIColor.white

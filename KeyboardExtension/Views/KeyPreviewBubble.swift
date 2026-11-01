@@ -35,7 +35,10 @@ final class KeyPreviewBubble: UIView {
         label.text = text
         let w = max(keyFrame.width * 1.4, 48)
         let h = keyFrame.height * 1.3
-        frame = CGRect(x: keyFrame.midX - w / 2, y: keyFrame.minY - h - 6, width: w, height: h)
+        // 最上排的泡泡不能超出鍵盤頂端（超出會被系統裁掉），頂多貼齊鍵盤頂
+        let topLimit = -(superview?.frame.minY ?? 0)
+        let y = max(keyFrame.minY - h - 6, topLimit)
+        frame = CGRect(x: keyFrame.midX - w / 2, y: y, width: w, height: h)
         isHidden = false
     }
 

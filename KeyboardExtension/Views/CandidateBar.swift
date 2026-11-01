@@ -1,46 +1,58 @@
 import UIKit
 
-/// 工具列那排：左側顯示正在組的注音，右側橫向列出候選字。片 4 版。
+/// 工具列那排：橫向列出候選字（或打完字後的聯想詞），右端一顆展開鍵看全部候選。
+/// 正在組的注音不顯示在這裡——它直接顯示在輸入框游標處（跟原生鍵盤一樣）。
 final class CandidateBar: UIView {
     var onSelect: ((Int) -> Void)?
+    var onToggleExpand: (() -> Void)?
 
-    private let composingLabel = UILabel()
     private let scroll = UIScrollView()
     private let stack = UIStackView()
+    private let expandButton = KeyButton()
+    private let divider = UIView()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        composingLabel.font = .systemFont(ofSize: 18)
-        composingLabel.textColor = .darkGray
-        composingLabel.setContentHuggingPriority(.required, for: .horizontal)
-        composingLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
-
         stack.axis = .horizontal
-        stack.spacing = 4
+        stack.spacing = 2
         stack.alignment = .fill
         scroll.showsHorizontalScrollIndicator = false
         scroll.addSubview(stack)
 
-        for v in [composingLabel, scroll] {
+        expandButton.normalColor = .clear
+        expandButton.layer.shadowOpacity = 0
+        expandButton.setIcon("chevron.down")
+        expandButton.onTap = { [weak self] in self?.onToggleExpand?() }
+
+        divider.backgroundColor = SamsungTheme.hintText.withAlphaComponent(0.4)
+
+        for v in [scroll, expandButton, divider] {
             v.translatesAutoresizingMaskIntoConstraints = false
             addSubview(v)
         }
         stack.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
-            composingLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
-            composingLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
-
-            scroll.leadingAnchor.constraint(equalTo: composingLabel.trailingAnchor, constant: 12),
-            scroll.trailingAnchor.constraint(equalTo: trailingAnchor),
+            scroll.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 4),
+            scroll.trailingAnchor.constraint(equalTo: divider.leadingAnchor),
             scroll.topAnchor.constraint(equalTo: topAnchor),
             scroll.bottomAnchor.constraint(equalTo: bottomAnchor),
 
+            divider.trailingAnchor.constraint(equalTo: expandButton.leadingAnchor),
+            divider.widthAnchor.constraint(equalToConstant: 1),
+            divider.topAnchor.constraint(equalTo: topAnchor, constant: 10),
+            divider.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -10),
+
+            expandButton.trailingAnchor.constraint(equalTo: trailingAnchor),
+            expandButton.topAnchor.constraint(equalTo: topAnchor),
+            expandButton.bottomAnchor.constraint(equalTo: bottomAnchor),
+            expandButton.widthAnchor.constraint(equalToConstant: 48),
+
             stack.leadingAnchor.constraint(equalTo: scroll.contentLayoutGuide.leadingAnchor),
             stack.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor),
-            stack.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor),
-            stack.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor),
-            stack.heightAnchor.constraint(equalTo: scroll.frameLayoutGuide.heightAnchor),
+            stack.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor, constant: 4),
+            stack.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor, constant: -4),
+            stack.heightAnchor.constraint(equalTo: scroll.frameLayoutGuide.heightAnchor, constant: -8),
         ])
     }
 
@@ -49,23 +61,26 @@ final class CandidateBar: UIView {
         fatalError("not used")
     }
 
-    func update(composing: String, candidates: [String]) {
-        composingLabel.text = composing
+    /// highlightFirst：第一個是「按空白會送出的那個」時打亮（組字中）；聯想詞不打亮
+    func update(candidates: [String], highlightFirst: Bool, expanded: Bool) {
         stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         for (i, c) in candidates.enumerated() {
             let b = KeyButton()
             b.label.text = c
-            b.label.font = .systemFont(ofSize: 24)
-            b.normalColor = .clear
+            b.label.font = .systemFont(ofSize: SamsungTheme.candidateFontSize)
+            b.label.adjustsFontSizeToFitWidth = false
+            b.layer.shadowOpacity = 0
+            b.normalColor = (i == 0 && highlightFirst) ? SamsungTheme.keyWhite : .clear
             b.tag = i
-            b.addTarget(self, action: #selector(tapped(_:)), for: .touchUpInside)
-            b.widthAnchor.constraint(equalTo: b.label.widthAnchor, constant: 20).isActive = true
+            b.onTap = { [weak self] in self?.onSelect?(i) }
+            b.widthAnchor.constraint(greaterThanOrEqualTo: b.label.widthAnchor, constant: 22).isActive = true
+            b.widthAnchor.constraint(greaterThanOrEqualToConstant: 40).isActive = true
             stack.addArrangedSubview(b)
         }
         scroll.setContentOffset(.zero, animated: false)
-    }
-
-    @objc private func tapped(_ sender: KeyButton) {
-        onSelect?(sender.tag)
+        let canExpand = candidates.count > 0
+        expandButton.isHidden = !canExpand
+        divider.isHidden = !canExpand
+        expandButton.setIcon(expanded ? "chevron.up" : "chevron.down")
     }
 }

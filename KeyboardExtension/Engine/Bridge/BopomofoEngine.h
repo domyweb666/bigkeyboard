@@ -5,8 +5,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// Swift 與小麥注音 C++ 引擎之間唯一的接口。畫面層只准碰這個類別。
 @interface BopomofoEngine : NSObject
 
-/// dataPath：小麥詞庫 data.txt 的路徑。載入失敗回傳 nil。
-- (nullable instancetype)initWithDataPath:(NSString *)dataPath;
+/// dataPath：小麥詞庫 data.txt 的路徑；associatedPath：聯想詞庫（可為 nil）。主詞庫載入失敗回傳 nil。
+- (nullable instancetype)initWithDataPath:(NSString *)dataPath associatedPath:(nullable NSString *)associatedPath;
 
 /// 送一個注音符號（如「ㄋ」「ˇ」）進組字器。回傳 NO 表示這個符號接不上目前的注音、已被忽略。
 - (BOOL)feedSymbol:(NSString *)symbol;
@@ -24,6 +24,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)backspace;
 
 - (void)clear;
+
+/// 剛送出 text 之後可以接的字詞（聯想詞），依機率高到低，已去掉 text 本身。沒有則空陣列。
+- (NSArray<NSString *> *)associatedPhrasesAfter:(NSString *)text;
 
 @end
 

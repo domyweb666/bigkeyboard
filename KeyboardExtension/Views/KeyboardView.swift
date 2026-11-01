@@ -4,6 +4,8 @@ import UIKit
 final class KeyboardView: UIView {
     var onKey: ((KeySpec) -> Void)?
     var onLongKey: ((KeySpec) -> Void)?
+    /// 任何一顆鍵被按下（給按鍵聲用）
+    var onAnyPress: (() -> Void)?
 
     /// shift 狀態（只影響英文字母的顯示與送出）
     enum ShiftState {
@@ -76,20 +78,31 @@ final class KeyboardView: UIView {
         let fontSize = spec.isFunction ? SamsungTheme.functionFontSize : SamsungTheme.keyFontSize
         b.label.font = .systemFont(ofSize: fontSize)
         b.hintLabel.text = spec.alt
+        b.footLabel.text = spec.foot
+        b.setIcon(spec.icon)
         b.normalColor = spec.isFunction ? SamsungTheme.keyGray : SamsungTheme.keyWhite
-        b.onTap = { [weak self] in self?.onKey?(spec) }
+
+        if case .backspace = spec.action {
+            // 刪除鍵：按下立刻刪、按住連刪
+            b.onRepeat = { [weak self] in self?.onKey?(spec) }
+        } else {
+            b.onTap = { [weak self] in self?.onKey?(spec) }
+        }
         if spec.alt != nil {
             b.onLongPress = { [weak self] in self?.onLongKey?(spec) }
         }
-        if !spec.isFunction, !spec.label.isEmpty {
-            b.onPressChanged = { [weak self, weak b] pressed in
-                guard let self, let b else { return }
-                if pressed {
-                    let f = b.convert(b.bounds, to: self)
-                    bubble.show(text: b.label.text ?? "", above: f)
-                } else {
-                    bubble.hide()
-                }
+        let showsBubble = !spec.isFunction && !spec.label.isEmpty
+        b.onPressChanged = { [weak self, weak b] pressed in
+            guard let self, let b else { return }
+            if pressed {
+                onAnyPress?()
+            }
+            guard showsBubble else { return }
+            if pressed {
+                let f = b.convert(b.bounds, to: self)
+                bubble.show(text: b.label.text ?? "", above: f)
+            } else {
+                bubble.hide()
             }
         }
         specs[b] = spec
@@ -104,7 +117,11 @@ final class KeyboardView: UIView {
             case let .letter(c):
                 b.label.text = shift == .off ? c : c.uppercased()
             case .shift:
-                b.label.text = shift == .locked ? "⇪" : "⇧"
+                switch shift {
+                case .off: b.setIcon("shift")
+                case .once: b.setIcon("shift.fill")
+                case .locked: b.setIcon("capslock.fill")
+                }
                 b.normalColor = shift == .off ? SamsungTheme.keyGray : SamsungTheme.keyWhite
             default:
                 break

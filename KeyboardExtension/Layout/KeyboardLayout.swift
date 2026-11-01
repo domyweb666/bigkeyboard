@@ -24,7 +24,7 @@ struct KeySpec {
         case backspace
         case newline
         case shift
-        case toggleLanguage // 🌐：注音 ⇄ 英文
+        case toggleLanguage // 注音 ⇄ 英文（鍵上寫的是要去的那個語言；系統底排的地球是切換鍵盤，不能跟它用同一個圖示）
         case switchMode(KeyboardMode) // 去符號頁／數字鍵盤
         case backToLanguage // 從符號頁／數字鍵盤回到原本的語言鍵面
     }
@@ -36,13 +36,27 @@ struct KeySpec {
     /// 相對寬度，1 = 一般鍵
     let width: CGFloat
     let isFunction: Bool
+    /// SF Symbol 名稱；有的話鍵帽畫圖示而不是 label
+    let icon: String?
+    /// 鍵帽底部小字（空白鍵用來顯示目前語言）
+    let foot: String?
 
-    init(_ label: String, _ action: Action, alt: String? = nil, width: CGFloat = 1, function: Bool = false) {
+    init(
+        _ label: String,
+        _ action: Action,
+        alt: String? = nil,
+        width: CGFloat = 1,
+        function: Bool = false,
+        icon: String? = nil,
+        foot: String? = nil
+    ) {
         self.label = label
         self.action = action
         self.alt = alt
         self.width = width
         isFunction = function
+        self.icon = icon
+        self.foot = foot
     }
 
     /// 長按時實際送出的字
@@ -56,12 +70,16 @@ typealias KeyRow = [KeySpec]
 // MARK: - 共用的功能鍵
 
 enum FunctionKeys {
-    static let backspace = KeySpec("⌫", .backspace, width: 1.2, function: true)
-    static let newline = KeySpec("↵", .newline, width: 1.3, function: true)
-    static let globe = KeySpec("🌐", .toggleLanguage, width: 1.3, function: true)
+    static func backspace(width: CGFloat = 1.2) -> KeySpec {
+        KeySpec("⌫", .backspace, width: width, function: true, icon: "delete.left")
+    }
 
-    static func space(width: CGFloat = 3.4) -> KeySpec {
-        KeySpec("", .space, width: width)
+    static let newline = KeySpec("↵", .newline, width: 1.3, function: true, icon: "return")
+    static let toEnglish = KeySpec("ABC", .toggleLanguage, width: 1.3, function: true)
+    static let toBopomofo = KeySpec("注音", .toggleLanguage, width: 1.3, function: true)
+
+    static func space(width: CGFloat = 3.4, foot: String? = nil) -> KeySpec {
+        KeySpec("", .space, width: width, foot: foot)
     }
 }
 
@@ -91,12 +109,12 @@ enum BopomofoLayout {
             ["ㄈ", "ㄌ", "ㄏ", "ㄒ", "ㄖ", "ㄙ", "ㄩ", "ㄝ", "ㄡ", "ㄥ"],
             [nil, "-", "'", "\"", ":", ";", ",", "?", nil, nil]
         )
-            + [FunctionKeys.backspace],
+            + [FunctionKeys.backspace()],
         [
             KeySpec("符", .switchMode(.symbols1), width: 1.3, function: true),
-            FunctionKeys.globe,
+            FunctionKeys.toEnglish,
             KeySpec("，", .text("，")),
-            FunctionKeys.space(),
+            FunctionKeys.space(foot: "注音"),
             KeySpec("。", .text("。")),
             KeySpec("123", .switchMode(.numpad), width: 1.3, function: true),
             FunctionKeys.newline,
@@ -117,14 +135,14 @@ enum EnglishLayout {
         ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"].map { KeySpec($0, .text($0)) },
         letters("qwertyuiop", ["+", "×", "÷", "=", "/", "_", "<", ">", "[", "]"]),
         letters("asdfghjkl", ["!", "@", "#", "$", "%", "&", "*", "(", ")"]),
-        [KeySpec("⇧", .shift, width: 1.4, function: true)]
+        [KeySpec("⇧", .shift, width: 1.4, function: true, icon: "shift")]
             + letters("zxcvbnm", ["-", "'", "\"", ":", ";", ",", "?"])
-            + [KeySpec("⌫", .backspace, width: 1.4, function: true)],
+            + [FunctionKeys.backspace(width: 1.4)],
         [
             KeySpec("!#1", .switchMode(.symbols1), width: 1.3, function: true),
-            FunctionKeys.globe,
+            FunctionKeys.toBopomofo,
             KeySpec(",", .text(",")),
-            FunctionKeys.space(),
+            FunctionKeys.space(foot: "English"),
             KeySpec(".", .text(".")),
             FunctionKeys.newline,
         ],
@@ -141,9 +159,8 @@ enum SymbolLayout {
     private static func bottom(chinese: Bool) -> KeyRow {
         [
             KeySpec(chinese ? "中文" : "ABC", .backToLanguage, width: 1.3, function: true),
-            FunctionKeys.globe,
             KeySpec(chinese ? "，" : ",", .text(chinese ? "，" : ",")),
-            FunctionKeys.space(width: 2.6),
+            FunctionKeys.space(width: 3.9),
             KeySpec(chinese ? "。" : ".", .text(chinese ? "。" : ".")),
             KeySpec("123", .switchMode(.numpad), width: 1.3, function: true),
             FunctionKeys.newline,
@@ -159,7 +176,7 @@ enum SymbolLayout {
                 + texts(chinese
                     ? ["-", "‘’", "“”", "：", "；", "，", "？"]
                     : ["-", "'", "\"", ":", ";", ",", "?"])
-                + [KeySpec("⌫", .backspace, width: 1.3, function: true)],
+                + [FunctionKeys.backspace(width: 1.3)],
             bottom(chinese: chinese),
         ]
     }
@@ -171,7 +188,7 @@ enum SymbolLayout {
             texts(["°", "•", "○", "●", "□", "■", "♠", "♡", "◇", "♣"]),
             [KeySpec("2/2", .switchMode(.symbols1), width: 1.3, function: true)]
                 + texts(["☆", "▪", "¤", "《", "》", "……", "·"])
-                + [KeySpec("⌫", .backspace, width: 1.3, function: true)],
+                + [FunctionKeys.backspace(width: 1.3)],
             bottom(chinese: chinese),
         ]
     }
@@ -184,7 +201,7 @@ enum NumpadLayout {
         let f: (String) -> KeySpec = { KeySpec($0, .text($0), width: 1.2, function: true) }
         let n: (String) -> KeySpec = { KeySpec($0, .text($0), width: 1.6) }
         return [
-            [f("_"), n("1"), n("2"), n("3"), KeySpec("⌫", .backspace, width: 1.2, function: true)],
+            [f("_"), n("1"), n("2"), n("3"), FunctionKeys.backspace()],
             [f("@"), n("4"), n("5"), n("6"), KeySpec(".", .text("."), width: 1.2)],
             [f(":"), n("7"), n("8"), n("9"), KeySpec(",", .text(","), width: 1.2)],
             [
@@ -192,7 +209,7 @@ enum NumpadLayout {
                 KeySpec(chinese ? "中文" : "ABC", .backToLanguage, width: 1.6, function: true),
                 n("0"),
                 KeySpec("", .space, width: 1.6),
-                KeySpec("↵", .newline, width: 1.2, function: true),
+                KeySpec("↵", .newline, width: 1.2, function: true, icon: "return"),
             ],
         ]
     }

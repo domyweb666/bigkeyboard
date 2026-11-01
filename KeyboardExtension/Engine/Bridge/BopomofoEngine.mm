@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 
+#include "AssociatedPhrasesV2.h"
 #include "Mandarin/Mandarin.h"
 #include "ParselessLM.h"
 #include "gramambular2/reading_grid.h"
@@ -123,13 +124,18 @@ private:
     std::unique_ptr<BopomofoReadingBuffer> _buffer; // 正在打、還沒收進格子的那一個音
     std::unique_ptr<ReadingGrid> _grid; // 已收起來的音（可多個）
     std::vector<std::pair<std::string, size_t>> _candidateCache; // (字, 佔幾個音)
+    std::unique_ptr<McBopomofo::AssociatedPhrasesV2> _associated;
 }
 
-- (nullable instancetype)initWithDataPath:(NSString *)dataPath {
+- (nullable instancetype)initWithDataPath:(NSString *)dataPath associatedPath:(nullable NSString *)associatedPath {
     self = [super init];
     if (!self) return nil;
     _lm = std::make_shared<McBopomofo::ParselessLM>();
     if (!_lm->open(dataPath.fileSystemRepresentation)) return nil;
+    if (associatedPath) {
+        _associated = std::make_unique<McBopomofo::AssociatedPhrasesV2>();
+        if (!_associated->open(associatedPath.fileSystemRepresentation)) _associated.reset();
+    }
     _buffer = std::make_unique<BopomofoReadingBuffer>(BopomofoKeyboardLayout::StandardLayout());
     _grid = std::make_unique<ReadingGrid>(std::make_shared<FuzzyToneLM>(_lm));
     return self;
@@ -139,6 +145,7 @@ private:
 
 - (void)pushBufferIntoGrid {
     if (_buffer->isEmpty()) return;
+    _grid->setCursor(_grid->length());
     _grid->insertReading(_buffer->syllable().composedString());
     _buffer->clear();
 }
@@ -146,7 +153,10 @@ private:
 - (void)rebuildCandidates {
     _candidateCache.clear();
     BOOL tentative = !_buffer->isEmpty();
-    if (tentative) _grid->insertReading(_buffer->syllable().composedString());
+    if (tentative) {
+        _grid->setCursor(_grid->length());
+        _grid->insertReading(_buffer->syllable().composedString());
+    }
     if (_grid->length() == 0) return;
 
     // 第一個候選：整句最佳走法的第一個節點（通常就是整個詞）
@@ -211,6 +221,7 @@ private:
     size_t span = std::min(picked.second, _grid->length());
     _grid->setCursor(span);
     for (size_t i = 0; i < span; i++) _grid->deleteReadingBeforeCursor();
+    _grid->setCursor(_grid->length());
     [self rebuildCandidates];
     return [NSString stringWithUTF8String:picked.first.c_str()];
 }
@@ -239,6 +250,26 @@ private:
     _buffer->clear();
     _grid->clear();
     _candidateCache.clear();
+}
+
+- (NSArray<NSString *> *)associatedPhrasesAfter:(NSString *)text {
+    if (!_associated || text.length == 0) return @[];
+    // 用最後一個字查（聯想詞庫的 key 是「字-讀音-字-讀音…」，只給字就是比對所有讀音）
+    auto chars = splitUTF8(text.UTF8String);
+    if (chars.empty()) return @[];
+    const std::string &last = chars.back();
+    auto phrases = _associated->findPhrases(last, {});
+    NSMutableArray<NSString *> *out = [NSMutableArray array];
+    NSMutableSet<NSString *> *seen = [NSMutableSet set];
+    for (const auto &p : phrases) {
+        if (p.value.size() <= last.size() || p.value.compare(0, last.size(), last) != 0) continue;
+        NSString *rest = [NSString stringWithUTF8String:p.value.substr(last.size()).c_str()];
+        if (rest.length == 0 || [seen containsObject:rest]) continue;
+        [seen addObject:rest];
+        [out addObject:rest];
+        if (out.count >= 40) break;
+    }
+    return out;
 }
 
 @end
