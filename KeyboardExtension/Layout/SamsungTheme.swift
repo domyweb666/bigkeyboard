@@ -29,6 +29,7 @@ enum SamsungTheme {
     static let repeatInterval: TimeInterval = 0.08
 
     // 顏色：深色跟系統（或輸入框要求深色鍵盤時）切換
+
     /// 鍵盤底透明：iOS 26 會在第三方鍵盤上方和底部系統排畫自己的底色，擴充畫不到那裡；
     /// 自己塗底色會被框成一塊，所以整個鍵盤共用系統那層底色
     static let background = UIColor.clear
