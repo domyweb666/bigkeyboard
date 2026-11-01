@@ -1,0 +1,18 @@
+name: 格式修正建議
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diff:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install swiftformat
+      - name: 套用格式並輸出 diff
+        run: |
+          swiftformat App KeyboardExtension
+          git diff > format.patch || true
+          echo "=====PATCH BEGIN====="
+          cat format.patch
+          echo "=====PATCH END====="
