@@ -33,7 +33,7 @@ final class KeyButton: UIControl {
         label.adjustsFontSizeToFitWidth = true
         label.minimumScaleFactor = 0.6
 
-        hintLabel.font = .systemFont(ofSize: SamsungTheme.hintFontSize)
+        hintLabel.font = .systemFont(ofSize: SamsungTheme.hintFontSize, weight: .medium)
         hintLabel.textColor = SamsungTheme.hintText
 
         iconView.tintColor = SamsungTheme.keyText
@@ -54,7 +54,7 @@ final class KeyButton: UIControl {
             label.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: 2),
             label.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -2),
             hintLabel.topAnchor.constraint(equalTo: topAnchor, constant: 3),
-            hintLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -5),
+            hintLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -4),
             iconView.centerXAnchor.constraint(equalTo: centerXAnchor),
             iconView.centerYAnchor.constraint(equalTo: centerYAnchor),
             footLabel.centerXAnchor.constraint(equalTo: centerXAnchor),

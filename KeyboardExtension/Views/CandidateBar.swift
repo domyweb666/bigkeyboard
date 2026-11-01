@@ -10,9 +10,15 @@ final class CandidateBar: UIView {
     private let stack = UIStackView()
     private let expandButton = KeyButton()
     private let divider = UIView()
+    /// 右端淡出：讓人看得出候選還能往右滑，最後一個字也不會被分隔線硬切一半
+    private let fade = CAGradientLayer()
+    private let fadeWidth: CGFloat = 36
 
     override init(frame: CGRect) {
         super.init(frame: frame)
+        fade.startPoint = CGPoint(x: 0, y: 0.5)
+        fade.endPoint = CGPoint(x: 1, y: 0.5)
+        updateFadeColors()
         stack.axis = .horizontal
         stack.spacing = 2
         stack.alignment = .fill
@@ -46,7 +52,7 @@ final class CandidateBar: UIView {
             expandButton.trailingAnchor.constraint(equalTo: trailingAnchor),
             expandButton.topAnchor.constraint(equalTo: topAnchor),
             expandButton.bottomAnchor.constraint(equalTo: bottomAnchor),
-            expandButton.widthAnchor.constraint(equalToConstant: 48),
+            expandButton.widthAnchor.constraint(equalToConstant: 44),
 
             stack.leadingAnchor.constraint(equalTo: scroll.contentLayoutGuide.leadingAnchor),
             stack.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor),
@@ -54,11 +60,37 @@ final class CandidateBar: UIView {
             stack.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor, constant: -4),
             stack.heightAnchor.constraint(equalTo: scroll.frameLayoutGuide.heightAnchor, constant: -8),
         ])
+        layer.addSublayer(fade)
     }
 
     @available(*, unavailable)
     required init?(coder _: NSCoder) {
         fatalError("not used")
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let f = scroll.frame
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        fade.frame = CGRect(x: f.maxX - fadeWidth, y: f.minY, width: fadeWidth, height: f.height)
+        CATransaction.commit()
+        updateFadeVisibility()
+    }
+
+    override func traitCollectionDidChange(_ previous: UITraitCollection?) {
+        super.traitCollectionDidChange(previous)
+        updateFadeColors()
+    }
+
+    private func updateFadeColors() {
+        let bg = SamsungTheme.background.resolvedColor(with: traitCollection)
+        fade.colors = [bg.withAlphaComponent(0).cgColor, bg.cgColor]
+    }
+
+    /// 候選放得下就不淡出
+    private func updateFadeVisibility() {
+        fade.isHidden = stack.frame.width <= scroll.frame.width
     }
 
     /// highlightFirst：第一個是「按空白會送出的那個」時打亮（組字中）；聯想詞不打亮
@@ -73,11 +105,12 @@ final class CandidateBar: UIView {
             b.normalColor = (i == 0 && highlightFirst) ? SamsungTheme.keyWhite : .clear
             b.tag = i
             b.onTap = { [weak self] in self?.onSelect?(i) }
-            b.widthAnchor.constraint(greaterThanOrEqualTo: b.label.widthAnchor, constant: 22).isActive = true
+            b.widthAnchor.constraint(greaterThanOrEqualTo: b.label.widthAnchor, constant: 18).isActive = true
             b.widthAnchor.constraint(greaterThanOrEqualToConstant: 40).isActive = true
             stack.addArrangedSubview(b)
         }
         scroll.setContentOffset(.zero, animated: false)
+        setNeedsLayout()
         let canExpand = candidates.count > 0
         expandButton.isHidden = !canExpand
         divider.isHidden = !canExpand

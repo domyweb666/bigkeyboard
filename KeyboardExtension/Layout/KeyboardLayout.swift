@@ -40,6 +40,13 @@ struct KeySpec {
     let icon: String?
     /// 鍵帽底部小字（空白鍵用來顯示目前語言）
     let foot: String?
+    /// 長按改做另一個動作（不送字）；右上角小字顯示 longHint
+    let longAction: Action?
+    let longHint: String?
+    /// 鍵帽底色；nil 照字鍵／功能鍵的預設色
+    let tint: UIColor?
+    /// 聲調這類筆畫細的符號：放大加粗
+    let isTone: Bool
 
     init(
         _ label: String,
@@ -48,7 +55,11 @@ struct KeySpec {
         width: CGFloat = 1,
         function: Bool = false,
         icon: String? = nil,
-        foot: String? = nil
+        foot: String? = nil,
+        longAction: Action? = nil,
+        longHint: String? = nil,
+        tint: UIColor? = nil,
+        isTone: Bool = false
     ) {
         self.label = label
         self.action = action
@@ -57,6 +68,15 @@ struct KeySpec {
         isFunction = function
         self.icon = icon
         self.foot = foot
+        self.longAction = longAction
+        self.longHint = longHint
+        self.tint = tint
+        self.isTone = isTone
+    }
+
+    /// 右上角小字
+    var hint: String? {
+        alt ?? longHint
     }
 
     /// 長按時實際送出的字
@@ -81,14 +101,49 @@ enum FunctionKeys {
     static func space(width: CGFloat = 3.4, foot: String? = nil) -> KeySpec {
         KeySpec("", .space, width: width, foot: foot)
     }
+
+    // 語言鍵面的底排：數字鍵盤收進符號鍵的長按，空白鍵與換行鍵讓出來的寬度
+    static let languageSpace: CGFloat = 4.3
+    static let languageNewline = KeySpec("↵", .newline, width: 1.6, function: true, icon: "return")
+
+    static func symbols(_ label: String) -> KeySpec {
+        KeySpec(
+            label,
+            .switchMode(.symbols1),
+            width: 1.3,
+            function: true,
+            longAction: .switchMode(.numpad),
+            longHint: "123"
+        )
+    }
 }
 
 // MARK: - 注音（標準排法，照三星截圖；右上角小字＝長按）
 
 enum BopomofoLayout {
+    private static let tones: Set<String> = ["ˇ", "ˋ", "ˊ", "˙"]
+    private static let medials: Set<String> = ["ㄧ", "ㄨ", "ㄩ"]
+    private static let finals: Set<String> = [
+        "ㄚ", "ㄛ", "ㄜ", "ㄝ", "ㄞ", "ㄟ", "ㄠ", "ㄡ", "ㄢ", "ㄣ", "ㄤ", "ㄥ", "ㄦ",
+    ]
+
+    /// 聲母白、介音淡藍、韻母淡暖、聲調淡灰
+    private static func tint(_ s: String) -> UIColor? {
+        if tones.contains(s) { return SamsungTheme.keyTone }
+        if medials.contains(s) { return SamsungTheme.keyMedial }
+        if finals.contains(s) { return SamsungTheme.keyFinal }
+        return nil
+    }
+
     private static func keys(_ symbols: [String], _ alts: [String?]) -> KeyRow {
         symbols.enumerated().map { i, s in
-            KeySpec(s, .bopomofo(s), alt: i < alts.count ? alts[i] : nil)
+            KeySpec(
+                s,
+                .bopomofo(s),
+                alt: i < alts.count ? alts[i] : nil,
+                tint: tint(s),
+                isTone: tones.contains(s)
+            )
         }
     }
 
@@ -111,13 +166,12 @@ enum BopomofoLayout {
         )
             + [FunctionKeys.backspace()],
         [
-            KeySpec("符", .switchMode(.symbols1), width: 1.3, function: true),
+            FunctionKeys.symbols("符"),
             FunctionKeys.toEnglish,
             KeySpec("，", .text("，")),
-            FunctionKeys.space(foot: "注音"),
+            FunctionKeys.space(width: FunctionKeys.languageSpace, foot: "注音"),
             KeySpec("。", .text("。")),
-            KeySpec("123", .switchMode(.numpad), width: 1.3, function: true),
-            FunctionKeys.newline,
+            FunctionKeys.languageNewline,
         ],
     ]
 }
@@ -132,19 +186,21 @@ enum EnglishLayout {
     }
 
     static let rows: [KeyRow] = [
-        ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"].map { KeySpec($0, .text($0)) },
+        ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"].map {
+            KeySpec($0, .text($0), tint: SamsungTheme.keyTone)
+        },
         letters("qwertyuiop", ["+", "×", "÷", "=", "/", "_", "<", ">", "[", "]"]),
         letters("asdfghjkl", ["!", "@", "#", "$", "%", "&", "*", "(", ")"]),
         [KeySpec("⇧", .shift, width: 1.4, function: true, icon: "shift")]
             + letters("zxcvbnm", ["-", "'", "\"", ":", ";", ",", "?"])
             + [FunctionKeys.backspace(width: 1.4)],
         [
-            KeySpec("!#1", .switchMode(.symbols1), width: 1.3, function: true),
+            FunctionKeys.symbols("!#1"),
             FunctionKeys.toBopomofo,
             KeySpec(",", .text(",")),
-            FunctionKeys.space(foot: "English"),
+            FunctionKeys.space(width: FunctionKeys.languageSpace, foot: "English"),
             KeySpec(".", .text(".")),
-            FunctionKeys.newline,
+            FunctionKeys.languageNewline,
         ],
     ]
 }

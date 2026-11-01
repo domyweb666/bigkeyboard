@@ -255,6 +255,10 @@ final class KeyboardViewController: UIInputViewController {
     }
 
     private func handleLongPress(_ spec: KeySpec) {
+        if let longAction = spec.longAction {
+            handle(KeySpec(spec.label, longAction))
+            return
+        }
         guard let alt = spec.altText else { return }
         commitAllComposing()
         textDocumentProxy.insertText(alt)

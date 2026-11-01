@@ -16,8 +16,10 @@ enum SamsungTheme {
     // 鍵帽字：三星字大
     static let keyFontSize: CGFloat = 26
     static let functionFontSize: CGFloat = 19
-    static let hintFontSize: CGFloat = 11
+    static let hintFontSize: CGFloat = 10
     static let footFontSize: CGFloat = 11
+    /// 聲調 ˇ ˋ ˊ ˙ 筆畫細，同字級在窄鍵上只剩一個點，放大加粗
+    static let toneFontSize: CGFloat = 34
     static let previewFontSize: CGFloat = 40
     static let candidateFontSize: CGFloat = 22
     static let iconPointSize: CGFloat = 20
@@ -27,12 +29,20 @@ enum SamsungTheme {
     static let repeatInterval: TimeInterval = 0.08
 
     // 顏色：淺色照三星截圖；深色跟系統（或輸入框要求深色鍵盤時）切換
-    static let background = dynamic(light: rgb(0xE0DED8), dark: rgb(0x1C1C1E))
-    static let keyWhite = dynamic(light: .white, dark: rgb(0x3A3A3C))
-    static let keyGray = dynamic(light: rgb(0xC7C2BA), dark: rgb(0x2A2A2C))
-    static let keyPressed = dynamic(light: rgb(0xE6E3DE), dark: rgb(0x55555A))
+    // 深色：字鍵比功能鍵亮，功能鍵才跟背景分得開
+    static let background = dynamic(light: rgb(0xE0DED8), dark: rgb(0x1B1B1D))
+    static let keyWhite = dynamic(light: .white, dark: rgb(0x46464A))
+    static let keyGray = dynamic(light: rgb(0xC7C2BA), dark: rgb(0x2C2C2F))
+    static let keyPressed = dynamic(light: rgb(0xE6E3DE), dark: rgb(0x636368))
     static let keyText = dynamic(light: .black, dark: .white)
-    static let hintText = dynamic(light: UIColor(white: 0.55, alpha: 1), dark: UIColor(white: 0.62, alpha: 1))
+    /// 長按提示小字：在白鍵與各分區底色上都要過 4.5:1
+    static let hintText = dynamic(light: rgb(0x5E5E5E), dark: rgb(0xC2C2C7))
+
+    // 注音分區底色：介音 ㄧㄨㄩ 剛好排成中間一直欄，把聲母（左）與韻母（右）隔開
+    static let keyMedial = dynamic(light: rgb(0xD3E3F8), dark: rgb(0x2E4A6B))
+    static let keyFinal = dynamic(light: rgb(0xFBE9D9), dark: rgb(0x55443A))
+    /// 聲調鍵；英文常駐數字列也用這色，跟字母分開
+    static let keyTone = dynamic(light: rgb(0xEFEDE9), dark: rgb(0x38383C))
 
     private static func dynamic(light: UIColor, dark: UIColor) -> UIColor {
         UIColor { $0.userInterfaceStyle == .dark ? dark : light }

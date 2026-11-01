@@ -75,12 +75,20 @@ final class KeyboardView: UIView {
     private func makeButton(_ spec: KeySpec) -> KeyButton {
         let b = KeyButton()
         b.label.text = spec.label
-        let fontSize = spec.isFunction ? SamsungTheme.functionFontSize : SamsungTheme.keyFontSize
-        b.label.font = .systemFont(ofSize: fontSize)
-        b.hintLabel.text = spec.alt
+        if spec.isTone {
+            b.label.font = .systemFont(ofSize: SamsungTheme.toneFontSize, weight: .bold)
+        } else {
+            let fontSize = spec.isFunction ? SamsungTheme.functionFontSize : SamsungTheme.keyFontSize
+            b.label.font = .systemFont(ofSize: fontSize)
+        }
+        b.hintLabel.text = spec.hint
+        if spec.isFunction {
+            // 灰色功能鍵上灰字對比不夠，改用主字色
+            b.hintLabel.textColor = SamsungTheme.keyText
+        }
         b.footLabel.text = spec.foot
         b.setIcon(spec.icon)
-        b.normalColor = spec.isFunction ? SamsungTheme.keyGray : SamsungTheme.keyWhite
+        b.normalColor = spec.tint ?? (spec.isFunction ? SamsungTheme.keyGray : SamsungTheme.keyWhite)
 
         if case .backspace = spec.action {
             // 刪除鍵：按下立刻刪、按住連刪
@@ -88,7 +96,7 @@ final class KeyboardView: UIView {
         } else {
             b.onTap = { [weak self] in self?.onKey?(spec) }
         }
-        if spec.alt != nil {
+        if spec.alt != nil || spec.longAction != nil {
             b.onLongPress = { [weak self] in self?.onLongKey?(spec) }
         }
         let showsBubble = !spec.isFunction && !spec.label.isEmpty
