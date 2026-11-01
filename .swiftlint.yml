@@ -10,3 +10,5 @@ excluded:
   - .build
   - Packages
   - KeyboardExtension/Engine/Vendor
+cyclomatic_complexity:
+  ignores_case_statements: true
