@@ -28,6 +28,8 @@ final class KeyboardViewController: UIInputViewController {
     /// 工具列展開成全部候選
     var expanded = false
     var lastShiftTap = Date.distantPast
+    /// 這段組字選過的字（判斷要不要自動加詞）
+    var learning = LearningSession()
 
     // MARK: - 生命週期
 
@@ -87,12 +89,15 @@ final class KeyboardViewController: UIInputViewController {
 
         restoreMode()
         showMode()
+        setUpDismissHandle()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         applyHeight()
         engine?.clear()
+        learning = LearningSession()
+        loadUserDictionary()
         hasMarkedText = false
         associations = []
         expanded = false
@@ -199,6 +204,7 @@ final class KeyboardViewController: UIInputViewController {
         case let .bopomofo(symbol):
             associations = []
             _ = engine?.feedSymbol(symbol)
+            learning.noteTyped()
             syncMarkedText()
 
         case let .letter(c):
@@ -223,6 +229,7 @@ final class KeyboardViewController: UIInputViewController {
 
         case .backspace:
             if engine?.backspace() == true {
+                learning.noteTyped()
                 syncMarkedText()
             } else {
                 textDocumentProxy.deleteBackward()
@@ -256,6 +263,7 @@ final class KeyboardViewController: UIInputViewController {
             selectCandidate(0)
         } else if let engine, !engine.composing.isEmpty {
             engine.clear() // 殘留、接不上字的注音，丟掉
+            learning = LearningSession()
             syncMarkedText()
         } else {
             textDocumentProxy.insertText(" ")

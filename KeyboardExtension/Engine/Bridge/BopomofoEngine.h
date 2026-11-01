@@ -28,6 +28,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// 剛送出 text 之後可以接的字詞（聯想詞），依機率高到低，已去掉 text 本身。沒有則空陣列。
 - (NSArray<NSString *> *)associatedPhrasesAfter:(NSString *)text;
 
+/// 使用者字典的詞：readings[i] 讀成 words[i]（讀音用小麥詞庫的格式，音節以 - 連接）。
+/// 這些詞排在同讀音候選的最前面，整句組字也優先用；同讀音時照陣列順序排。
+- (void)setUserPhrasesWithReadings:(NSArray<NSString *> *)readings
+                             words:(NSArray<NSString *> *)words NS_SWIFT_NAME(setUserPhrases(readings:words:));
+
+/// 上一次 selectCandidateAtIndex: 選走的那幾個音（帶聲調、小麥格式），給自動學詞用。沒選過時為空字串。
+@property (nonatomic, readonly) NSString *lastSelectedReading;
+
 @end
 
 NS_ASSUME_NONNULL_END

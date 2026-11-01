@@ -37,6 +37,8 @@ extension KeyboardViewController {
     /// 組字中要送標點、換行、切鍵面、收鍵盤時：整串照第一個候選一路送完
     func commitAllComposing() {
         guard let engine else { return }
+        // 打標點、換行、切鍵面時剩下的照預設送出：這段不算一個詞，不學
+        learning = LearningSession()
         var out = ""
         while !engine.candidates.isEmpty {
             let piece = engine.selectCandidate(at: 0)
@@ -95,8 +97,10 @@ extension KeyboardViewController {
         guard let engine else { return }
         let text = engine.selectCandidate(at: UInt(index))
         guard !text.isEmpty else { return }
+        notePick(text, reading: engine.lastSelectedReading, index: index)
         commit(text)
         if engine.composing.isEmpty {
+            finishLearningSession()
             associations = engine.associatedPhrases(after: text)
         } else {
             // 只選走了前面幾個音，剩下的繼續組字

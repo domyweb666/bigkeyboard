@@ -40,6 +40,8 @@ enum SamsungTheme {
     static let keyText = dynamic(light: .black, dark: .white)
     /// 長按提示小字：在白鍵與各分區底色上都要過 4.5:1
     static let hintText = dynamic(light: rgb(0x5E5E5E), dark: rgb(0xD8D8DC))
+    /// 鍵盤頂端收鍵盤的拖曳條（跟系統底色對比 3:1 以上，看得到）
+    static let grabber = dynamic(light: rgb(0x7C8089), dark: rgb(0x8E8E93))
 
     // 注音分區底色：介音 ㄧㄨㄩ 剛好排成中間一直欄，把聲母（左）與韻母（右）隔開
     static let keyMedial = dynamic(light: rgb(0xD3E3F8), dark: rgb(0x35557A))

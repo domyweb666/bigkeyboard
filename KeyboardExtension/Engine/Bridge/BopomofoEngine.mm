@@ -1,6 +1,7 @@
 #import "BopomofoEngine.h"
 
 #include <algorithm>
+#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -15,6 +16,7 @@ using Formosa::Gramambular2::ReadingGrid;
 using Formosa::Mandarin::BopomofoKeyboardLayout;
 using Formosa::Mandarin::BopomofoReadingBuffer;
 using Formosa::Mandarin::BPMF;
+using Unigram = Formosa::Gramambular2::LanguageModel::Unigram;
 
 namespace {
 
@@ -52,15 +54,22 @@ std::vector<std::string> splitUTF8(const std::string &s) {
 }
 
 // 沒標聲調的音節 → 五種聲調都查（手機注音可以不打聲調）。只包、不改小麥的 LM。
+// 使用者字典的詞也在這裡併進來：分數比詞庫高，排在同讀音的最前面。
+// 每個結果的 rawValue 記下實際查中的讀音（帶聲調），選字後自動學詞要用。
 class FuzzyToneLM : public Formosa::Gramambular2::LanguageModel {
 public:
     explicit FuzzyToneLM(std::shared_ptr<McBopomofo::ParselessLM> lm) : lm_(std::move(lm)) {}
 
+    void setUserPhrases(std::map<std::string, std::vector<Unigram>> phrases) { user_ = std::move(phrases); }
+
     std::vector<Unigram> getUnigrams(const std::string &reading) override {
         std::vector<Unigram> out;
         for (const auto &variant : expand(reading)) {
-            auto part = lm_->getUnigrams(variant);
-            out.insert(out.end(), part.begin(), part.end());
+            auto user = user_.find(variant);
+            if (user != user_.end()) {
+                for (const auto &u : user->second) out.emplace_back(u.value(), u.score(), variant);
+            }
+            for (const auto &u : lm_->getUnigrams(variant)) out.emplace_back(u.value(), u.score(), variant);
         }
         std::stable_sort(out.begin(), out.end(), [](const Unigram &a, const Unigram &b) {
             return a.score() > b.score();
@@ -70,7 +79,7 @@ public:
 
     bool hasUnigrams(const std::string &reading) override {
         for (const auto &variant : expand(reading)) {
-            if (lm_->hasUnigrams(variant)) return true;
+            if (user_.count(variant) > 0 || lm_->hasUnigrams(variant)) return true;
         }
         return false;
     }
@@ -115,16 +124,26 @@ private:
     }
 
     std::shared_ptr<McBopomofo::ParselessLM> lm_;
+    std::map<std::string, std::vector<Unigram>> user_; // 使用者字典：讀音 → 詞
+};
+
+// 候選字快取：字、佔幾個音、實際查中的讀音（帶聲調，可能為空）
+struct CachedCandidate {
+    std::string value;
+    size_t span;
+    std::string reading;
 };
 
 } // namespace
 
 @implementation BopomofoEngine {
     std::shared_ptr<McBopomofo::ParselessLM> _lm;
+    std::shared_ptr<FuzzyToneLM> _toneLM;
     std::unique_ptr<BopomofoReadingBuffer> _buffer; // 正在打、還沒收進格子的那一個音
     std::unique_ptr<ReadingGrid> _grid; // 已收起來的音（可多個）
-    std::vector<std::pair<std::string, size_t>> _candidateCache; // (字, 佔幾個音)
+    std::vector<CachedCandidate> _candidateCache;
     std::unique_ptr<McBopomofo::AssociatedPhrasesV2> _associated;
+    std::string _lastSelectedReading;
 }
 
 - (nullable instancetype)initWithDataPath:(NSString *)dataPath associatedPath:(nullable NSString *)associatedPath {
@@ -137,7 +156,8 @@ private:
         if (!_associated->open(associatedPath.fileSystemRepresentation)) _associated.reset();
     }
     _buffer = std::make_unique<BopomofoReadingBuffer>(BopomofoKeyboardLayout::StandardLayout());
-    _grid = std::make_unique<ReadingGrid>(std::make_shared<FuzzyToneLM>(_lm));
+    _toneLM = std::make_shared<FuzzyToneLM>(_lm);
+    _grid = std::make_unique<ReadingGrid>(_toneLM);
     return self;
 }
 
@@ -163,14 +183,14 @@ private:
     auto walk = _grid->walk();
     if (!walk.nodes.empty()) {
         const auto &n = walk.nodes.front();
-        _candidateCache.emplace_back(n->value(), n->spanningLength());
+        _candidateCache.push_back({n->value(), n->spanningLength(), n->currentUnigram().rawValue()});
     }
     // 其餘：從第 0 個音起算、所有可能的字與詞
     for (const auto &c : _grid->candidatesAt(0)) {
         size_t span = splitUTF8(c.value).size();
         bool dup = false;
-        for (const auto &e : _candidateCache) if (e.first == c.value) { dup = true; break; }
-        if (!dup) _candidateCache.emplace_back(c.value, span);
+        for (const auto &e : _candidateCache) if (e.value == c.value) { dup = true; break; }
+        if (!dup) _candidateCache.push_back({c.value, span, c.rawValue});
     }
 
     if (tentative) {
@@ -208,7 +228,7 @@ private:
 - (NSArray<NSString *> *)candidates {
     NSMutableArray<NSString *> *out = [NSMutableArray arrayWithCapacity:_candidateCache.size()];
     for (const auto &c : _candidateCache) {
-        [out addObject:[NSString stringWithUTF8String:c.first.c_str()]];
+        [out addObject:[NSString stringWithUTF8String:c.value.c_str()]];
     }
     return out;
 }
@@ -218,12 +238,24 @@ private:
     auto picked = _candidateCache[index];
     [self pushBufferIntoGrid];
     // 把這個候選字吃掉的那幾個音從格子前面拿掉
-    size_t span = std::min(picked.second, _grid->length());
+    size_t span = std::min(picked.span, _grid->length());
+    // 記下選走的讀音：有查中的帶聲調讀音就用它，否則用格子裡打的
+    if (!picked.reading.empty()) {
+        _lastSelectedReading = picked.reading;
+    } else {
+        auto readings = _grid->readings();
+        std::string joined;
+        for (size_t i = 0; i < span && i < readings.size(); i++) {
+            if (i > 0) joined += "-";
+            joined += readings[i];
+        }
+        _lastSelectedReading = joined;
+    }
     _grid->setCursor(span);
     for (size_t i = 0; i < span; i++) _grid->deleteReadingBeforeCursor();
     _grid->setCursor(_grid->length());
     [self rebuildCandidates];
-    return [NSString stringWithUTF8String:picked.first.c_str()];
+    return [NSString stringWithUTF8String:picked.value.c_str()];
 }
 
 - (BOOL)backspace {
@@ -270,6 +302,21 @@ private:
         if (out.count >= 40) break;
     }
     return out;
+}
+
+- (void)setUserPhrasesWithReadings:(NSArray<NSString *> *)readings words:(NSArray<NSString *> *)words {
+    std::map<std::string, std::vector<Unigram>> phrases;
+    NSUInteger n = MIN(readings.count, words.count);
+    for (NSUInteger i = 0; i < n; i++) {
+        auto &list = phrases[std::string(readings[i].UTF8String)];
+        // 分數 0 比詞庫裡任何詞都高（詞庫是負的對數機率）；同讀音照陣列順序微幅遞減，先後才固定
+        list.emplace_back(std::string(words[i].UTF8String), -0.0001 * static_cast<double>(list.size()));
+    }
+    _toneLM->setUserPhrases(std::move(phrases));
+}
+
+- (NSString *)lastSelectedReading {
+    return [NSString stringWithUTF8String:_lastSelectedReading.c_str()];
 }
 
 @end

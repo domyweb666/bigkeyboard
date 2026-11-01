@@ -16,6 +16,12 @@ targets:
     platform: iOS
     sources:
       - App
+      - Shared
+    entitlements:
+      path: Entitlements/BigKeyboard.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.org.domyweb.bigkeyboard
     info:
       path: App/Info.plist
       properties:
@@ -39,6 +45,12 @@ targets:
       - path: KeyboardExtension
         excludes:
           - "Engine/Vendor/McBopomofo/LICENSE.txt"
+      - Shared
+    entitlements:
+      path: Entitlements/KeyboardExtension.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.org.domyweb.bigkeyboard
     info:
       path: KeyboardExtension/Info.plist
       properties:
@@ -53,7 +65,8 @@ targets:
             PrimaryLanguage: mul
             IsASCIICapable: false
             PrefersRightToLeft: false
-            RequestsOpenAccess: false
+            # 字典要讓鍵盤寫進 App 共用的資料夾，iOS 規定要開「允許完全取用」；鍵盤仍然不連網
+            RequestsOpenAccess: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.domyweb.bigkeyboard.keyboard
