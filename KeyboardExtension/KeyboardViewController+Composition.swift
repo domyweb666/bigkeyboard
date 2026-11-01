@@ -4,12 +4,22 @@ import UIKit
 extension KeyboardViewController {
     // MARK: - 組字中的底線文字（跟原生一樣，注音直接顯示在輸入框游標處）
 
+    /// 底線裡顯示「前半段已選好的字＋還在組的注音」
     func syncMarkedText() {
         let composing = engine?.composing ?? ""
-        if !composing.isEmpty {
+        // 注音刪光了：前半段已選好的字直接送出（這段沒選完，不算一個詞，不學）
+        if composing.isEmpty, !pendingText.isEmpty {
+            let text = pendingText
+            pendingText = ""
+            learning = LearningSession()
+            commit(text)
+            return
+        }
+        let shown = pendingText + composing
+        if !shown.isEmpty {
             textDocumentProxy.setMarkedText(
-                composing,
-                selectedRange: NSRange(location: (composing as NSString).length, length: 0)
+                shown,
+                selectedRange: NSRange(location: (shown as NSString).length, length: 0)
             )
             hasMarkedText = true
         } else if hasMarkedText {
@@ -39,7 +49,8 @@ extension KeyboardViewController {
         guard let engine else { return }
         // 打標點、換行、切鍵面時剩下的照預設送出：這段不算一個詞，不學
         learning = LearningSession()
-        var out = ""
+        var out = pendingText
+        pendingText = ""
         while !engine.candidates.isEmpty {
             let piece = engine.selectCandidate(at: 0)
             if piece.isEmpty {
@@ -100,12 +111,14 @@ extension KeyboardViewController {
         let text = engine.selectCandidate(at: UInt(index))
         guard !text.isEmpty else { return }
         notePick(text, reading: engine.lastSelectedReading, isDefault: isDefault)
-        commit(text)
         if engine.composing.isEmpty {
+            commit(pendingText + text)
+            pendingText = ""
             finishLearningSession()
             associations = engine.associatedPhrases(after: text)
         } else {
-            // 只選走了前面幾個音，剩下的繼續組字
+            // 只選走了前面幾個音：選好的字留在底線裡，剩下的繼續組字
+            pendingText += text
             syncMarkedText()
         }
         expanded = false

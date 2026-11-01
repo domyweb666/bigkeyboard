@@ -23,6 +23,9 @@ final class KeyboardViewController: UIInputViewController {
 
     /// 輸入框裡目前有沒有我們放的「組字中」底線文字
     var hasMarkedText = false
+    /// 只選了前半段時已選好的字：先留在底線裡，整段選完才一起送出（跟系統注音一樣）。
+    /// 選一段就送一段的話，「送出→馬上再標底線」在有些 App 會蓋掉剛送的字
+    var pendingText = ""
     /// 剛送出字之後的聯想詞
     var associations: [String] = []
     /// 工具列展開成全部候選
@@ -99,6 +102,7 @@ final class KeyboardViewController: UIInputViewController {
         learning = LearningSession()
         loadUserDictionary()
         hasMarkedText = false
+        pendingText = ""
         associations = []
         expanded = false
         updateAutoCapitalization()
