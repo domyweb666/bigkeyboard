@@ -19,6 +19,8 @@ final class KeyButton: UIControl {
     var onSwipeDown: (() -> Void)?
     /// 按下就觸發 onTap、不等放開（展開鍵用：放開前觸控被系統取消也不會沒反應）
     var firesOnPress = false
+    /// 觸控被取消時，手指沒怎麼動就照樣算按到。候選字關掉：它在可左右捲的列裡，取消代表使用者開始捲了
+    var tapsWhenCancelled = true
 
     var normalColor: UIColor = SamsungTheme.keyWhite {
         didSet {
@@ -81,7 +83,8 @@ final class KeyButton: UIControl {
 
         addTarget(self, action: #selector(touchDown), for: .touchDown)
         addTarget(self, action: #selector(touchUpInside), for: .touchUpInside)
-        addTarget(self, action: #selector(touchEnded), for: [.touchUpOutside, .touchCancel])
+        addTarget(self, action: #selector(touchUpOutside), for: .touchUpOutside)
+        addTarget(self, action: #selector(touchCancelled), for: .touchCancel)
     }
 
     @available(*, unavailable)
@@ -139,6 +142,14 @@ final class KeyButton: UIControl {
             return false
         }
         return super.continueTracking(touch, with: event)
+    }
+
+    override func endTracking(_ touch: UITouch?, with event: UIEvent?) {
+        if let touch {
+            trackLast = touch.location(in: nil)
+            trackLastTime = touch.timestamp
+        }
+        super.endTracking(touch, with: event)
     }
 
     /// 往下為主、拖得夠遠（或放開時撥得夠快）→ 算收鍵盤，這次按下不送字
@@ -217,15 +228,35 @@ final class KeyButton: UIControl {
     @objc private func touchUpInside() {
         stopTimers()
         guard !firesOnPress, !detectSwipeDown(ended: true), !swiped, !firedEarly, !longPressFired else { return }
+        finishTap()
+    }
+
+    /// 在鍵外放開：按在鍵縫、錯開的半顆空位時，落點本來就在這顆鍵的範圍外
+    @objc private func touchUpOutside() {
+        touchEnded(canTap: true)
+    }
+
+    /// 觸控被取消：最左最右兩欄的觸控常被系統邊緣手勢取消
+    @objc private func touchCancelled() {
+        touchEnded(canTap: tapsWhenCancelled)
+    }
+
+    /// 手指幾乎沒移動就照樣算按到
+    private func touchEnded(canTap: Bool) {
+        stopTimers()
+        guard !firesOnPress, !detectSwipeDown(ended: true), !swiped, !firedEarly, !longPressFired else { return }
+        let moved = hypot(trackLast.x - trackStart.x, trackLast.y - trackStart.y)
+        if canTap, moved < SamsungTheme.tapSlop {
+            finishTap()
+        } else {
+            onPressChanged?(false)
+        }
+    }
+
+    private func finishTap() {
         onPressChanged?(false)
         if onRepeat == nil {
             onTap?()
         }
-    }
-
-    @objc private func touchEnded() {
-        stopTimers()
-        guard !firesOnPress, !detectSwipeDown(ended: true), !swiped, !firedEarly, !longPressFired else { return }
-        onPressChanged?(false)
     }
 }

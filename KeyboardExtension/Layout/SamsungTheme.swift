@@ -28,6 +28,8 @@ enum SamsungTheme {
     static let expandIconPointSize: CGFloat = 24
 
     static let longPressSeconds: TimeInterval = 0.4
+    /// 按下後移動不到這距離就放開，一律算按到這顆鍵（不管放開時在不在鍵上、觸控有沒有被系統取消）
+    static let tapSlop: CGFloat = 20
 
     // 往下拖收鍵盤：拖超過這距離就收；或放開時往下撥超過短距離、速度夠快也收。點鍵時手指滑不到這麼遠
     static let swipeDownDistance: CGFloat = 40

@@ -125,6 +125,7 @@ final class CandidateBar: UIView {
             b.tag = i
             b.onTap = { [weak self] in self?.onSelect?(i) }
             b.onSwipeDown = onSwipeDown
+            b.tapsWhenCancelled = false
             b.widthAnchor.constraint(greaterThanOrEqualTo: b.label.widthAnchor, constant: 18).isActive = true
             b.widthAnchor.constraint(greaterThanOrEqualToConstant: 40).isActive = true
             stack.addArrangedSubview(b)
