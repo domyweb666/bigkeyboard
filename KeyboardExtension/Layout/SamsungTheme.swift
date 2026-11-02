@@ -50,6 +50,7 @@ enum SamsungTheme {
     static let background = UIColor.clear
 
     // 下面每個顏色畫的時候才照當下的主題與深淺色取值；每次取都是新物件，換主題後重新指定就會重畫
+
     static var keyWhite: UIColor {
         themed(\.key)
     }
@@ -72,6 +73,7 @@ enum SamsungTheme {
     }
 
     // 注音分區底色：介音 ㄧㄨㄩ 剛好排成中間一直欄，把聲母（左）與韻母（右）隔開
+
     static var keyMedial: UIColor {
         themed(\.medial)
     }

@@ -12,6 +12,7 @@ final class CandidateGrid: UIView, UICollectionViewDataSource, UICollectionViewD
     private static var font: UIFont {
         SamsungTheme.keyFont(ofSize: SamsungTheme.candidateFontSize)
     }
+
     private static let padX: CGFloat = 12
     private static let padY: CGFloat = 8
     private static let minWidth: CGFloat = 48
