@@ -101,6 +101,7 @@ final class KeyboardView: UIView {
     }
 
     func load(_ rows: [KeyRow]) {
+        bubble.applyTheme()
         rowsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         buttons.removeAll()
         specs.removeAll()
@@ -135,10 +136,10 @@ final class KeyboardView: UIView {
         let b = KeyButton()
         b.label.text = spec.label
         if spec.isTone {
-            b.label.font = .systemFont(ofSize: SamsungTheme.toneFontSize, weight: .bold)
+            b.label.font = SamsungTheme.keyFont(ofSize: SamsungTheme.toneFontSize, bold: true)
         } else {
             let fontSize = spec.isFunction ? SamsungTheme.functionFontSize : SamsungTheme.keyFontSize
-            b.label.font = .systemFont(ofSize: fontSize)
+            b.label.font = SamsungTheme.keyFont(ofSize: fontSize)
         }
         b.hintLabel.text = spec.longHint
         if spec.isFunction {

@@ -69,14 +69,13 @@ final class CandidateBar: UIView {
         dismissButton.normalColor = .clear
         dismissButton.layer.shadowOpacity = 0
         dismissButton.setIcon("keyboard.chevron.compact.down", pointSize: SamsungTheme.dismissIconPointSize)
-        dismissButton.iconView.tintColor = SamsungTheme.hintText
         dismissButton.onTap = { [weak self] in self?.onDismiss?() }
         dismissButton.firesOnPress = true
         dismissButton.isAccessibilityElement = true
         dismissButton.accessibilityLabel = "收起鍵盤"
         dismissButton.accessibilityTraits = .button
 
-        divider.backgroundColor = SamsungTheme.hintText.withAlphaComponent(0.4)
+        applyTheme()
     }
 
     private func activateConstraints() {
@@ -122,6 +121,22 @@ final class CandidateBar: UIView {
         updateFade()
     }
 
+    /// 照目前主題上色、換字（候選字按鈕會重複使用，換主題後全部重設）
+    func applyTheme() {
+        divider.backgroundColor = SamsungTheme.hintText.withAlphaComponent(0.4)
+        expandButton.iconView.tintColor = SamsungTheme.keyText
+        dismissButton.iconView.tintColor = SamsungTheme.hintText
+        for chip in chips {
+            styleChip(chip)
+        }
+    }
+
+    private func styleChip(_ b: KeyButton) {
+        b.label.font = SamsungTheme.keyFont(ofSize: SamsungTheme.candidateFontSize)
+        b.label.textColor = SamsungTheme.keyText
+        b.layer.cornerRadius = SamsungTheme.keyCornerRadius
+    }
+
     /// 候選放不下才淡出；放得下就整列清楚
     private func updateFade() {
         let w = clip.bounds.width
@@ -162,7 +177,7 @@ final class CandidateBar: UIView {
     /// 第 i 個位置的候選按鈕（點了就選第 i 個）
     private func makeChip(_ i: Int) -> KeyButton {
         let b = KeyButton()
-        b.label.font = .systemFont(ofSize: SamsungTheme.candidateFontSize)
+        styleChip(b)
         b.label.adjustsFontSizeToFitWidth = false
         b.layer.shadowOpacity = 0
         b.tag = i

@@ -1,6 +1,6 @@
 import UIKit
 
-/// 鍵盤的尺寸與配色常數。尺寸照三星截圖量；配色 2026-11-02 起改成跟 iOS 系統鍵盤底色搭的冷灰系。寫死，不做設定項。
+/// 鍵盤的尺寸與配色常數。尺寸照三星截圖量、寫死；配色、字體、圓角照 App 裡選的主題（KeyboardTheme）。
 enum SamsungTheme {
     /// 鍵盤總高度佔螢幕高度的比例（含工具列帶；不含系統在下方另加的地球／麥克風排）
     static let keyboardHeightRatio: CGFloat = 0.37
@@ -11,7 +11,6 @@ enum SamsungTheme {
     static let keyGap: CGFloat = 5
     static let rowGap: CGFloat = 7
     static let sideInset: CGFloat = 4
-    static let keyCornerRadius: CGFloat = 7
 
     // 鍵帽字：三星字大
     static let keyFontSize: CGFloat = 26
@@ -41,36 +40,65 @@ enum SamsungTheme {
     /// 刪除鍵按住後的連刪間隔
     static let repeatInterval: TimeInterval = 0.08
 
-    // 顏色：深色跟系統（或輸入框要求深色鍵盤時）切換
+    // 顏色：照目前主題（KeyboardTheme），深色跟系統（或輸入框要求深色鍵盤時）切換
+
+    /// 目前主題。鍵盤每次叫出來時重讀（KeyboardViewController.viewWillAppear）
+    static var theme = KeyboardTheme.saved
 
     /// 鍵盤底透明：iOS 26 會在第三方鍵盤上方和底部系統排畫自己的底色，擴充畫不到那裡；
     /// 自己塗底色會被框成一塊，所以整個鍵盤共用系統那層底色
     static let background = UIColor.clear
-    // 鍵帽配合系統底色（淺色約 #E2E3E7）；深色時字鍵比功能鍵亮，功能鍵也要比系統底亮
-    static let keyWhite = dynamic(light: .white, dark: rgb(0x5B5B5F))
-    static let keyGray = dynamic(light: rgb(0xC0C4CC), dark: rgb(0x3B3B3E))
-    static let keyPressed = dynamic(light: rgb(0xD3D6DC), dark: rgb(0x76767B))
-    static let keyText = dynamic(light: .black, dark: .white)
-    /// 長按提示小字：在白鍵與各分區底色上都要過 4.5:1
-    static let hintText = dynamic(light: rgb(0x5E5E5E), dark: rgb(0xD8D8DC))
 
-    // 注音分區底色：介音 ㄧㄨㄩ 剛好排成中間一直欄，把聲母（左）與韻母（右）隔開
-    static let keyMedial = dynamic(light: rgb(0xD3E3F8), dark: rgb(0x35557A))
-    static let keyFinal = dynamic(light: rgb(0xFBE9D9), dark: rgb(0x5F4C40))
-    /// 聲調鍵；英文常駐數字列也用這色，跟字母分開
-    static let keyTone = dynamic(light: rgb(0xECEDF1), dark: rgb(0x4B4B4F))
-
-    private static func dynamic(light: UIColor, dark: UIColor) -> UIColor {
-        UIColor { $0.userInterfaceStyle == .dark ? dark : light }
+    // 下面每個顏色畫的時候才照當下的主題與深淺色取值；每次取都是新物件，換主題後重新指定就會重畫
+    static var keyWhite: UIColor {
+        themed(\.key)
     }
 
-    private static func rgb(_ hex: Int) -> UIColor {
-        UIColor(
-            red: CGFloat((hex >> 16) & 0xFF) / 255,
-            green: CGFloat((hex >> 8) & 0xFF) / 255,
-            blue: CGFloat(hex & 0xFF) / 255,
-            alpha: 1
-        )
+    static var keyGray: UIColor {
+        themed(\.function)
+    }
+
+    static var keyPressed: UIColor {
+        themed(\.pressed)
+    }
+
+    static var keyText: UIColor {
+        themed(\.text)
+    }
+
+    /// 長按提示小字：在字鍵與各分區底色上都要過 4.5:1
+    static var hintText: UIColor {
+        themed(\.hint)
+    }
+
+    // 注音分區底色：介音 ㄧㄨㄩ 剛好排成中間一直欄，把聲母（左）與韻母（右）隔開
+    static var keyMedial: UIColor {
+        themed(\.medial)
+    }
+
+    static var keyFinal: UIColor {
+        themed(\.finals)
+    }
+
+    /// 聲調鍵；英文常駐數字列也用這色，跟字母分開
+    static var keyTone: UIColor {
+        themed(\.tone)
+    }
+
+    static var keyCornerRadius: CGFloat {
+        theme.cornerRadius
+    }
+
+    /// 鍵帽、候選字、預覽泡泡的字
+    static func keyFont(ofSize size: CGFloat, bold: Bool = false) -> UIFont {
+        theme.font(ofSize: size, bold: bold)
+    }
+
+    private static func themed(_ color: KeyPath<KeyboardTheme.Colors, Int>) -> UIColor {
+        UIColor { trait in
+            let colors = trait.userInterfaceStyle == .dark ? theme.dark : theme.light
+            return KeyboardTheme.color(colors[keyPath: color])
+        }
     }
 
     static func keyboardHeight(for screen: UIScreen) -> CGFloat {

@@ -6,14 +6,12 @@ final class KeyPreviewBubble: UIView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        backgroundColor = SamsungTheme.keyWhite
         layer.cornerRadius = 10
         layer.shadowColor = UIColor.black.cgColor
         layer.shadowOpacity = 0.25
         layer.shadowOffset = CGSize(width: 0, height: 2)
         layer.shadowRadius = 4
-        label.font = .systemFont(ofSize: SamsungTheme.previewFontSize)
-        label.textColor = SamsungTheme.keyText
+        applyTheme()
         label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
         addSubview(label)
@@ -23,6 +21,13 @@ final class KeyPreviewBubble: UIView {
         ])
         isUserInteractionEnabled = false
         isHidden = true
+    }
+
+    /// 照目前主題上色、換字（換主題後鍵面重建時呼叫）
+    func applyTheme() {
+        backgroundColor = SamsungTheme.keyWhite
+        label.font = SamsungTheme.keyFont(ofSize: SamsungTheme.previewFontSize)
+        label.textColor = SamsungTheme.keyText
     }
 
     @available(*, unavailable)

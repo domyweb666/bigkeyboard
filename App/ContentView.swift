@@ -7,6 +7,10 @@ struct ContentView: View {
                 .tabItem {
                     Label("字典", systemImage: "book")
                 }
+            ThemeView()
+                .tabItem {
+                    Label("主題", systemImage: "paintpalette")
+                }
             GuideView()
                 .tabItem {
                     Label("使用說明", systemImage: "questionmark.circle")

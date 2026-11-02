@@ -112,6 +112,7 @@ final class KeyboardViewController: UIInputViewController {
         pendingText = ""
         associations = []
         expanded = false
+        applyTheme()
         updateAutoCapitalization()
         applyHostTraits()
         refreshBar()
@@ -149,6 +150,15 @@ final class KeyboardViewController: UIInputViewController {
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
         coordinator.animate(alongsideTransition: { _ in self.applyHeight() })
+    }
+
+    /// App 裡換了主題：重建鍵面，其他已經畫好的東西重新上色
+    private func applyTheme() {
+        let saved = KeyboardTheme.saved
+        guard saved != SamsungTheme.theme else { return }
+        SamsungTheme.theme = saved
+        showMode()
+        candidateBar.applyTheme()
     }
 
     private func applyHeight() {

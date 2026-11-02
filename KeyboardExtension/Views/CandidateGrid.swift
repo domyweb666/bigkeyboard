@@ -9,7 +9,9 @@ final class CandidateGrid: UIView, UICollectionViewDataSource, UICollectionViewD
     /// 每格的大小：展開時一次算好。以前讓每格自己量（automaticSize），候選上百個時第一次排版要量上百次，
     /// 按了展開要等一下才出來（2026-11-02 多米回報）。量字寬很快，直接給大小
     private var sizes: [CGSize] = []
-    private static let font = UIFont.systemFont(ofSize: SamsungTheme.candidateFontSize)
+    private static var font: UIFont {
+        SamsungTheme.keyFont(ofSize: SamsungTheme.candidateFontSize)
+    }
     private static let padX: CGFloat = 12
     private static let padY: CGFloat = 8
     private static let minWidth: CGFloat = 48
@@ -59,7 +61,10 @@ final class CandidateGrid: UIView, UICollectionViewDataSource, UICollectionViewD
 
     func collectionView(_ cv: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = cv.dequeueReusableCell(withReuseIdentifier: "c", for: indexPath)
-        (cell as? Cell)?.label.text = items[indexPath.item]
+        if let cell = cell as? Cell {
+            cell.applyTheme()
+            cell.label.text = items[indexPath.item]
+        }
         return cell
     }
 
@@ -80,10 +85,7 @@ final class CandidateGrid: UIView, UICollectionViewDataSource, UICollectionViewD
 
         override init(frame: CGRect) {
             super.init(frame: frame)
-            contentView.backgroundColor = SamsungTheme.keyWhite
-            contentView.layer.cornerRadius = SamsungTheme.keyCornerRadius
-            label.font = CandidateGrid.font
-            label.textColor = SamsungTheme.keyText
+            applyTheme()
             label.textAlignment = .center
             label.translatesAutoresizingMaskIntoConstraints = false
             contentView.addSubview(label)
@@ -97,6 +99,14 @@ final class CandidateGrid: UIView, UICollectionViewDataSource, UICollectionViewD
         @available(*, unavailable)
         required init?(coder _: NSCoder) {
             fatalError("not used")
+        }
+
+        /// 照目前主題上色、換字（格子會重複使用，換主題後每次拿出來都重設）
+        func applyTheme() {
+            contentView.backgroundColor = SamsungTheme.keyWhite
+            contentView.layer.cornerRadius = SamsungTheme.keyCornerRadius
+            label.font = CandidateGrid.font
+            label.textColor = SamsungTheme.keyText
         }
 
         override var isHighlighted: Bool {
