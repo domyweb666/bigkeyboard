@@ -106,6 +106,9 @@ enum KeyboardTheme: String, CaseIterable, Identifiable {
         }
     }
 
+    /// 主題字體檔，放在鍵盤擴充的 Resources/Fonts（擴充的 Info.plist 用 UIAppFonts 載入；App 從擴充裡借來註冊）
+    static let fontFiles = ["NotoSerifTC-Medium.otf", "LXGWWenKaiTC-Regular.ttf"]
+
     /// 鍵帽字體；nil 用系統字
     private var fontName: String? {
         switch self {
@@ -123,7 +126,7 @@ enum KeyboardTheme: String, CaseIterable, Identifiable {
         }
     }
 
-    /// 鍵帽、候選字、預覽泡泡用的字。字體檔沒放進 app 時退回系統字
+    /// 鍵帽、候選字、預覽泡泡用的字。字體載入失敗時退回系統字
     func font(ofSize size: CGFloat, bold: Bool = false) -> UIFont {
         if let fontName, let font = UIFont(name: fontName, size: size) {
             return font
