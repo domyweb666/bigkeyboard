@@ -8,3 +8,5 @@
 - 【build 47】組字中只選前半段時，「insertText／unmarkText 送出 → 馬上 setMarkedText 剩下的注音」在提醒事項會亂序：剩下的注音蓋掉剛送的字、而且變成一般文字。已選的字要留在底線裡，整段選完才一次送出（跟系統注音一樣）。
 
 - 【build 49】鍵盤擴充裡掛在 view 上的 UIPanGestureRecognizer（往下滑收鍵盤）實測很難觸發；貼螢幕右緣、放開才觸發的展開鍵也常沒反應。改成鍵自己在 continueTracking 判斷往下拖／撥，邊緣的功能鍵按下就觸發。鍵盤裡的觸控判斷不要靠手勢辨識器跟系統搶。
+
+- 【build 50】鍵盤的鍵用 UIControl 的 touchUpInside 判定「按到」會漏：hitTest 把鍵縫、半顆空位分給最近的鍵時，落點在鍵外會變 touchUpOutside；靠螢幕邊緣的觸控常被系統取消變 touchCancel。改成看手指移動距離，< 20pt 一律算按到；在可捲動列裡的鍵（候選字）取消時不算，免得捲動時誤選。
