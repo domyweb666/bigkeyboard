@@ -1,23 +1,9 @@
 import UIKit
 
-/// 收鍵盤：從任何一顆鍵或候選字往下拖（或往下撥）就收起（有些 app 沒地方收鍵盤，鍵盤又大，關不掉很麻煩）。
-/// 往下拖由每顆鍵自己判斷（見 KeyButton）；最上面中間的拖曳條只是提示有這個動作
+/// 收鍵盤（2026-11-02 改）：拿掉頂端拖曳條和「往下拖收起」——往下拖在鍵上很不敏感，又可能在快打時誤收。
+/// 改成看得見的鍵：注音鍵面工具列最右邊一顆「收鍵盤」（系統同款圖示）；其他鍵面沒有工具列，長按換行鍵收（鍵上小字 ⌄）
 extension KeyboardViewController {
-    func setUpDismissHandle() {
-        let grabber = UIView()
-        grabber.backgroundColor = SamsungTheme.grabber
-        grabber.layer.cornerRadius = 2.5
-        grabber.isUserInteractionEnabled = false
-        grabber.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(grabber)
-        NSLayoutConstraint.activate([
-            // 貼齊最上緣：再上面那條灰帶是系統畫的，擴充畫不到
-            grabber.topAnchor.constraint(equalTo: view.topAnchor),
-            grabber.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            grabber.widthAnchor.constraint(equalToConstant: 36),
-            grabber.heightAnchor.constraint(equalToConstant: 5),
-        ])
-        keyboardView.onSwipeDown = { [weak self] in self?.dismissKeyboard() }
-        candidateBar.onSwipeDown = { [weak self] in self?.dismissKeyboard() }
+    func setUpDismiss() {
+        candidateBar.onDismiss = { [weak self] in self?.dismissKeyboard() }
     }
 }

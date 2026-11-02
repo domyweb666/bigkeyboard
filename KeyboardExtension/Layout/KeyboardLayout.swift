@@ -28,6 +28,7 @@ struct KeySpec {
         case switchMode(KeyboardMode) // 去符號頁／數字鍵盤
         case backToLanguage // 從符號頁／數字鍵盤回到原本的語言鍵面
         case spacer // 不是鍵：只佔寬度，把一排左右錯開半顆（跟三星一樣）
+        case dismiss // 收鍵盤（換行鍵長按）
     }
 
     let label: String
@@ -95,7 +96,19 @@ enum FunctionKeys {
         KeySpec("⌫", .backspace, width: width, function: true, icon: "delete.left")
     }
 
-    static let newline = KeySpec("↵", .newline, width: 1.3, function: true, icon: "return")
+    /// 換行鍵：長按收鍵盤（工具列只在注音鍵面出現，其他鍵面靠這個收）
+    static func newline(width: CGFloat = 1.3) -> KeySpec {
+        KeySpec(
+            "↵",
+            .newline,
+            width: width,
+            function: true,
+            icon: "return",
+            longAction: .dismiss,
+            longHint: "⌄"
+        )
+    }
+
     static let toEnglish = KeySpec("ABC", .toggleLanguage, width: 1.3, function: true)
     static let toBopomofo = KeySpec("注音", .toggleLanguage, width: 1.3, function: true)
 
@@ -105,7 +118,7 @@ enum FunctionKeys {
 
     // 語言鍵面的底排：數字鍵盤收進符號鍵的長按，空白鍵與換行鍵讓出來的寬度
     static let languageSpace: CGFloat = 4.3
-    static let languageNewline = KeySpec("↵", .newline, width: 1.6, function: true, icon: "return")
+    static let languageNewline = newline(width: 1.6)
 
     static func symbols(_ label: String) -> KeySpec {
         KeySpec(
@@ -221,18 +234,31 @@ enum SymbolLayout {
             FunctionKeys.space(width: 3.9),
             KeySpec(chinese ? "。" : ".", .text(chinese ? "。" : ".")),
             KeySpec("123", .switchMode(.numpad), width: 1.3, function: true),
-            FunctionKeys.newline,
+            FunctionKeys.newline(),
         ]
+    }
+
+    /// 中文模式用全形符號，英文模式用半形（2026-11-02 多米：中文打出來混著半形的 ! 很怪）
+    private static func wide(_ chinese: Bool, _ half: [String], _ full: [String]) -> KeyRow {
+        texts(chinese ? full : half)
     }
 
     static func page1(chinese: Bool) -> [KeyRow] {
         [
             texts(["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]),
-            texts(["+", "×", "÷", "=", "/", "_", "<", ">", "[", "]"]),
-            texts(["!", "@", "#", "$", "%", "^", "&", "*", "(", ")"]),
+            wide(
+                chinese,
+                ["+", "×", "÷", "=", "/", "_", "<", ">", "[", "]"],
+                ["＋", "×", "÷", "＝", "／", "＿", "＜", "＞", "［", "］"]
+            ),
+            wide(
+                chinese,
+                ["!", "@", "#", "$", "%", "^", "&", "*", "(", ")"],
+                ["！", "＠", "＃", "＄", "％", "＾", "＆", "＊", "（", "）"]
+            ),
             [KeySpec("1/2", .switchMode(.symbols2), width: 1.3, function: true)]
                 + texts(chinese
-                    ? ["-", "‘’", "“”", "：", "；", "，", "？"]
+                    ? ["－", "‘’", "“”", "：", "；", "，", "？"]
                     : ["-", "'", "\"", ":", ";", ",", "?"])
                 + [FunctionKeys.backspace(width: 1.3)],
             bottom(chinese: chinese),
@@ -242,7 +268,11 @@ enum SymbolLayout {
     static func page2(chinese: Bool) -> [KeyRow] {
         [
             texts(["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]),
-            texts(["`", "~", "、", "|", "{", "}", "€", "£", "¥", "₩"]),
+            wide(
+                chinese,
+                ["`", "~", "、", "|", "{", "}", "€", "£", "¥", "₩"],
+                ["｀", "～", "、", "｜", "｛", "｝", "€", "￡", "￥", "￦"]
+            ),
             texts(["°", "•", "○", "●", "□", "■", "♠", "♡", "◇", "♣"]),
             [KeySpec("2/2", .switchMode(.symbols1), width: 1.3, function: true)]
                 + texts(["☆", "▪", "¤", "《", "》", "……", "·"])
@@ -267,7 +297,7 @@ enum NumpadLayout {
                 KeySpec(chinese ? "中文" : "ABC", .backToLanguage, width: 1.6, function: true),
                 n("0"),
                 KeySpec("", .space, width: 1.6),
-                KeySpec("↵", .newline, width: 1.2, function: true, icon: "return"),
+                FunctionKeys.newline(width: 1.2),
             ],
         ]
     }

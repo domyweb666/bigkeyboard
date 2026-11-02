@@ -2,15 +2,21 @@ import UIKit
 
 /// 展開後的全部候選：蓋在鍵盤區上面，一格一格排，可上下捲。
 /// 為了「候選字選不到想要的字」這個最怕的事：橫向一列滑不完的時候，展開一次看完。
-final class CandidateGrid: UIView, UICollectionViewDataSource, UICollectionViewDelegate {
+final class CandidateGrid: UIView, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     var onSelect: ((Int) -> Void)?
 
     private var items: [String] = []
+    /// 每格的大小：展開時一次算好。以前讓每格自己量（automaticSize），候選上百個時第一次排版要量上百次，
+    /// 按了展開要等一下才出來（2026-11-02 多米回報）。量字寬很快，直接給大小
+    private var sizes: [CGSize] = []
+    private static let font = UIFont.systemFont(ofSize: SamsungTheme.candidateFontSize)
+    private static let padX: CGFloat = 12
+    private static let padY: CGFloat = 8
+    private static let minWidth: CGFloat = 48
     private let collection: UICollectionView
 
     override init(frame: CGRect) {
         let layout = UICollectionViewFlowLayout()
-        layout.estimatedItemSize = UICollectionViewFlowLayout.automaticSize
         layout.minimumInteritemSpacing = SamsungTheme.keyGap
         layout.minimumLineSpacing = SamsungTheme.keyGap
         layout.sectionInset = UIEdgeInsets(top: 6, left: 6, bottom: 6, right: 6)
@@ -38,6 +44,11 @@ final class CandidateGrid: UIView, UICollectionViewDataSource, UICollectionViewD
 
     func update(_ candidates: [String]) {
         items = candidates
+        let h = ceil(Self.font.lineHeight) + Self.padY * 2
+        sizes = candidates.map { text in
+            let w = ceil((text as NSString).size(withAttributes: [.font: Self.font]).width) + Self.padX * 2
+            return CGSize(width: max(Self.minWidth, w), height: h)
+        }
         collection.reloadData()
         collection.setContentOffset(.zero, animated: false)
     }
@@ -52,6 +63,14 @@ final class CandidateGrid: UIView, UICollectionViewDataSource, UICollectionViewD
         return cell
     }
 
+    func collectionView(
+        _: UICollectionView,
+        layout _: UICollectionViewLayout,
+        sizeForItemAt indexPath: IndexPath
+    ) -> CGSize {
+        indexPath.item < sizes.count ? sizes[indexPath.item] : CGSize(width: Self.minWidth, height: Self.minWidth)
+    }
+
     func collectionView(_: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         onSelect?(indexPath.item)
     }
@@ -63,17 +82,15 @@ final class CandidateGrid: UIView, UICollectionViewDataSource, UICollectionViewD
             super.init(frame: frame)
             contentView.backgroundColor = SamsungTheme.keyWhite
             contentView.layer.cornerRadius = SamsungTheme.keyCornerRadius
-            label.font = .systemFont(ofSize: SamsungTheme.candidateFontSize)
+            label.font = CandidateGrid.font
             label.textColor = SamsungTheme.keyText
             label.textAlignment = .center
             label.translatesAutoresizingMaskIntoConstraints = false
             contentView.addSubview(label)
+            // 格子大小由外面算好給（sizeForItemAt），字置中就好
             NSLayoutConstraint.activate([
-                label.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
-                label.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
-                label.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 12),
-                label.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -12),
-                contentView.widthAnchor.constraint(greaterThanOrEqualToConstant: 48),
+                label.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+                label.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             ])
         }
 

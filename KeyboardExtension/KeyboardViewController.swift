@@ -99,7 +99,7 @@ final class KeyboardViewController: UIInputViewController {
 
         restoreMode()
         showMode()
-        setUpDismissHandle()
+        setUpDismiss()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -271,6 +271,9 @@ final class KeyboardViewController: UIInputViewController {
 
         case .backToLanguage:
             setMode(language)
+
+        case .dismiss:
+            dismissKeyboard()
 
         case .spacer:
             break

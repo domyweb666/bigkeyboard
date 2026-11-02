@@ -15,8 +15,6 @@ final class KeyButton: UIControl {
     var onRepeat: (() -> Void)?
     /// 手指按下／放開（給預覽泡泡用）
     var onPressChanged: ((Bool) -> Void)?
-    /// 從這顆鍵往下拖或往下撥（收鍵盤）。鍵自己判斷，不靠手勢辨識器：辨識器要跟系統手勢搶，常常判斷不到
-    var onSwipeDown: (() -> Void)?
     /// 按下就觸發 onTap、不等放開（展開鍵用：放開前觸控被系統取消也不會沒反應）
     var firesOnPress = false
     /// 觸控被取消時，手指沒怎麼動就照樣算按到。候選字關掉：它在可左右捲的列裡，取消代表使用者開始捲了
@@ -33,12 +31,9 @@ final class KeyButton: UIControl {
     private var longPressFired = false
     /// 快打時被下一顆鍵搶先送出了，放開時不再送一次
     private var firedEarly = false
-    // 往下拖的判斷：按下的位置與時間、最後一次移動的位置與時間、這次是不是已經算成往下拖
+    /// 按下的位置、最後一次移動的位置（判斷「手指幾乎沒動」用）
     private var trackStart = CGPoint.zero
-    private var trackStartTime: TimeInterval = 0
     private var trackLast = CGPoint.zero
-    private var trackLastTime: TimeInterval = 0
-    private var swiped = false
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -128,45 +123,20 @@ final class KeyButton: UIControl {
 
     override func beginTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
         trackStart = touch.location(in: nil)
-        trackStartTime = touch.timestamp
         trackLast = trackStart
-        trackLastTime = trackStartTime
-        swiped = false
         return super.beginTracking(touch, with: event)
     }
 
     override func continueTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
         trackLast = touch.location(in: nil)
-        trackLastTime = touch.timestamp
-        if detectSwipeDown(ended: false) {
-            return false
-        }
         return super.continueTracking(touch, with: event)
     }
 
     override func endTracking(_ touch: UITouch?, with event: UIEvent?) {
         if let touch {
             trackLast = touch.location(in: nil)
-            trackLastTime = touch.timestamp
         }
         super.endTracking(touch, with: event)
-    }
-
-    /// 往下為主、拖得夠遠（或放開時撥得夠快）→ 算收鍵盤，這次按下不送字
-    private func detectSwipeDown(ended: Bool) -> Bool {
-        guard onSwipeDown != nil, !swiped else { return false }
-        let dx = trackLast.x - trackStart.x
-        let dy = trackLast.y - trackStart.y
-        guard dy > abs(dx) * 1.5 else { return false }
-        let speed = dy / max(trackLastTime - trackStartTime, 0.001)
-        let dragged = dy > SamsungTheme.swipeDownDistance
-        let flicked = ended && dy > SamsungTheme.flickDownDistance && speed > SamsungTheme.flickDownSpeed
-        guard dragged || flicked else { return false }
-        swiped = true
-        stopTimers()
-        onPressChanged?(false)
-        onSwipeDown?()
-        return true
     }
 
     @objc private func touchDown() {
@@ -218,7 +188,7 @@ final class KeyButton: UIControl {
 
     /// 快打時下一顆鍵已經按下：這顆現在就算按完（不等手指放開）
     func fireNow() {
-        guard isTracking, onRepeat == nil, !longPressFired, !firedEarly, !swiped else { return }
+        guard isTracking, onRepeat == nil, !longPressFired, !firedEarly else { return }
         firedEarly = true
         stopTimers()
         onPressChanged?(false)
@@ -227,7 +197,7 @@ final class KeyButton: UIControl {
 
     @objc private func touchUpInside() {
         stopTimers()
-        guard !firesOnPress, !detectSwipeDown(ended: true), !swiped, !firedEarly, !longPressFired else { return }
+        guard !firesOnPress, !firedEarly, !longPressFired else { return }
         finishTap()
     }
 
@@ -244,7 +214,7 @@ final class KeyButton: UIControl {
     /// 手指幾乎沒移動就照樣算按到
     private func touchEnded(canTap: Bool) {
         stopTimers()
-        guard !firesOnPress, !detectSwipeDown(ended: true), !swiped, !firedEarly, !longPressFired else { return }
+        guard !firesOnPress, !firedEarly, !longPressFired else { return }
         let moved = hypot(trackLast.x - trackStart.x, trackLast.y - trackStart.y)
         if canTap, moved < SamsungTheme.tapSlop {
             finishTap()

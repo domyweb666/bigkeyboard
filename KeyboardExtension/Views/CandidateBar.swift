@@ -1,19 +1,12 @@
 import UIKit
 
-/// 工具列那排：橫向列出候選字（或打完字後的聯想詞），右端一顆展開鍵看全部候選。
+/// 工具列那排：橫向列出候選字（或打完字後的聯想詞），右邊一顆展開鍵看全部候選，最右邊一顆收鍵盤。
 /// 正在組的注音不顯示在這裡——它直接顯示在輸入框游標處（跟原生鍵盤一樣）。
 final class CandidateBar: UIView {
     var onSelect: ((Int) -> Void)?
     var onToggleExpand: (() -> Void)?
-    /// 從候選字或展開鍵往下拖（收鍵盤）
-    var onSwipeDown: (() -> Void)? {
-        didSet {
-            expandButton.onSwipeDown = onSwipeDown
-            for chip in chips {
-                chip.onSwipeDown = onSwipeDown
-            }
-        }
-    }
+    /// 收鍵盤
+    var onDismiss: (() -> Void)?
 
     /// 一列最多放幾個。常見的音候選有上百個，全放打字會卡；更多的按 ⌄ 展開看
     private static let maxShown = 30
@@ -26,6 +19,7 @@ final class CandidateBar: UIView {
     private let scroll = UIScrollView()
     private let stack = UIStackView()
     private let expandButton = KeyButton()
+    private let dismissButton = KeyButton()
     private let divider = UIView()
     /// 右端淡出：讓人看得出候選還能往右滑，最後一個字也不會被分隔線硬切一半。
     /// 用遮罩讓字本身漸漸透明，不是蓋一層底色上去：鍵盤底是透明的，蓋什麼顏色都會穿幫
@@ -48,12 +42,25 @@ final class CandidateBar: UIView {
         expandButton.layer.shadowOpacity = 0
         expandButton.setIcon("chevron.down", pointSize: SamsungTheme.expandIconPointSize)
         expandButton.onTap = { [weak self] in self?.onToggleExpand?() }
-        // 在最右邊、貼著螢幕邊緣：放開前觸控常被系統邊緣手勢取消，改成按下就展開
+        // 按下就展開，不等放開（放開前觸控被系統取消也不會沒反應）
         expandButton.firesOnPress = true
+        expandButton.accessibilityLabel = "全部候選字"
+
+        // 收鍵盤：跟系統工具列同一個圖示。放最右邊貼著螢幕邊緣，把展開鍵讓到裡面一點
+        // （2026-11-02 多米：展開鍵在邊緣按了常沒反應）
+        dismissButton.normalColor = .clear
+        dismissButton.layer.shadowOpacity = 0
+        dismissButton.setIcon("keyboard.chevron.compact.down", pointSize: SamsungTheme.dismissIconPointSize)
+        dismissButton.iconView.tintColor = SamsungTheme.hintText
+        dismissButton.onTap = { [weak self] in self?.onDismiss?() }
+        dismissButton.firesOnPress = true
+        dismissButton.isAccessibilityElement = true
+        dismissButton.accessibilityLabel = "收起鍵盤"
+        dismissButton.accessibilityTraits = .button
 
         divider.backgroundColor = SamsungTheme.hintText.withAlphaComponent(0.4)
 
-        for v in [clip, expandButton, divider] {
+        for v in [clip, expandButton, dismissButton, divider] {
             v.translatesAutoresizingMaskIntoConstraints = false
             addSubview(v)
         }
@@ -76,17 +83,21 @@ final class CandidateBar: UIView {
             divider.topAnchor.constraint(equalTo: topAnchor, constant: 10),
             divider.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -10),
 
-            expandButton.trailingAnchor.constraint(equalTo: trailingAnchor),
+            expandButton.trailingAnchor.constraint(equalTo: dismissButton.leadingAnchor),
             expandButton.topAnchor.constraint(equalTo: topAnchor),
             expandButton.bottomAnchor.constraint(equalTo: bottomAnchor),
-            // 展開鍵在最右邊，44 寬太難按
-            expandButton.widthAnchor.constraint(equalToConstant: 64),
+            expandButton.widthAnchor.constraint(equalToConstant: SamsungTheme.barButtonWidth),
+
+            dismissButton.trailingAnchor.constraint(equalTo: trailingAnchor),
+            dismissButton.topAnchor.constraint(equalTo: topAnchor),
+            dismissButton.bottomAnchor.constraint(equalTo: bottomAnchor),
+            dismissButton.widthAnchor.constraint(equalToConstant: SamsungTheme.barButtonWidth),
 
             stack.leadingAnchor.constraint(equalTo: scroll.contentLayoutGuide.leadingAnchor),
             stack.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor),
-            // 上面多留一點給收鍵盤的拖曳條，候選字不跟它疊在一起
-            stack.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor, constant: 8),
-            stack.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor, constant: -2),
+            // 頂端的拖曳條拿掉了（2026-11-02），候選字上下置中
+            stack.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor, constant: 5),
+            stack.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor, constant: -5),
             stack.heightAnchor.constraint(equalTo: scroll.frameLayoutGuide.heightAnchor, constant: -10),
         ])
     }
@@ -135,9 +146,8 @@ final class CandidateBar: UIView {
         }
         scroll.setContentOffset(.zero, animated: false)
         setNeedsLayout()
-        let canExpand = candidates.count > 0
-        expandButton.isHidden = !canExpand
-        divider.isHidden = !canExpand
+        // 沒有候選時展開鍵藏起來，分隔線照樣隔開收鍵盤鍵
+        expandButton.isHidden = candidates.isEmpty
         expandButton.setIcon(expanded ? "chevron.up" : "chevron.down", pointSize: SamsungTheme.expandIconPointSize)
     }
 
@@ -149,7 +159,6 @@ final class CandidateBar: UIView {
         b.layer.shadowOpacity = 0
         b.tag = i
         b.onTap = { [weak self] in self?.onSelect?(i) }
-        b.onSwipeDown = onSwipeDown
         b.tapsWhenCancelled = false
         b.widthAnchor.constraint(greaterThanOrEqualTo: b.label.widthAnchor, constant: 18).isActive = true
         b.widthAnchor.constraint(greaterThanOrEqualToConstant: 40).isActive = true

@@ -24,8 +24,12 @@ enum SamsungTheme {
     /// 候選字跟系統注音差不多大，比較好點，也不容易誤按到第一排的鍵
     static let candidateFontSize: CGFloat = 27
     static let iconPointSize: CGFloat = 20
-    /// 候選列最右邊的展開鍵 ⌄
+    /// 候選列右邊的展開鍵 ⌄
     static let expandIconPointSize: CGFloat = 24
+    /// 候選列最右邊的收鍵盤鍵
+    static let dismissIconPointSize: CGFloat = 21
+    /// 展開鍵、收鍵盤鍵的寬（展開鍵排在收鍵盤鍵左邊，離開螢幕邊緣：邊緣的觸控會被系統延後或取消）
+    static let barButtonWidth: CGFloat = 52
 
     /// 動態感應範圍：打了聲母後介音、韻母（打了介音後只剩韻母）多吃旁邊鍵這麼寬的邊；外觀不變
     static let likelyKeyTouchMargin: CGFloat = 10
@@ -34,11 +38,6 @@ enum SamsungTheme {
     /// 按下後移動不到這距離就放開，一律算按到這顆鍵（不管放開時在不在鍵上、觸控有沒有被系統取消）
     static let tapSlop: CGFloat = 20
 
-    // 往下拖收鍵盤：拖超過這距離就收；或放開時往下撥超過短距離、速度夠快也收。點鍵時手指滑不到這麼遠
-    static let swipeDownDistance: CGFloat = 40
-    static let flickDownDistance: CGFloat = 24
-    /// 每秒幾 pt
-    static let flickDownSpeed: CGFloat = 600
     /// 刪除鍵按住後的連刪間隔
     static let repeatInterval: TimeInterval = 0.08
 
@@ -54,8 +53,6 @@ enum SamsungTheme {
     static let keyText = dynamic(light: .black, dark: .white)
     /// 長按提示小字：在白鍵與各分區底色上都要過 4.5:1
     static let hintText = dynamic(light: rgb(0x5E5E5E), dark: rgb(0xD8D8DC))
-    /// 鍵盤頂端收鍵盤的拖曳條：淡一點、不搶眼（使用者 2026-11-02 要求），看得出有就好
-    static let grabber = dynamic(light: rgb(0xAEB2BA), dark: rgb(0x636366))
 
     // 注音分區底色：介音 ㄧㄨㄩ 剛好排成中間一直欄，把聲母（左）與韻母（右）隔開
     static let keyMedial = dynamic(light: rgb(0xD3E3F8), dark: rgb(0x35557A))
