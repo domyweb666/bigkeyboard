@@ -4,6 +4,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -60,6 +61,8 @@ std::vector<std::string> splitUTF8(const std::string &s) {
 // 每個結果的 rawValue 記下實際查中的讀音（帶聲調），選字後自動學詞要用。
 // 快打時每按一鍵都要查很多次：①一個音一個音展開，詞庫裡沒有這個開頭的就不往下展開（不再 5×5×5… 全試）；
 // ②查過的讀音記起來，同一段注音不重查。
+// 最後一個音只打了聲母（如「ㄧㄥ ㄍ」的 ㄍ）：當成還沒打完，補成詞庫裡以它開頭的音（應該），分數扣一點，
+// 讓完整打出來的音排在補出來的前面。
 class FuzzyToneLM : public Formosa::Gramambular2::LanguageModel {
 public:
     FuzzyToneLM(std::shared_ptr<McBopomofo::ParselessLM> lm, const char *dataPath) : lm_(std::move(lm)) {
@@ -78,12 +81,15 @@ public:
         auto hit = cache_.find(reading);
         if (hit != cache_.end()) return hit->second;
         std::vector<Unigram> out;
-        for (const auto &variant : expand(reading)) {
+        for (const auto &[variant, completed] : expand(reading)) {
+            double penalty = completed ? kCompletionPenalty : 0;
             auto user = user_.find(variant);
             if (user != user_.end()) {
-                for (const auto &u : user->second) out.emplace_back(u.value(), u.score(), variant);
+                for (const auto &u : user->second) out.emplace_back(u.value(), u.score() + penalty, variant);
             }
-            for (const auto &u : lm_->getUnigrams(variant)) out.emplace_back(u.value(), u.score(), variant);
+            for (const auto &u : lm_->getUnigrams(variant)) {
+                out.emplace_back(u.value(), u.score() + penalty, variant);
+            }
         }
         std::stable_sort(out.begin(), out.end(), [](const Unigram &a, const Unigram &b) {
             return a.score() > b.score();
@@ -95,7 +101,38 @@ public:
 
     bool hasUnigrams(const std::string &reading) override { return !getUnigrams(reading).empty(); }
 
+    /// 詞庫裡有沒有以這個音（可能還沒打完）開頭的讀音。「ㄉㄧㄦ」沒有 → 打 ㄦ 時要另起一個音
+    bool isSyllableStart(const std::string &syllable) const {
+        return !db_ || db_->findFirstMatchingLine(syllable) != nullptr;
+    }
+
 private:
+    static constexpr double kCompletionPenalty = -1.0;
+
+    // 只打了聲母、還沒打韻母和聲調
+    static bool isConsonantOnly(const std::string &syllable) {
+        BPMF s = BPMF::FromComposedString(syllable);
+        return s.hasConsonant() && !s.hasMiddleVowel() && !s.hasVowel() && !s.hasToneMarker();
+    }
+
+    // 詞庫和使用者字典裡以 key 開頭、音節數跟 key 一樣的讀音（key 的最後一個音是只打了聲母的）
+    std::vector<std::string> completions(const std::string &key) const {
+        auto dashes = std::count(key.begin(), key.end(), '-');
+        std::vector<std::string> out;
+        auto keep = [&](std::string_view full) {
+            if (std::count(full.begin(), full.end(), '-') != dashes) return;
+            std::string k(full);
+            if (std::find(out.begin(), out.end(), k) == out.end()) out.push_back(std::move(k));
+        };
+        if (db_) {
+            for (const auto &row : db_->findRows(key)) keep(row.substr(0, row.find(' ')));
+        }
+        for (auto it = user_.lower_bound(key); it != user_.end() && it->first.compare(0, key.size(), key) == 0; ++it) {
+            keep(it->first);
+        }
+        return out;
+    }
+
     static bool hasTone(const std::string &syllable) {
         for (const char *t : {"ˊ", "ˇ", "ˋ", "˙"}) {
             if (syllable.find(t) != std::string::npos) return true;
@@ -119,8 +156,9 @@ private:
     }
 
     // "ㄅㄨ-ㄧㄠˋ" → 詞庫裡真的有的那幾種，如 {"ㄅㄨˊ-ㄧㄠˋ"}（輕聲 ˙ 在詞庫裡寫在後面）。
-    // 一個音一個音接上去，接上後詞庫裡沒有這個開頭的就丟掉
-    std::vector<std::string> expand(const std::string &reading) const {
+    // 一個音一個音接上去，接上後詞庫裡沒有這個開頭的就丟掉。
+    // 最後一個音只打了聲母時，另外補上以它開頭的完整讀音（second = true 表示是補出來的）
+    std::vector<std::pair<std::string, bool>> expand(const std::string &reading) const {
         std::vector<std::string> syllables;
         size_t start = 0;
         for (size_t i = 0; i <= reading.size(); i++) {
@@ -130,6 +168,7 @@ private:
             }
         }
         std::vector<std::string> results{""};
+        std::vector<std::string> completed;
         for (size_t idx = 0; idx < syllables.size() && !results.empty(); idx++) {
             const auto &syl = syllables[idx];
             std::vector<std::string> variants;
@@ -140,6 +179,13 @@ private:
             }
             bool last = idx + 1 == syllables.size();
             std::vector<std::string> next;
+            if (last && isConsonantOnly(syl)) {
+                for (const auto &prefix : results) {
+                    for (auto &full : completions(idx == 0 ? syl : prefix + "-" + syl)) {
+                        completed.push_back(std::move(full));
+                    }
+                }
+            }
             for (const auto &prefix : results) {
                 for (const auto &v : variants) {
                     std::string candidate = idx == 0 ? v : prefix + "-" + v;
@@ -148,7 +194,12 @@ private:
             }
             results.swap(next);
         }
-        return results;
+        std::vector<std::pair<std::string, bool>> out;
+        for (auto &r : results) out.emplace_back(std::move(r), false);
+        for (auto &c : completed) {
+            if (std::find(results.begin(), results.end(), c) == results.end()) out.emplace_back(std::move(c), true);
+        }
+        return out;
     }
 
     std::shared_ptr<McBopomofo::ParselessLM> lm_;
@@ -284,7 +335,15 @@ void promotePreferred(std::vector<CachedCandidate> &cache, NSUInteger &defaults,
     char key = keyForSymbol(symbol.UTF8String);
     if (!key) return NO;
     BPMF incoming = BPMF::FromComposedString(symbol.UTF8String);
-    if (stage(incoming) <= stage(_buffer->syllable())) {
+    BPMF current = _buffer->syllable();
+    bool startNew = stage(incoming) <= stage(current);
+    if (!startNew && !current.isEmpty() && !incoming.hasToneMarker()) {
+        // 段落雖然排得上，但接上後變成不存在的音（如 ㄉㄧ＋ㄦ）→ 也另起新音，打「第二」不用打聲調
+        BPMF joined = current;
+        joined += incoming;
+        startNew = !_toneLM->isSyllableStart(joined.composedString());
+    }
+    if (startNew) {
         // 接不上目前這個音 → 目前的當一聲收起來，另起新音
         [self pushBufferIntoGrid];
     }
