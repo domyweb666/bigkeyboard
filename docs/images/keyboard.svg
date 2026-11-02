@@ -1,0 +1,320 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="868" height="442" viewBox="0 0 868 442" role="img" aria-label="豆鍵注音鍵盤（冷灰主題）">
+<title>豆鍵注音鍵盤（冷灰主題）</title>
+<rect width="868" height="442" rx="16" fill="#F3F3F5"/>
+<text x="24" y="40" font-size="15" font-weight="500" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#3A3A3F" text-anchor="start">淺色模式</text>
+<rect x="24" y="56" width="390" height="362" rx="22" fill="#E2E3E7"/>
+<rect x="32" y="62" width="72" height="36" rx="7.0" fill="#FFFFFF"/>
+<text x="68.0" y="89" text-anchor="middle" font-size="25" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">豆鍵</text>
+<text x="128.5" y="89" text-anchor="middle" font-size="25" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">豆</text>
+<text x="175.5" y="89" text-anchor="middle" font-size="25" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">鬥</text>
+<text x="222.5" y="89" text-anchor="middle" font-size="25" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">逗</text>
+<text x="269.5" y="89" text-anchor="middle" font-size="25" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">痘</text>
+<g transform="translate(318.0,66.0) scale(1.083)" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></g>
+<rect x="358" y="68" width="1" height="22" fill="#5E5E5E" opacity="0.4"/>
+<g transform="translate(374.0,66.0) scale(1.083)" fill="none" stroke="#5E5E5E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="11" rx="2"/><path d="M7 7h1M11 7h2M16 7h1M8 10.5h8"/><path d="M9 18l3 3 3-3"/></g>
+<rect x="28.0" y="109" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="28.0" y="108" width="30.2" height="44" rx="7.0" fill="#FFFFFF"/>
+<text x="43.1" y="139.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄅ</text>
+<rect x="63.2" y="109" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="63.2" y="108" width="30.2" height="44" rx="7.0" fill="#FFFFFF"/>
+<text x="78.3" y="139.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄉ</text>
+<rect x="98.4" y="109" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="98.4" y="108" width="30.2" height="44" rx="7.0" fill="#ECEDF1"/>
+<text x="113.5" y="148.2" text-anchor="middle" font-size="34" font-weight="700" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ˇ</text>
+<rect x="133.5" y="109" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="133.5" y="108" width="30.2" height="44" rx="7.0" fill="#ECEDF1"/>
+<text x="148.6" y="148.2" text-anchor="middle" font-size="34" font-weight="700" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ˋ</text>
+<rect x="168.7" y="109" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="168.7" y="108" width="30.2" height="44" rx="7.0" fill="#FFFFFF"/>
+<text x="183.8" y="139.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄓ</text>
+<rect x="203.9" y="109" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="203.9" y="108" width="30.2" height="44" rx="7.0" fill="#ECEDF1"/>
+<text x="219.0" y="148.2" text-anchor="middle" font-size="34" font-weight="700" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ˊ</text>
+<rect x="239.1" y="109" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="239.1" y="108" width="30.2" height="44" rx="7.0" fill="#ECEDF1"/>
+<text x="254.2" y="148.2" text-anchor="middle" font-size="34" font-weight="700" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">˙</text>
+<rect x="274.3" y="109" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="274.3" y="108" width="30.2" height="44" rx="7.0" fill="#FBE9D9"/>
+<text x="289.4" y="139.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄚ</text>
+<rect x="309.5" y="109" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="309.5" y="108" width="30.2" height="44" rx="7.0" fill="#FBE9D9"/>
+<text x="324.5" y="139.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄞ</text>
+<rect x="344.6" y="109" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="344.6" y="108" width="30.2" height="44" rx="7.0" fill="#FBE9D9"/>
+<text x="359.7" y="139.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄢ</text>
+<rect x="379.8" y="109" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="379.8" y="108" width="30.2" height="44" rx="7.0" fill="#FBE9D9"/>
+<text x="394.9" y="139.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄦ</text>
+<rect x="47.9" y="160" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="47.9" y="159" width="29.7" height="44" rx="7.0" fill="#FFFFFF"/>
+<text x="62.7" y="190.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄆ</text>
+<rect x="82.6" y="160" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="82.6" y="159" width="29.7" height="44" rx="7.0" fill="#FFFFFF"/>
+<text x="97.5" y="190.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄊ</text>
+<rect x="117.3" y="160" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="117.3" y="159" width="29.7" height="44" rx="7.0" fill="#FFFFFF"/>
+<text x="132.2" y="190.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄍ</text>
+<rect x="152.0" y="160" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="152.0" y="159" width="29.7" height="44" rx="7.0" fill="#FFFFFF"/>
+<text x="166.9" y="190.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄐ</text>
+<rect x="186.8" y="160" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="186.8" y="159" width="29.7" height="44" rx="7.0" fill="#FFFFFF"/>
+<text x="201.6" y="190.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄔ</text>
+<rect x="221.5" y="160" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="221.5" y="159" width="29.7" height="44" rx="7.0" fill="#FFFFFF"/>
+<text x="236.4" y="190.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄗ</text>
+<rect x="256.2" y="160" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="256.2" y="159" width="29.7" height="44" rx="7.0" fill="#D3E3F8"/>
+<text x="271.1" y="190.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄧ</text>
+<rect x="291.0" y="160" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="291.0" y="159" width="29.7" height="44" rx="7.0" fill="#FBE9D9"/>
+<text x="305.8" y="190.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄛ</text>
+<rect x="325.7" y="160" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="325.7" y="159" width="29.7" height="44" rx="7.0" fill="#FBE9D9"/>
+<text x="340.5" y="190.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄟ</text>
+<rect x="360.4" y="160" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="360.4" y="159" width="29.7" height="44" rx="7.0" fill="#FBE9D9"/>
+<text x="375.3" y="190.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄣ</text>
+<rect x="47.9" y="211" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="47.9" y="210" width="29.7" height="44" rx="7.0" fill="#FFFFFF"/>
+<text x="62.7" y="241.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄇ</text>
+<rect x="82.6" y="211" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="82.6" y="210" width="29.7" height="44" rx="7.0" fill="#FFFFFF"/>
+<text x="97.5" y="241.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄋ</text>
+<rect x="117.3" y="211" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="117.3" y="210" width="29.7" height="44" rx="7.0" fill="#FFFFFF"/>
+<text x="132.2" y="241.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄎ</text>
+<rect x="152.0" y="211" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="152.0" y="210" width="29.7" height="44" rx="7.0" fill="#FFFFFF"/>
+<text x="166.9" y="241.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄑ</text>
+<rect x="186.8" y="211" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="186.8" y="210" width="29.7" height="44" rx="7.0" fill="#FFFFFF"/>
+<text x="201.6" y="241.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄕ</text>
+<rect x="221.5" y="211" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="221.5" y="210" width="29.7" height="44" rx="7.0" fill="#FFFFFF"/>
+<text x="236.4" y="241.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄘ</text>
+<rect x="256.2" y="211" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="256.2" y="210" width="29.7" height="44" rx="7.0" fill="#D3E3F8"/>
+<text x="271.1" y="241.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄨ</text>
+<rect x="291.0" y="211" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="291.0" y="210" width="29.7" height="44" rx="7.0" fill="#FBE9D9"/>
+<text x="305.8" y="241.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄜ</text>
+<rect x="325.7" y="211" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="325.7" y="210" width="29.7" height="44" rx="7.0" fill="#FBE9D9"/>
+<text x="340.5" y="241.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄠ</text>
+<rect x="360.4" y="211" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="360.4" y="210" width="29.7" height="44" rx="7.0" fill="#FBE9D9"/>
+<text x="375.3" y="241.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄤ</text>
+<rect x="28.0" y="262" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="28.0" y="261" width="30.2" height="44" rx="7.0" fill="#FFFFFF"/>
+<text x="43.1" y="292.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄈ</text>
+<rect x="63.2" y="262" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="63.2" y="261" width="30.2" height="44" rx="7.0" fill="#FFFFFF"/>
+<text x="78.3" y="292.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄌ</text>
+<rect x="98.4" y="262" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="98.4" y="261" width="30.2" height="44" rx="7.0" fill="#FFFFFF"/>
+<text x="113.5" y="292.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄏ</text>
+<rect x="133.5" y="262" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="133.5" y="261" width="30.2" height="44" rx="7.0" fill="#FFFFFF"/>
+<text x="148.6" y="292.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄒ</text>
+<rect x="168.7" y="262" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="168.7" y="261" width="30.2" height="44" rx="7.0" fill="#FFFFFF"/>
+<text x="183.8" y="292.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄖ</text>
+<rect x="203.9" y="262" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="203.9" y="261" width="30.2" height="44" rx="7.0" fill="#FFFFFF"/>
+<text x="219.0" y="292.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄙ</text>
+<rect x="239.1" y="262" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="239.1" y="261" width="30.2" height="44" rx="7.0" fill="#D3E3F8"/>
+<text x="254.2" y="292.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄩ</text>
+<rect x="274.3" y="262" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="274.3" y="261" width="30.2" height="44" rx="7.0" fill="#FBE9D9"/>
+<text x="289.4" y="292.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄝ</text>
+<rect x="309.5" y="262" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="309.5" y="261" width="30.2" height="44" rx="7.0" fill="#FBE9D9"/>
+<text x="324.5" y="292.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄡ</text>
+<rect x="344.6" y="262" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="344.6" y="261" width="30.2" height="44" rx="7.0" fill="#FBE9D9"/>
+<text x="359.7" y="292.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ㄥ</text>
+<rect x="379.8" y="262" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="379.8" y="261" width="30.2" height="44" rx="7.0" fill="#C0C4CC"/>
+<g transform="translate(382.9,271.0) scale(1.000)" fill="none" stroke="#000000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6-7z"/><path d="M12.5 9.5l5 5M17.5 9.5l-5 5"/></g>
+<rect x="28.0" y="313" width="44.2" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="28.0" y="312" width="44.2" height="44" rx="7.0" fill="#C0C4CC"/>
+<text x="50.1" y="340.8" text-anchor="middle" font-size="19" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">符</text>
+<text x="67.2" y="325" text-anchor="end" font-size="10" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">123</text>
+<rect x="77.2" y="313" width="44.2" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="77.2" y="312" width="44.2" height="44" rx="7.0" fill="#C0C4CC"/>
+<text x="99.3" y="340.1" text-anchor="middle" font-size="17" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">ABC</text>
+<rect x="126.4" y="313" width="34.0" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="126.4" y="312" width="34.0" height="44" rx="7.0" fill="#FFFFFF"/>
+<text x="143.4" y="343.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">，</text>
+<rect x="165.4" y="313" width="146.2" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="165.4" y="312" width="146.2" height="44" rx="7.0" fill="#FFFFFF"/>
+<text x="238.5" y="351" text-anchor="middle" font-size="11" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#5E5E5E">注音</text>
+<rect x="316.6" y="313" width="34.0" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="316.6" y="312" width="34.0" height="44" rx="7.0" fill="#FFFFFF"/>
+<text x="333.6" y="343.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#000000">。</text>
+<rect x="355.6" y="313" width="54.4" height="44" rx="7.0" fill="rgba(0,0,0,0.14)"/>
+<rect x="355.6" y="312" width="54.4" height="44" rx="7.0" fill="#C0C4CC"/>
+<g transform="translate(370.8,322.0) scale(1.000)" fill="none" stroke="#000000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 5v7a2 2 0 0 1-2 2H5"/><path d="M9 10l-4 4 4 4"/></g>
+<g transform="translate(48.0,372.0) scale(1.083)" fill="none" stroke="#3C3C43" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></g>
+<g transform="translate(364.0,372.0) scale(1.083)" fill="none" stroke="#3C3C43" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></g>
+<text x="454" y="40" font-size="15" font-weight="500" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#3A3A3F" text-anchor="start">深色模式</text>
+<rect x="454" y="56" width="390" height="362" rx="22" fill="#2C2C2E"/>
+<rect x="462" y="62" width="72" height="36" rx="7.0" fill="#5B5B5F"/>
+<text x="498.0" y="89" text-anchor="middle" font-size="25" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">豆鍵</text>
+<text x="558.5" y="89" text-anchor="middle" font-size="25" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">豆</text>
+<text x="605.5" y="89" text-anchor="middle" font-size="25" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">鬥</text>
+<text x="652.5" y="89" text-anchor="middle" font-size="25" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">逗</text>
+<text x="699.5" y="89" text-anchor="middle" font-size="25" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">痘</text>
+<g transform="translate(748.0,66.0) scale(1.083)" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></g>
+<rect x="788" y="68" width="1" height="22" fill="#D8D8DC" opacity="0.4"/>
+<g transform="translate(804.0,66.0) scale(1.083)" fill="none" stroke="#D8D8DC" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="11" rx="2"/><path d="M7 7h1M11 7h2M16 7h1M8 10.5h8"/><path d="M9 18l3 3 3-3"/></g>
+<rect x="458.0" y="109" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="458.0" y="108" width="30.2" height="44" rx="7.0" fill="#5B5B5F"/>
+<text x="473.1" y="139.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄅ</text>
+<rect x="493.2" y="109" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="493.2" y="108" width="30.2" height="44" rx="7.0" fill="#5B5B5F"/>
+<text x="508.3" y="139.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄉ</text>
+<rect x="528.4" y="109" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="528.4" y="108" width="30.2" height="44" rx="7.0" fill="#4B4B4F"/>
+<text x="543.5" y="148.2" text-anchor="middle" font-size="34" font-weight="700" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ˇ</text>
+<rect x="563.5" y="109" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="563.5" y="108" width="30.2" height="44" rx="7.0" fill="#4B4B4F"/>
+<text x="578.6" y="148.2" text-anchor="middle" font-size="34" font-weight="700" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ˋ</text>
+<rect x="598.7" y="109" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="598.7" y="108" width="30.2" height="44" rx="7.0" fill="#5B5B5F"/>
+<text x="613.8" y="139.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄓ</text>
+<rect x="633.9" y="109" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="633.9" y="108" width="30.2" height="44" rx="7.0" fill="#4B4B4F"/>
+<text x="649.0" y="148.2" text-anchor="middle" font-size="34" font-weight="700" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ˊ</text>
+<rect x="669.1" y="109" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="669.1" y="108" width="30.2" height="44" rx="7.0" fill="#4B4B4F"/>
+<text x="684.2" y="148.2" text-anchor="middle" font-size="34" font-weight="700" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">˙</text>
+<rect x="704.3" y="109" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="704.3" y="108" width="30.2" height="44" rx="7.0" fill="#5F4C40"/>
+<text x="719.4" y="139.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄚ</text>
+<rect x="739.5" y="109" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="739.5" y="108" width="30.2" height="44" rx="7.0" fill="#5F4C40"/>
+<text x="754.5" y="139.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄞ</text>
+<rect x="774.6" y="109" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="774.6" y="108" width="30.2" height="44" rx="7.0" fill="#5F4C40"/>
+<text x="789.7" y="139.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄢ</text>
+<rect x="809.8" y="109" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="809.8" y="108" width="30.2" height="44" rx="7.0" fill="#5F4C40"/>
+<text x="824.9" y="139.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄦ</text>
+<rect x="477.9" y="160" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="477.9" y="159" width="29.7" height="44" rx="7.0" fill="#5B5B5F"/>
+<text x="492.7" y="190.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄆ</text>
+<rect x="512.6" y="160" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="512.6" y="159" width="29.7" height="44" rx="7.0" fill="#5B5B5F"/>
+<text x="527.5" y="190.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄊ</text>
+<rect x="547.3" y="160" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="547.3" y="159" width="29.7" height="44" rx="7.0" fill="#5B5B5F"/>
+<text x="562.2" y="190.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄍ</text>
+<rect x="582.0" y="160" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="582.0" y="159" width="29.7" height="44" rx="7.0" fill="#5B5B5F"/>
+<text x="596.9" y="190.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄐ</text>
+<rect x="616.8" y="160" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="616.8" y="159" width="29.7" height="44" rx="7.0" fill="#5B5B5F"/>
+<text x="631.6" y="190.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄔ</text>
+<rect x="651.5" y="160" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="651.5" y="159" width="29.7" height="44" rx="7.0" fill="#5B5B5F"/>
+<text x="666.4" y="190.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄗ</text>
+<rect x="686.2" y="160" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="686.2" y="159" width="29.7" height="44" rx="7.0" fill="#35557A"/>
+<text x="701.1" y="190.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄧ</text>
+<rect x="721.0" y="160" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="721.0" y="159" width="29.7" height="44" rx="7.0" fill="#5F4C40"/>
+<text x="735.8" y="190.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄛ</text>
+<rect x="755.7" y="160" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="755.7" y="159" width="29.7" height="44" rx="7.0" fill="#5F4C40"/>
+<text x="770.5" y="190.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄟ</text>
+<rect x="790.4" y="160" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="790.4" y="159" width="29.7" height="44" rx="7.0" fill="#5F4C40"/>
+<text x="805.3" y="190.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄣ</text>
+<rect x="477.9" y="211" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="477.9" y="210" width="29.7" height="44" rx="7.0" fill="#5B5B5F"/>
+<text x="492.7" y="241.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄇ</text>
+<rect x="512.6" y="211" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="512.6" y="210" width="29.7" height="44" rx="7.0" fill="#5B5B5F"/>
+<text x="527.5" y="241.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄋ</text>
+<rect x="547.3" y="211" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="547.3" y="210" width="29.7" height="44" rx="7.0" fill="#5B5B5F"/>
+<text x="562.2" y="241.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄎ</text>
+<rect x="582.0" y="211" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="582.0" y="210" width="29.7" height="44" rx="7.0" fill="#5B5B5F"/>
+<text x="596.9" y="241.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄑ</text>
+<rect x="616.8" y="211" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="616.8" y="210" width="29.7" height="44" rx="7.0" fill="#5B5B5F"/>
+<text x="631.6" y="241.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄕ</text>
+<rect x="651.5" y="211" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="651.5" y="210" width="29.7" height="44" rx="7.0" fill="#5B5B5F"/>
+<text x="666.4" y="241.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄘ</text>
+<rect x="686.2" y="211" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="686.2" y="210" width="29.7" height="44" rx="7.0" fill="#35557A"/>
+<text x="701.1" y="241.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄨ</text>
+<rect x="721.0" y="211" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="721.0" y="210" width="29.7" height="44" rx="7.0" fill="#5F4C40"/>
+<text x="735.8" y="241.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄜ</text>
+<rect x="755.7" y="211" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="755.7" y="210" width="29.7" height="44" rx="7.0" fill="#5F4C40"/>
+<text x="770.5" y="241.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄠ</text>
+<rect x="790.4" y="211" width="29.7" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="790.4" y="210" width="29.7" height="44" rx="7.0" fill="#5F4C40"/>
+<text x="805.3" y="241.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄤ</text>
+<rect x="458.0" y="262" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="458.0" y="261" width="30.2" height="44" rx="7.0" fill="#5B5B5F"/>
+<text x="473.1" y="292.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄈ</text>
+<rect x="493.2" y="262" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="493.2" y="261" width="30.2" height="44" rx="7.0" fill="#5B5B5F"/>
+<text x="508.3" y="292.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄌ</text>
+<rect x="528.4" y="262" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="528.4" y="261" width="30.2" height="44" rx="7.0" fill="#5B5B5F"/>
+<text x="543.5" y="292.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄏ</text>
+<rect x="563.5" y="262" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="563.5" y="261" width="30.2" height="44" rx="7.0" fill="#5B5B5F"/>
+<text x="578.6" y="292.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄒ</text>
+<rect x="598.7" y="262" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="598.7" y="261" width="30.2" height="44" rx="7.0" fill="#5B5B5F"/>
+<text x="613.8" y="292.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄖ</text>
+<rect x="633.9" y="262" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="633.9" y="261" width="30.2" height="44" rx="7.0" fill="#5B5B5F"/>
+<text x="649.0" y="292.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄙ</text>
+<rect x="669.1" y="262" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="669.1" y="261" width="30.2" height="44" rx="7.0" fill="#35557A"/>
+<text x="684.2" y="292.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄩ</text>
+<rect x="704.3" y="262" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="704.3" y="261" width="30.2" height="44" rx="7.0" fill="#5F4C40"/>
+<text x="719.4" y="292.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄝ</text>
+<rect x="739.5" y="262" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="739.5" y="261" width="30.2" height="44" rx="7.0" fill="#5F4C40"/>
+<text x="754.5" y="292.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄡ</text>
+<rect x="774.6" y="262" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="774.6" y="261" width="30.2" height="44" rx="7.0" fill="#5F4C40"/>
+<text x="789.7" y="292.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ㄥ</text>
+<rect x="809.8" y="262" width="30.2" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="809.8" y="261" width="30.2" height="44" rx="7.0" fill="#3B3B3E"/>
+<g transform="translate(812.9,271.0) scale(1.000)" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6-7z"/><path d="M12.5 9.5l5 5M17.5 9.5l-5 5"/></g>
+<rect x="458.0" y="313" width="44.2" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="458.0" y="312" width="44.2" height="44" rx="7.0" fill="#3B3B3E"/>
+<text x="480.1" y="340.8" text-anchor="middle" font-size="19" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">符</text>
+<text x="497.2" y="325" text-anchor="end" font-size="10" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">123</text>
+<rect x="507.2" y="313" width="44.2" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="507.2" y="312" width="44.2" height="44" rx="7.0" fill="#3B3B3E"/>
+<text x="529.3" y="340.1" text-anchor="middle" font-size="17" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">ABC</text>
+<rect x="556.4" y="313" width="34.0" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="556.4" y="312" width="34.0" height="44" rx="7.0" fill="#5B5B5F"/>
+<text x="573.4" y="343.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">，</text>
+<rect x="595.4" y="313" width="146.2" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="595.4" y="312" width="146.2" height="44" rx="7.0" fill="#5B5B5F"/>
+<text x="668.5" y="351" text-anchor="middle" font-size="11" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#D8D8DC">注音</text>
+<rect x="746.6" y="313" width="34.0" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="746.6" y="312" width="34.0" height="44" rx="7.0" fill="#5B5B5F"/>
+<text x="763.6" y="343.4" text-anchor="middle" font-size="26" font-weight="400" font-family="PingFang TC, Noto Sans TC, Microsoft JhengHei, sans-serif" fill="#FFFFFF">。</text>
+<rect x="785.6" y="313" width="54.4" height="44" rx="7.0" fill="rgba(0,0,0,0.35)"/>
+<rect x="785.6" y="312" width="54.4" height="44" rx="7.0" fill="#3B3B3E"/>
+<g transform="translate(800.8,322.0) scale(1.000)" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 5v7a2 2 0 0 1-2 2H5"/><path d="M9 10l-4 4 4 4"/></g>
+<g transform="translate(478.0,372.0) scale(1.083)" fill="none" stroke="#EBEBF5" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></g>
+<g transform="translate(794.0,372.0) scale(1.083)" fill="none" stroke="#EBEBF5" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></g>
+</svg>
