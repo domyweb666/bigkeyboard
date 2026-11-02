@@ -159,12 +159,23 @@ extension KeyboardViewController {
         return out
     }
 
+    /// 正在打的音打到哪 → 哪一類注音鍵要變寬
+    private func currentEmphasis() -> KeyboardView.Emphasis {
+        guard mode == .bopomofo, let engine else { return .none }
+        switch engine.composingStage {
+        case 1: return .afterConsonant
+        case 2: return .afterMedial
+        default: return .none
+        }
+    }
+
     func toggleExpand() {
         expanded.toggle()
         refreshBar()
     }
 
     func refreshBar() {
+        keyboardView.emphasis = currentEmphasis()
         let items = barItems
         if items.isEmpty {
             expanded = false

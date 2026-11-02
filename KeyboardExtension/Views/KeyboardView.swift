@@ -22,10 +22,32 @@ final class KeyboardView: UIView {
         }
     }
 
+    /// 動態鍵寬：正在打的音打到哪，下一顆可能按的那類注音鍵就變寬
+    enum Emphasis {
+        case none
+        /// 只打了聲母 → 介音、韻母變寬
+        case afterConsonant
+        /// 打到介音 → 韻母變寬
+        case afterMedial
+    }
+
+    var emphasis: Emphasis = .none {
+        didSet {
+            guard emphasis != oldValue else { return }
+            applyWidths()
+            UIView.animate(withDuration: SamsungTheme.emphasisAnimation) {
+                self.layoutIfNeeded()
+            }
+        }
+    }
+
     private let rowsStack = UIStackView()
     private let bubble = KeyPreviewBubble()
     private var buttons: [KeyButton] = []
     private var specs: [KeyButton: KeySpec] = [:]
+    /// 每一排的鍵（含空位）與它們的資料，重算寬度用
+    private var rows: [(stack: UIStackView, keys: [(view: UIView, spec: KeySpec)])] = []
+    private var widthConstraints: [NSLayoutConstraint] = []
     /// 目前按著還沒放開的那顆（快打時判斷「上一顆還沒放、下一顆已按下」）
     private weak var heldKey: KeyButton?
 
@@ -73,13 +95,13 @@ final class KeyboardView: UIView {
         rowsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         buttons.removeAll()
         specs.removeAll()
+        self.rows.removeAll()
         for row in rows {
             let rowStack = UIStackView()
             rowStack.axis = .horizontal
             rowStack.spacing = SamsungTheme.keyGap
             rowStack.alignment = .fill
-            let total = row.reduce(0) { $0 + $1.width }
-            let gaps = SamsungTheme.keyGap * CGFloat(row.count - 1)
+            var keys: [(view: UIView, spec: KeySpec)] = []
             for spec in row {
                 // 空位不是鍵：按在上面由 hitTest 算給最近的鍵
                 let b: UIView = if case .spacer = spec.action {
@@ -88,16 +110,46 @@ final class KeyboardView: UIView {
                     makeButton(spec)
                 }
                 rowStack.addArrangedSubview(b)
-                b.widthAnchor.constraint(
-                    equalTo: rowStack.widthAnchor,
-                    multiplier: spec.width / total,
-                    constant: -gaps * spec.width / total
-                ).isActive = true
+                keys.append((b, spec))
             }
+            self.rows.append((rowStack, keys))
             rowsStack.addArrangedSubview(rowStack)
         }
+        applyWidths()
         bringSubviewToFront(bubble)
         applyShiftAppearance()
+    }
+
+    /// 照 emphasis 算每顆鍵的寬：一排的總寬不變，變寬的鍵從變窄的鍵那裡拿空間
+    private func applyWidths() {
+        NSLayoutConstraint.deactivate(widthConstraints)
+        widthConstraints.removeAll()
+        for row in rows {
+            let widths = row.keys.map { $0.spec.width * widthFactor($0.spec) }
+            let total = widths.reduce(0, +)
+            let gaps = SamsungTheme.keyGap * CGFloat(row.keys.count - 1)
+            for (key, w) in zip(row.keys, widths) {
+                let c = key.view.widthAnchor.constraint(
+                    equalTo: row.stack.widthAnchor,
+                    multiplier: w / total,
+                    constant: -gaps * w / total
+                )
+                widthConstraints.append(c)
+            }
+        }
+        NSLayoutConstraint.activate(widthConstraints)
+    }
+
+    private func widthFactor(_ spec: KeySpec) -> CGFloat {
+        guard let group = spec.zhuyin, group != .tone else { return 1 }
+        switch (emphasis, group) {
+        case (.none, _):
+            return 1
+        case (.afterConsonant, .medial), (.afterConsonant, .final), (.afterMedial, .final):
+            return SamsungTheme.emphasisGrow
+        default:
+            return SamsungTheme.emphasisShrink
+        }
     }
 
     private func makeButton(_ spec: KeySpec) -> KeyButton {

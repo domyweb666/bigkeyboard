@@ -14,6 +14,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 目前正在組、尚未送出的注音（如「ㄋㄧˇ ㄏㄠˇ」，音與音之間空一格）。空字串表示沒有在組。
 @property (nonatomic, readonly) NSString *composing;
 
+/// 正在打的那個音打到哪一段：0 沒在打、1 只有聲母、2 到介音、3 到韻母（打了聲調就收進格子，回到 0）
+@property (nonatomic, readonly) NSInteger composingStage;
+
 /// 目前注音對應的候選字，依機率高到低。沒在組字時為空陣列。
 @property (nonatomic, readonly) NSArray<NSString *> *candidates;
 

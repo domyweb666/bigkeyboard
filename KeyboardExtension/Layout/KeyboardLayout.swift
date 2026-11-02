@@ -46,6 +46,15 @@ struct KeySpec {
     let tint: UIColor?
     /// 聲調這類筆畫細的符號：放大加粗
     let isTone: Bool
+    /// 注音鍵屬於哪一類（動態鍵寬用）；不是注音鍵為 nil
+    let zhuyin: ZhuyinGroup?
+
+    enum ZhuyinGroup {
+        case consonant
+        case medial
+        case final
+        case tone
+    }
 
     init(
         _ label: String,
@@ -57,7 +66,8 @@ struct KeySpec {
         longAction: Action? = nil,
         longHint: String? = nil,
         tint: UIColor? = nil,
-        isTone: Bool = false
+        isTone: Bool = false,
+        zhuyin: ZhuyinGroup? = nil
     ) {
         self.label = label
         self.action = action
@@ -69,6 +79,7 @@ struct KeySpec {
         self.longHint = longHint
         self.tint = tint
         self.isTone = isTone
+        self.zhuyin = zhuyin
     }
 
     /// 半顆鍵寬的空位
@@ -131,9 +142,19 @@ enum BopomofoLayout {
         return nil
     }
 
+    private static func group(_ s: String) -> KeySpec.ZhuyinGroup {
+        if tones.contains(s) {
+            return .tone
+        }
+        if medials.contains(s) {
+            return .medial
+        }
+        return finals.contains(s) ? .final : .consonant
+    }
+
     private static func keys(_ symbols: [String]) -> KeyRow {
         symbols.map { s in
-            KeySpec(s, .bopomofo(s), tint: tint(s), isTone: tones.contains(s))
+            KeySpec(s, .bopomofo(s), tint: tint(s), isTone: tones.contains(s), zhuyin: group(s))
         }
     }
 

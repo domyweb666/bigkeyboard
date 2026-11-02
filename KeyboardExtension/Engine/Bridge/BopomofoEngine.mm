@@ -370,6 +370,10 @@ void promotePreferred(std::vector<CachedCandidate> &cache, NSUInteger &defaults,
     return [NSString stringWithUTF8String:s.c_str()];
 }
 
+- (NSInteger)composingStage {
+    return stage(_buffer->syllable());
+}
+
 - (NSArray<NSString *> *)candidates {
     NSMutableArray<NSString *> *out = [NSMutableArray arrayWithCapacity:_candidateCache.size()];
     for (const auto &c : _candidateCache) {
