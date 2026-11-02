@@ -38,6 +38,24 @@ final class CandidateBar: UIView {
         scroll.addSubview(stack)
         clip.addSubview(scroll)
 
+        setUpButtons()
+
+        for v in [clip, expandButton, dismissButton, divider] {
+            v.translatesAutoresizingMaskIntoConstraints = false
+            addSubview(v)
+        }
+        scroll.translatesAutoresizingMaskIntoConstraints = false
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        activateConstraints()
+    }
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError("not used")
+    }
+
+    /// 展開鍵、收鍵盤鍵、分隔線的樣子與動作
+    private func setUpButtons() {
         expandButton.normalColor = .clear
         expandButton.layer.shadowOpacity = 0
         expandButton.setIcon("chevron.down", pointSize: SamsungTheme.expandIconPointSize)
@@ -59,14 +77,9 @@ final class CandidateBar: UIView {
         dismissButton.accessibilityTraits = .button
 
         divider.backgroundColor = SamsungTheme.hintText.withAlphaComponent(0.4)
+    }
 
-        for v in [clip, expandButton, dismissButton, divider] {
-            v.translatesAutoresizingMaskIntoConstraints = false
-            addSubview(v)
-        }
-        scroll.translatesAutoresizingMaskIntoConstraints = false
-        stack.translatesAutoresizingMaskIntoConstraints = false
-
+    private func activateConstraints() {
         NSLayoutConstraint.activate([
             clip.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 4),
             clip.trailingAnchor.constraint(equalTo: divider.leadingAnchor),
@@ -100,11 +113,6 @@ final class CandidateBar: UIView {
             stack.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor, constant: -5),
             stack.heightAnchor.constraint(equalTo: scroll.frameLayoutGuide.heightAnchor, constant: -10),
         ])
-    }
-
-    @available(*, unavailable)
-    required init?(coder _: NSCoder) {
-        fatalError("not used")
     }
 
     override func layoutSubviews() {

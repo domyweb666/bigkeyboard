@@ -272,10 +272,7 @@ final class KeyboardViewController: UIInputViewController {
         case .backToLanguage:
             setMode(language)
 
-        case .dismiss:
-            dismissKeyboard()
-
-        case .spacer:
+        case .dismiss, .spacer: // 收鍵盤只從長按來（handleLongPress）
             break
         }
         if mode == .english {
@@ -299,6 +296,10 @@ final class KeyboardViewController: UIInputViewController {
 
     private func handleLongPress(_ spec: KeySpec) {
         guard let longAction = spec.longAction else { return }
+        if case .dismiss = longAction {
+            dismissKeyboard()
+            return
+        }
         handle(KeySpec(spec.label, longAction))
     }
 }
