@@ -6,6 +6,8 @@ final class KeyboardView: UIView {
     var onLongKey: ((KeySpec) -> Void)?
     /// 任何一顆鍵被按下（給按鍵聲用）
     var onAnyPress: (() -> Void)?
+    /// 從任何一顆鍵往下拖（收鍵盤）
+    var onSwipeDown: (() -> Void)?
 
     /// shift 狀態（只影響英文字母的顯示與送出）
     enum ShiftState {
@@ -125,6 +127,7 @@ final class KeyboardView: UIView {
         if spec.longAction != nil {
             b.onLongPress = { [weak self] in self?.onLongKey?(spec) }
         }
+        b.onSwipeDown = { [weak self] in self?.onSwipeDown?() }
         let showsBubble = !spec.isFunction && !spec.label.isEmpty
         b.onPressChanged = { [weak self, weak b] pressed in
             guard let self, let b else { return }

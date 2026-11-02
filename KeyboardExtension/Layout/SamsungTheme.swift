@@ -28,6 +28,12 @@ enum SamsungTheme {
     static let expandIconPointSize: CGFloat = 24
 
     static let longPressSeconds: TimeInterval = 0.4
+
+    // 往下拖收鍵盤：拖超過這距離就收；或放開時往下撥超過短距離、速度夠快也收。點鍵時手指滑不到這麼遠
+    static let swipeDownDistance: CGFloat = 40
+    static let flickDownDistance: CGFloat = 24
+    /// 每秒幾 pt
+    static let flickDownSpeed: CGFloat = 600
     /// 刪除鍵按住後的連刪間隔
     static let repeatInterval: TimeInterval = 0.08
 

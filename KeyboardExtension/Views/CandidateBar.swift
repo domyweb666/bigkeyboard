@@ -5,6 +5,12 @@ import UIKit
 final class CandidateBar: UIView {
     var onSelect: ((Int) -> Void)?
     var onToggleExpand: (() -> Void)?
+    /// 從候選字或展開鍵往下拖（收鍵盤）
+    var onSwipeDown: (() -> Void)? {
+        didSet {
+            expandButton.onSwipeDown = onSwipeDown
+        }
+    }
 
     /// 一列最多放幾個。每打一個注音這列就重建一次，常見的音候選有上百個，全放打字會卡；更多的按 ⌄ 展開看
     private static let maxShown = 30
@@ -36,6 +42,8 @@ final class CandidateBar: UIView {
         expandButton.layer.shadowOpacity = 0
         expandButton.setIcon("chevron.down", pointSize: SamsungTheme.expandIconPointSize)
         expandButton.onTap = { [weak self] in self?.onToggleExpand?() }
+        // 在最右邊、貼著螢幕邊緣：放開前觸控常被系統邊緣手勢取消，改成按下就展開
+        expandButton.firesOnPress = true
 
         divider.backgroundColor = SamsungTheme.hintText.withAlphaComponent(0.4)
 
@@ -66,7 +74,7 @@ final class CandidateBar: UIView {
             expandButton.topAnchor.constraint(equalTo: topAnchor),
             expandButton.bottomAnchor.constraint(equalTo: bottomAnchor),
             // 展開鍵在最右邊，44 寬太難按
-            expandButton.widthAnchor.constraint(equalToConstant: 56),
+            expandButton.widthAnchor.constraint(equalToConstant: 64),
 
             stack.leadingAnchor.constraint(equalTo: scroll.contentLayoutGuide.leadingAnchor),
             stack.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor),
@@ -116,6 +124,7 @@ final class CandidateBar: UIView {
             b.normalColor = (i == 0 && highlightFirst) ? SamsungTheme.keyWhite : .clear
             b.tag = i
             b.onTap = { [weak self] in self?.onSelect?(i) }
+            b.onSwipeDown = onSwipeDown
             b.widthAnchor.constraint(greaterThanOrEqualTo: b.label.widthAnchor, constant: 18).isActive = true
             b.widthAnchor.constraint(greaterThanOrEqualToConstant: 40).isActive = true
             stack.addArrangedSubview(b)
