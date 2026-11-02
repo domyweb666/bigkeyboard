@@ -27,10 +27,8 @@ enum SamsungTheme {
     /// 候選列最右邊的展開鍵 ⌄
     static let expandIconPointSize: CGFloat = 24
 
-    // 動態鍵寬：打了聲母後介音、韻母變寬（打了介音後只剩韻母），其他注音字鍵變窄；聲調鍵不變
-    static let emphasisGrow: CGFloat = 1.4
-    static let emphasisShrink: CGFloat = 0.75
-    static let emphasisAnimation: TimeInterval = 0.1
+    /// 動態感應範圍：打了聲母後介音、韻母（打了介音後只剩韻母）多吃旁邊鍵這麼寬的邊；外觀不變
+    static let likelyKeyTouchMargin: CGFloat = 10
 
     static let longPressSeconds: TimeInterval = 0.4
     /// 按下後移動不到這距離就放開，一律算按到這顆鍵（不管放開時在不在鍵上、觸控有沒有被系統取消）
