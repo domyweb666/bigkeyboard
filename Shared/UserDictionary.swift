@@ -37,6 +37,8 @@ enum UserDictionary {
         var ignored: [String] = []
         /// 鍵盤最後一次寫入的時間（App 用來顯示「自動學習中」）
         var keyboardSeen: Date?
+        /// 接續紀錄：前面的 1～2 個字 → 用豆鍵在它後面打出的字詞 → 次數。只存字，不存整段文字
+        var follows: [String: [String: Int]] = [:]
     }
 
     static var fileURL: URL? {
@@ -93,6 +95,25 @@ extension UserDictionary.File {
         words = try c.decodeIfPresent([UserDictionary.Word].self, forKey: .words) ?? []
         ignored = try c.decodeIfPresent([String].self, forKey: .ignored) ?? []
         keyboardSeen = try c.decodeIfPresent(Date.self, forKey: .keyboardSeen)
+        follows = try c.decodeIfPresent([String: [String: Int]].self, forKey: .follows) ?? [:]
+    }
+
+    /// 記一筆接續：context（前面 1～2 個字）後面打了 text。每個 context 只留最常用的 30 個；
+    /// context 超過 6000 個時，丟掉總次數最少的，剩 5000 個（檔案不會無限長大）
+    mutating func addFollow(_ text: String, after context: String) {
+        var next = follows[context] ?? [:]
+        next[text, default: 0] += 1
+        if next.count > 30 {
+            // 次數一樣時留剛打的這個，新詞才有機會留下來
+            let keep = next.sorted { a, b in
+                (a.value, a.key == text ? 1 : 0) > (b.value, b.key == text ? 1 : 0)
+            }.prefix(30)
+            next = Dictionary(uniqueKeysWithValues: keep.map { ($0.key, $0.value) })
+        }
+        follows[context] = next
+        guard follows.count > 6000 else { return }
+        let ranked = follows.sorted { $0.value.values.reduce(0, +) > $1.value.values.reduce(0, +) }
+        follows = Dictionary(uniqueKeysWithValues: ranked.prefix(5000).map { ($0.key, $0.value) })
     }
 
     /// 自動學到一個詞：已經有就加次數；在 App 裡刪過的不再學

@@ -134,6 +134,38 @@ struct CachedCandidate {
     std::string reading;
 };
 
+// 依使用者的接續紀錄調整候選順序：吃掉全部音（span == total）的提到最前面、算引擎猜的；
+// 只吃前段的排在原本引擎猜的後面。defaults 跟著改成新的「引擎猜的」個數。
+void promotePreferred(std::vector<CachedCandidate> &cache, NSUInteger &defaults,
+                      const std::vector<std::string> &preferred, size_t total) {
+    std::vector<bool> taken(cache.size(), false);
+    std::vector<CachedCandidate> front;
+    std::vector<CachedCandidate> middle;
+    for (const auto &word : preferred) {
+        for (size_t i = 0; i < cache.size(); i++) {
+            if (taken[i] || cache[i].value != word) continue;
+            taken[i] = true;
+            (cache[i].span == total ? front : middle).push_back(cache[i]);
+            break;
+        }
+    }
+    if (front.empty() && middle.empty()) return;
+    std::vector<CachedCandidate> out = front;
+    size_t keptDefaults = 0;
+    for (size_t i = 0; i < defaults && i < cache.size(); i++) {
+        if (!taken[i]) {
+            out.push_back(cache[i]);
+            keptDefaults++;
+        }
+    }
+    out.insert(out.end(), middle.begin(), middle.end());
+    for (size_t i = defaults; i < cache.size(); i++) {
+        if (!taken[i]) out.push_back(cache[i]);
+    }
+    defaults = front.size() + keptDefaults;
+    cache.swap(out);
+}
+
 } // namespace
 
 @implementation BopomofoEngine {
@@ -145,6 +177,7 @@ struct CachedCandidate {
     std::unique_ptr<McBopomofo::AssociatedPhrasesV2> _associated;
     std::string _lastSelectedReading;
     NSUInteger _defaultCandidateCount;
+    std::vector<std::string> _preferred; // 使用者常接在游標前那段字後面的字詞
 }
 
 - (nullable instancetype)initWithDataPath:(NSString *)dataPath associatedPath:(nullable NSString *)associatedPath {
@@ -206,6 +239,7 @@ struct CachedCandidate {
         for (const auto &e : _candidateCache) if (e.value == c.value) { dup = true; break; }
         if (!dup) _candidateCache.push_back({c.value, span, c.rawValue});
     }
+    promotePreferred(_candidateCache, _defaultCandidateCount, _preferred, _grid->length());
 
     if (tentative) {
         _grid->setCursor(_grid->length());
@@ -334,6 +368,12 @@ struct CachedCandidate {
         list.emplace_back(std::string(words[i].UTF8String), -0.0001 * static_cast<double>(list.size()));
     }
     _toneLM->setUserPhrases(std::move(phrases));
+}
+
+- (void)setPreferredFollowers:(NSArray<NSString *> *)words {
+    _preferred.clear();
+    for (NSString *w in words) _preferred.emplace_back(w.UTF8String);
+    if (_grid->length() > 0 || !_buffer->isEmpty()) [self rebuildCandidates];
 }
 
 - (NSUInteger)defaultCandidateCount {

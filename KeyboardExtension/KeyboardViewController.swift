@@ -33,6 +33,13 @@ final class KeyboardViewController: UIInputViewController {
     var lastShiftTap = Date.distantPast
     /// 這段組字選過的字（判斷要不要自動加詞）
     var learning = LearningSession()
+    /// 開始組字時游標前面的最後兩個字（查「這後面通常接什麼」用）
+    var composeContext = ""
+    /// 接續紀錄：前面 1～2 個字 → 用豆鍵在它後面打過的字詞 → 次數。鍵盤出現時從字典檔讀進來
+    var follows: [String: [String: Int]] = [:]
+    /// 還沒寫進字典檔的接續紀錄（停手 3 秒或收鍵盤時一起寫）
+    var pendingFollows: [(context: String, text: String)] = []
+    var followFlushTimer: Timer?
 
     // MARK: - 生命週期
 
@@ -117,17 +124,25 @@ final class KeyboardViewController: UIInputViewController {
             recognizer.delaysTouchesBegan = false
             recognizer.delaysTouchesEnded = false
         }
+        refreshContextAssociations()
     }
 
     override func textDidChange(_ textInput: UITextInput?) {
         super.textDidChange(textInput)
         // 換到另一個輸入框時：深淺色、換行鍵文字跟著它
         applyHostTraits()
+        refreshContextAssociations()
+    }
+
+    override func selectionDidChange(_ textInput: UITextInput?) {
+        super.selectionDidChange(textInput)
+        refreshContextAssociations()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         // 鍵盤收起時，組到一半的注音就照第一個候選送出，不讓打的字消失
         commitAllComposing()
+        flushFollows()
         super.viewWillDisappear(animated)
     }
 
@@ -207,6 +222,7 @@ final class KeyboardViewController: UIInputViewController {
         switch spec.action {
         case let .bopomofo(symbol):
             associations = []
+            startComposingIfNeeded()
             _ = engine?.feedSymbol(symbol)
             learning.noteTyped()
             syncMarkedText()

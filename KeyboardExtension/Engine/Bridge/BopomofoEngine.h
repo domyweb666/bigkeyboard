@@ -36,6 +36,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setUserPhrasesWithReadings:(NSArray<NSString *> *)readings
                              words:(NSArray<NSString *> *)words NS_SWIFT_NAME(setUserPhrases(readings:words:));
 
+/// 使用者自己打過、常接在游標前那段字後面的字詞（常用的在前）。候選裡有它們就往前排：
+/// 吃掉全部注音的排到最前面（算引擎猜的），只吃前段的排在引擎猜的後面。正在組字時會馬上重排。
+- (void)setPreferredFollowers:(NSArray<NSString *> *)words NS_SWIFT_NAME(setPreferredFollowers(_:));
+
 /// 上一次 selectCandidateAtIndex: 選走的那幾個音（帶聲調、小麥格式），給自動學詞用。沒選過時為空字串。
 @property (nonatomic, readonly) NSString *lastSelectedReading;
 

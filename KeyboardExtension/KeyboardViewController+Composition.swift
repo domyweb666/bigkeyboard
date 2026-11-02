@@ -97,8 +97,10 @@ extension KeyboardViewController {
             let items = barItems
             guard index < items.count else { return }
             let text = items[index]
+            let before = String((textDocumentProxy.documentContextBeforeInput ?? "").suffix(2))
             textDocumentProxy.insertText(text)
-            associations = engine?.associatedPhrases(after: text) ?? []
+            noteFollow(text, after: before)
+            associations = suggestions(after: before + text)
         }
         expanded = false
         refreshBar()
@@ -110,19 +112,51 @@ extension KeyboardViewController {
         let isDefault = index < Int(engine.defaultCandidateCount)
         let text = engine.selectCandidate(at: UInt(index))
         guard !text.isEmpty else { return }
+        let before = composeContext + pendingText
         notePick(text, reading: engine.lastSelectedReading, isDefault: isDefault)
+        noteFollow(text, after: before)
         if engine.composing.isEmpty {
             commit(pendingText + text)
             pendingText = ""
             finishLearningSession()
-            associations = engine.associatedPhrases(after: text)
+            associations = suggestions(after: before + text)
         } else {
-            // 只選走了前面幾個音：選好的字留在底線裡，剩下的繼續組字
+            // 只選走了前面幾個音：選好的字留在底線裡，剩下的繼續組字，
+            // 剩下的候選照「選好的字後面通常接什麼」排
             pendingText += text
+            engine.setPreferredFollowers(followers(after: before + text))
             syncMarkedText()
         }
         expanded = false
         refreshBar()
+    }
+
+    // MARK: - 看游標前面的字：候選和聯想照自己平常的寫法排
+
+    /// 剛開始打注音：記下游標前面的字，候選照「自己平常在這後面打什麼」排
+    func startComposingIfNeeded() {
+        guard let engine, engine.composing.isEmpty, pendingText.isEmpty else { return }
+        composeContext = String((textDocumentProxy.documentContextBeforeInput ?? "").suffix(2))
+        engine.setPreferredFollowers(followers(after: composeContext))
+    }
+
+    /// 沒在組字時（剛叫出鍵盤、移了游標、刪了字）：工具列擺游標前那個字後面通常接的字詞
+    func refreshContextAssociations() {
+        guard mode == .bopomofo, pendingText.isEmpty, !hasMarkedText, engine?.composing.isEmpty ?? true else {
+            return
+        }
+        associations = suggestions(after: textDocumentProxy.documentContextBeforeInput ?? "")
+        refreshBar()
+    }
+
+    /// 聯想詞：自己打過的接續排前面，後面接詞庫的聯想
+    func suggestions(after context: String) -> [String] {
+        let tail = String(context.suffix(2))
+        var out = followers(after: tail)
+        for phrase in engine?.associatedPhrases(after: tail) ?? [] where !out.contains(phrase) {
+            out.append(phrase)
+        }
+        return out
     }
 
     func toggleExpand() {
