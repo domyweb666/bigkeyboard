@@ -42,6 +42,11 @@ enum KeyboardTheme: String, CaseIterable, Identifiable {
         rawValue
     }
 
+    /// App 內購的產品 ID（非消耗性，NT$30）；冷灰免費是 nil。要跟 App Store Connect 建的一字不差
+    var productID: String? {
+        self == .gray ? nil : "org.domyweb.bigkeyboard.theme." + rawValue.lowercased()
+    }
+
     var name: String {
         switch self {
         case .gray: "冷灰"
