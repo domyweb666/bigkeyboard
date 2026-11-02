@@ -44,13 +44,15 @@ extension KeyboardViewController {
         }
     }
 
-    /// 一段組字全部選完：一個字一個字選、其中有改過候選、中間沒再打注音、共 2～6 個字 → 整段記成新詞
+    /// 一段組字全部選完：分好幾次選（字或詞都算，如「陳炳」＋「彰」）、其中有改過候選、中間沒再打注音、
+    /// 共 2～6 個字 → 整段記成新詞
     func finishLearningSession() {
         let s = learning
         learning = LearningSession()
-        guard s.pieces.count >= 2, s.pieces.count <= 6, s.choseNonDefault, !s.typedAfterPick,
-              s.pieces.allSatisfy({ $0.text.count == 1 }) else { return }
-        learn(s.pieces.map(\.text).joined(), reading: s.pieces.map(\.reading).joined(separator: "-"))
+        let text = s.pieces.map(\.text).joined()
+        guard s.pieces.count >= 2, (2 ... 6).contains(text.count), s.choseNonDefault, !s.typedAfterPick,
+              s.pieces.allSatisfy({ !$0.reading.isEmpty }) else { return }
+        learn(text, reading: s.pieces.map(\.reading).joined(separator: "-"))
     }
 
     private func learn(_ text: String, reading: String) {

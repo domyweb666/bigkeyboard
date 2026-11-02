@@ -34,7 +34,7 @@ final class CandidateBar: UIView {
 
         expandButton.normalColor = .clear
         expandButton.layer.shadowOpacity = 0
-        expandButton.setIcon("chevron.down")
+        expandButton.setIcon("chevron.down", pointSize: SamsungTheme.expandIconPointSize)
         expandButton.onTap = { [weak self] in self?.onToggleExpand?() }
 
         divider.backgroundColor = SamsungTheme.hintText.withAlphaComponent(0.4)
@@ -65,7 +65,8 @@ final class CandidateBar: UIView {
             expandButton.trailingAnchor.constraint(equalTo: trailingAnchor),
             expandButton.topAnchor.constraint(equalTo: topAnchor),
             expandButton.bottomAnchor.constraint(equalTo: bottomAnchor),
-            expandButton.widthAnchor.constraint(equalToConstant: 44),
+            // 展開鍵在最右邊，44 寬太難按
+            expandButton.widthAnchor.constraint(equalToConstant: 56),
 
             stack.leadingAnchor.constraint(equalTo: scroll.contentLayoutGuide.leadingAnchor),
             stack.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor),
@@ -124,6 +125,6 @@ final class CandidateBar: UIView {
         let canExpand = candidates.count > 0
         expandButton.isHidden = !canExpand
         divider.isHidden = !canExpand
-        expandButton.setIcon(expanded ? "chevron.up" : "chevron.down")
+        expandButton.setIcon(expanded ? "chevron.up" : "chevron.down", pointSize: SamsungTheme.expandIconPointSize)
     }
 }

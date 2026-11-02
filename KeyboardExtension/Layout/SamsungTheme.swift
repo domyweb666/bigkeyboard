@@ -24,6 +24,8 @@ enum SamsungTheme {
     /// 候選字跟系統注音差不多大，比較好點，也不容易誤按到第一排的鍵
     static let candidateFontSize: CGFloat = 27
     static let iconPointSize: CGFloat = 20
+    /// 候選列最右邊的展開鍵 ⌄
+    static let expandIconPointSize: CGFloat = 24
 
     static let longPressSeconds: TimeInterval = 0.4
     /// 刪除鍵按住後的連刪間隔
@@ -41,8 +43,8 @@ enum SamsungTheme {
     static let keyText = dynamic(light: .black, dark: .white)
     /// 長按提示小字：在白鍵與各分區底色上都要過 4.5:1
     static let hintText = dynamic(light: rgb(0x5E5E5E), dark: rgb(0xD8D8DC))
-    /// 鍵盤頂端收鍵盤的拖曳條（跟系統底色對比 3:1 以上，看得到）
-    static let grabber = dynamic(light: rgb(0x7C8089), dark: rgb(0x8E8E93))
+    /// 鍵盤頂端收鍵盤的拖曳條：淡一點、不搶眼（使用者 2026-11-02 要求），看得出有就好
+    static let grabber = dynamic(light: rgb(0xAEB2BA), dark: rgb(0x636366))
 
     // 注音分區底色：介音 ㄧㄨㄩ 剛好排成中間一直欄，把聲母（左）與韻母（右）隔開
     static let keyMedial = dynamic(light: rgb(0xD3E3F8), dark: rgb(0x35557A))

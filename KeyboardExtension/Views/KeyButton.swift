@@ -102,9 +102,9 @@ final class KeyButton: UIControl {
         bounds.insetBy(dx: -SamsungTheme.keyGap / 2, dy: -SamsungTheme.rowGap / 2).contains(point)
     }
 
-    func setIcon(_ systemName: String?) {
+    func setIcon(_ systemName: String?, pointSize: CGFloat = SamsungTheme.iconPointSize) {
         if let systemName {
-            let config = UIImage.SymbolConfiguration(pointSize: SamsungTheme.iconPointSize, weight: .regular)
+            let config = UIImage.SymbolConfiguration(pointSize: pointSize, weight: .regular)
             iconView.image = UIImage(systemName: systemName, withConfiguration: config)
             label.isHidden = true
         } else {
