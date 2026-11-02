@@ -9,7 +9,9 @@
 
 #include "AssociatedPhrasesV2.h"
 #include "Mandarin/Mandarin.h"
+#include "MemoryMappedFile.h"
 #include "ParselessLM.h"
+#include "ParselessPhraseDB.h"
 #include "gramambular2/reading_grid.h"
 
 using Formosa::Gramambular2::ReadingGrid;
@@ -56,13 +58,25 @@ std::vector<std::string> splitUTF8(const std::string &s) {
 // 沒標聲調的音節 → 五種聲調都查（手機注音可以不打聲調）。只包、不改小麥的 LM。
 // 使用者字典的詞也在這裡併進來：分數比詞庫高，排在同讀音的最前面。
 // 每個結果的 rawValue 記下實際查中的讀音（帶聲調），選字後自動學詞要用。
+// 快打時每按一鍵都要查很多次：①一個音一個音展開，詞庫裡沒有這個開頭的就不往下展開（不再 5×5×5… 全試）；
+// ②查過的讀音記起來，同一段注音不重查。
 class FuzzyToneLM : public Formosa::Gramambular2::LanguageModel {
 public:
-    explicit FuzzyToneLM(std::shared_ptr<McBopomofo::ParselessLM> lm) : lm_(std::move(lm)) {}
+    FuzzyToneLM(std::shared_ptr<McBopomofo::ParselessLM> lm, const char *dataPath) : lm_(std::move(lm)) {
+        // 另開一份唯讀映射查「有沒有這個開頭」（mmap 跟 LM 共用同一份檔案頁面，不多佔記憶體）
+        if (file_.open(dataPath)) {
+            db_ = std::make_unique<McBopomofo::ParselessPhraseDB>(file_.data(), file_.length());
+        }
+    }
 
-    void setUserPhrases(std::map<std::string, std::vector<Unigram>> phrases) { user_ = std::move(phrases); }
+    void setUserPhrases(std::map<std::string, std::vector<Unigram>> phrases) {
+        user_ = std::move(phrases);
+        cache_.clear();
+    }
 
     std::vector<Unigram> getUnigrams(const std::string &reading) override {
+        auto hit = cache_.find(reading);
+        if (hit != cache_.end()) return hit->second;
         std::vector<Unigram> out;
         for (const auto &variant : expand(reading)) {
             auto user = user_.find(variant);
@@ -74,15 +88,12 @@ public:
         std::stable_sort(out.begin(), out.end(), [](const Unigram &a, const Unigram &b) {
             return a.score() > b.score();
         });
+        if (cache_.size() > 4000) cache_.clear(); // 打很久之後清掉，記憶體不會一直長
+        cache_[reading] = out;
         return out;
     }
 
-    bool hasUnigrams(const std::string &reading) override {
-        for (const auto &variant : expand(reading)) {
-            if (user_.count(variant) > 0 || lm_->hasUnigrams(variant)) return true;
-        }
-        return false;
-    }
+    bool hasUnigrams(const std::string &reading) override { return !getUnigrams(reading).empty(); }
 
 private:
     static bool hasTone(const std::string &syllable) {
@@ -92,8 +103,24 @@ private:
         return false;
     }
 
-    // "ㄅㄨ-ㄧㄠˋ" → {"ㄅㄨ-ㄧㄠˋ","ㄅㄨˊ-ㄧㄠˋ","ㄅㄨˇ-ㄧㄠˋ","ㄅㄨˋ-ㄧㄠˋ","ㄅㄨ˙-ㄧㄠˋ"}（詞庫的輕聲寫在後面）
-    static std::vector<std::string> expand(const std::string &reading) {
+    // 詞庫或使用者字典裡有沒有以 prefix 開頭的讀音（prefix 結尾帶 "-" 表示後面還有音、帶 " " 表示到此為止）
+    bool hasPrefix(const std::string &prefix) const {
+        if (db_ && db_->findFirstMatchingLine(prefix) != nullptr) return true;
+        std::string bare = prefix.substr(0, prefix.size() - 1);
+        char tail = prefix.back();
+        for (auto it = user_.lower_bound(bare); it != user_.end(); ++it) {
+            const std::string &key = it->first;
+            if (key.compare(0, bare.size(), bare) != 0) break;
+            if (tail == ' ' ? key.size() == bare.size() : (key.size() > bare.size() && key[bare.size()] == '-')) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // "ㄅㄨ-ㄧㄠˋ" → 詞庫裡真的有的那幾種，如 {"ㄅㄨˊ-ㄧㄠˋ"}（輕聲 ˙ 在詞庫裡寫在後面）。
+    // 一個音一個音接上去，接上後詞庫裡沒有這個開頭的就丟掉
+    std::vector<std::string> expand(const std::string &reading) const {
         std::vector<std::string> syllables;
         size_t start = 0;
         for (size_t i = 0; i <= reading.size(); i++) {
@@ -103,7 +130,7 @@ private:
             }
         }
         std::vector<std::string> results{""};
-        for (size_t idx = 0; idx < syllables.size(); idx++) {
+        for (size_t idx = 0; idx < syllables.size() && !results.empty(); idx++) {
             const auto &syl = syllables[idx];
             std::vector<std::string> variants;
             if (hasTone(syl)) {
@@ -111,20 +138,24 @@ private:
             } else {
                 variants = {syl, syl + "ˊ", syl + "ˇ", syl + "ˋ", syl + "˙"};
             }
+            bool last = idx + 1 == syllables.size();
             std::vector<std::string> next;
             for (const auto &prefix : results) {
                 for (const auto &v : variants) {
-                    next.push_back(idx == 0 ? v : prefix + "-" + v);
+                    std::string candidate = idx == 0 ? v : prefix + "-" + v;
+                    if (hasPrefix(candidate + (last ? " " : "-"))) next.push_back(std::move(candidate));
                 }
             }
             results.swap(next);
-            if (results.size() > 700) break; // 超長的句子不展開，避免爆炸
         }
         return results;
     }
 
     std::shared_ptr<McBopomofo::ParselessLM> lm_;
+    McBopomofo::MemoryMappedFile file_;
+    std::unique_ptr<McBopomofo::ParselessPhraseDB> db_;
     std::map<std::string, std::vector<Unigram>> user_; // 使用者字典：讀音 → 詞
+    std::map<std::string, std::vector<Unigram>> cache_; // 查過的讀音 → 結果
 };
 
 // 候選字快取：字、佔幾個音、實際查中的讀音（帶聲調，可能為空）
@@ -190,7 +221,7 @@ void promotePreferred(std::vector<CachedCandidate> &cache, NSUInteger &defaults,
         if (!_associated->open(associatedPath.fileSystemRepresentation)) _associated.reset();
     }
     _buffer = std::make_unique<BopomofoReadingBuffer>(BopomofoKeyboardLayout::StandardLayout());
-    _toneLM = std::make_shared<FuzzyToneLM>(_lm);
+    _toneLM = std::make_shared<FuzzyToneLM>(_lm, dataPath.fileSystemRepresentation);
     _grid = std::make_unique<ReadingGrid>(_toneLM);
     return self;
 }

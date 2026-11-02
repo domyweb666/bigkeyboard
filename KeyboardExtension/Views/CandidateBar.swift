@@ -9,11 +9,17 @@ final class CandidateBar: UIView {
     var onSwipeDown: (() -> Void)? {
         didSet {
             expandButton.onSwipeDown = onSwipeDown
+            for chip in chips {
+                chip.onSwipeDown = onSwipeDown
+            }
         }
     }
 
-    /// 一列最多放幾個。每打一個注音這列就重建一次，常見的音候選有上百個，全放打字會卡；更多的按 ⌄ 展開看
+    /// 一列最多放幾個。常見的音候選有上百個，全放打字會卡；更多的按 ⌄ 展開看
     private static let maxShown = 30
+    /// 候選字的按鈕。每打一個注音都要換一次字：按鈕留著重用，只換字、藏起用不到的，
+    /// 不每次拆掉重建（重建 30 顆連同排版要好幾毫秒，快打時會讓按鍵反應慢半拍）
+    private var chips: [KeyButton] = []
 
     /// 套淡出遮罩用的外框（遮罩不能直接套在會捲動的 scroll 上，會跟著內容跑）
     private let clip = UIView()
@@ -114,21 +120,18 @@ final class CandidateBar: UIView {
 
     /// highlightFirst：第一個是「按空白會送出的那個」時打亮（組字中）；聯想詞不打亮
     func update(candidates: [String], highlightFirst: Bool, expanded: Bool) {
-        stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        for (i, c) in candidates.prefix(Self.maxShown).enumerated() {
-            let b = KeyButton()
-            b.label.text = c
-            b.label.font = .systemFont(ofSize: SamsungTheme.candidateFontSize)
-            b.label.adjustsFontSizeToFitWidth = false
-            b.layer.shadowOpacity = 0
-            b.normalColor = (i == 0 && highlightFirst) ? SamsungTheme.keyWhite : .clear
-            b.tag = i
-            b.onTap = { [weak self] in self?.onSelect?(i) }
-            b.onSwipeDown = onSwipeDown
-            b.tapsWhenCancelled = false
-            b.widthAnchor.constraint(greaterThanOrEqualTo: b.label.widthAnchor, constant: 18).isActive = true
-            b.widthAnchor.constraint(greaterThanOrEqualToConstant: 40).isActive = true
-            stack.addArrangedSubview(b)
+        let shown = Array(candidates.prefix(Self.maxShown))
+        while chips.count < shown.count {
+            chips.append(makeChip(chips.count))
+        }
+        for (i, chip) in chips.enumerated() {
+            guard i < shown.count else {
+                chip.isHidden = true
+                continue
+            }
+            chip.label.text = shown[i]
+            chip.normalColor = (i == 0 && highlightFirst) ? SamsungTheme.keyWhite : .clear
+            chip.isHidden = false
         }
         scroll.setContentOffset(.zero, animated: false)
         setNeedsLayout()
@@ -136,5 +139,21 @@ final class CandidateBar: UIView {
         expandButton.isHidden = !canExpand
         divider.isHidden = !canExpand
         expandButton.setIcon(expanded ? "chevron.up" : "chevron.down", pointSize: SamsungTheme.expandIconPointSize)
+    }
+
+    /// 第 i 個位置的候選按鈕（點了就選第 i 個）
+    private func makeChip(_ i: Int) -> KeyButton {
+        let b = KeyButton()
+        b.label.font = .systemFont(ofSize: SamsungTheme.candidateFontSize)
+        b.label.adjustsFontSizeToFitWidth = false
+        b.layer.shadowOpacity = 0
+        b.tag = i
+        b.onTap = { [weak self] in self?.onSelect?(i) }
+        b.onSwipeDown = onSwipeDown
+        b.tapsWhenCancelled = false
+        b.widthAnchor.constraint(greaterThanOrEqualTo: b.label.widthAnchor, constant: 18).isActive = true
+        b.widthAnchor.constraint(greaterThanOrEqualToConstant: 40).isActive = true
+        stack.addArrangedSubview(b)
+        return b
     }
 }
