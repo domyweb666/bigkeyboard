@@ -74,33 +74,38 @@ struct ThemeView: View {
         )
     }
 
+    /// 價格放在說明下面：放右邊會把說明擠成一行三、四個字（字放大時更明顯）
     private func row(_ theme: KeyboardTheme) -> some View {
-        HStack(spacing: 12) {
+        HStack(alignment: .top, spacing: 12) {
             ThemePreview(colors: colorScheme == .dark ? theme.dark : theme.light, dark: colorScheme == .dark)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(theme.name)
-                    .font(Font(theme.font(ofSize: 18) as CTFont))
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(theme.name)
+                        .font(Font(theme.font(ofSize: 18) as CTFont))
+                    Spacer(minLength: 0)
+                    if isOwned(theme), theme == selected {
+                        Image(systemName: "checkmark")
+                            .fontWeight(.semibold)
+                            .foregroundStyle(Palette.teal)
+                            .accessibilityLabel("使用中")
+                    }
+                }
                 Text(theme.summary)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                status(theme)
             }
-            Spacer(minLength: 0)
-            trailing(theme)
         }
         .padding(.vertical, 4)
         .contentShape(Rectangle())
     }
 
-    /// 右邊：擁有的打勾（使用中那款）；沒買的顯示 Apple 給的價格；還在問價格時轉圈
+    /// 說明下面：沒買的顯示 Apple 給的價格；還在問價格時轉圈；買過的不顯示
     @ViewBuilder
-    private func trailing(_ theme: KeyboardTheme) -> some View {
+    private func status(_ theme: KeyboardTheme) -> some View {
         if isOwned(theme) {
-            if theme == selected {
-                Image(systemName: "checkmark")
-                    .fontWeight(.semibold)
-                    .foregroundStyle(Palette.teal)
-                    .accessibilityLabel("使用中")
-            }
+            EmptyView()
         } else if let id = theme.productID, let product = products[id] {
             Text(product.displayPrice)
                 .font(.subheadline.weight(.semibold))
