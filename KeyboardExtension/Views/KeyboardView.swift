@@ -40,6 +40,7 @@ final class KeyboardView: UIView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
+        backgroundColor = SamsungTheme.keyAreaBackground
         rowsStack.axis = .vertical
         rowsStack.spacing = SamsungTheme.rowGap
         rowsStack.distribution = .fillEqually

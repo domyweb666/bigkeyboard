@@ -48,6 +48,8 @@ enum SamsungTheme {
     /// 鍵盤底透明：iOS 26 會在第三方鍵盤上方和底部系統排畫自己的底色，擴充畫不到那裡；
     /// 自己塗底色會被框成一塊，所以整個鍵盤共用系統那層底色
     static let background = UIColor.clear
+    /// 鍵區的底：看起來透明，但全透明的地方系統不會把觸控送進來，鍵縫和空位會按了沒反應
+    static let keyAreaBackground = UIColor(white: 0.5, alpha: 0.01)
 
     // 下面每個顏色畫的時候才照當下的主題與深淺色取值；每次取都是新物件，換主題後重新指定就會重畫
 
