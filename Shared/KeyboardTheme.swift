@@ -42,7 +42,7 @@ enum KeyboardTheme: String, CaseIterable, Identifiable {
         rawValue
     }
 
-    /// App 內購的產品 ID（非消耗性，NT$30）；冷灰免費是 nil。要跟 App Store Connect 建的一字不差
+    /// App 內購的產品 ID（非消耗性，價格從 Apple 拿）；冷灰免費是 nil。要跟 App Store Connect 建的一字不差
     var productID: String? {
         self == .gray ? nil : "org.domyweb.bigkeyboard.theme." + rawValue.lowercased()
     }
