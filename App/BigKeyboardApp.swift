@@ -7,6 +7,7 @@ struct BigKeyboardApp: App {
         ReadingLookup.warmUp()
         Self.registerThemeFonts()
         ThemePurchases.listenForUpdates()
+        ReviewPrompt.recordLaunch()
     }
 
     /// 主題字體只放在鍵盤擴充裡一份；主題頁要用同一套字顯示主題名稱，從擴充借來註冊

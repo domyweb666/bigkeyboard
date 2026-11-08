@@ -141,10 +141,13 @@ struct ThemeView: View {
         case .purchased:
             owned.insert(id)
             select(theme)
+            // 付款視窗剛關不接著跳評分視窗；新主題也還沒在鍵盤上看過
+            ReviewPrompt.hold()
         case .pending:
             message = "購買等待確認中（例如等家長同意），確認後回到這頁就會解鎖。"
         case .failed:
             message = "購買沒有完成，請稍後再試。"
+            ReviewPrompt.hold()
         case .cancelled:
             break
         }
@@ -176,6 +179,7 @@ struct ThemeView: View {
         busy = false
         guard let restored else {
             message = "回復失敗，請確認已登入 Apple 帳號後再試。"
+            ReviewPrompt.hold()
             return
         }
         owned = restored

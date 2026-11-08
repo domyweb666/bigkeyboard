@@ -29,6 +29,18 @@ struct GuideView: View {
                 Section("隱私") {
                     Text("豆鍵沒有連網功能，字典只存在這支手機上。")
                 }
+                if let url = ReviewPrompt.writeReviewURL {
+                    Section("喜歡豆鍵的話") {
+                        Link(destination: url) {
+                            HStack {
+                                Text("到 App Store 寫評論")
+                                Spacer()
+                                Image(systemName: "arrow.up.right")
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                    }
+                }
             }
             .navigationTitle("使用說明")
         }

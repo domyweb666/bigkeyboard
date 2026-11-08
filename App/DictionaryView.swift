@@ -1,3 +1,4 @@
+import StoreKit
 import SwiftUI
 import UIKit
 
@@ -26,10 +27,13 @@ struct DictionaryView: View {
     }
 
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.requestReview) private var requestReview
     @State private var file = UserDictionary.File()
     @State private var filter = Filter.all
     @State private var search = ""
     @State private var adding = false
+    /// 這次加詞視窗是按「加入」收起的（不是取消）
+    @State private var justAdded = false
     @State private var saveFailed = false
 
     var body: some View {
@@ -40,9 +44,10 @@ struct DictionaryView: View {
                 .overlay(alignment: .bottomTrailing) {
                     addButton
                 }
-                .sheet(isPresented: $adding) {
+                .sheet(isPresented: $adding, onDismiss: afterAdding) {
                     AddWordView { text, reading in
                         change { $0.addManual(text, reading: reading) }
+                        justAdded = true
                     }
                 }
                 .alert("字典存不進去", isPresented: $saveFailed) {
@@ -57,6 +62,27 @@ struct DictionaryView: View {
                 reload()
             }
         }
+        // 字典頁出現（或從背景回來）停一下才問；切走分頁、進背景時 task 會被取消
+        .task(id: scenePhase) {
+            guard scenePhase == .active else { return }
+            await askForReviewIfReady(after: .seconds(1.5))
+        }
+    }
+
+    private func afterAdding() {
+        guard justAdded else { return }
+        justAdded = false
+        Task { await askForReviewIfReady(after: .seconds(0.6)) }
+    }
+
+    /// 評分提示：條件見 ReviewPrompt；加詞視窗開著時不問
+    private func askForReviewIfReady(after delay: Duration) async {
+        try? await Task.sleep(for: delay)
+        guard !Task.isCancelled, !adding else { return }
+        let autoWords = file.words.filter { $0.source == .auto }.count
+        guard ReviewPrompt.shouldAsk(autoWords: autoWords, keyboardSeen: file.keyboardSeen) else { return }
+        ReviewPrompt.markAsked()
+        requestReview()
     }
 
     private var list: some View {
@@ -190,6 +216,7 @@ struct DictionaryView: View {
             reload()
         } else {
             saveFailed = true
+            ReviewPrompt.hold()
         }
     }
 
