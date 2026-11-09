@@ -1,6 +1,7 @@
 import UIKit
 
-/// 工具列那排：橫向列出候選字（或打完字後的聯想詞、英文預測字），右邊依序是剪貼簿鍵、展開鍵（看全部候選）、收鍵盤鍵。
+/// 工具列那排：橫向列出候選字（或打完字後的聯想詞、英文預測字）。
+/// 右邊依序是展開鍵（看全部候選）、剪貼簿鍵、收鍵盤鍵（2026-11-09 多米定的順序）
 /// 正在組的注音不顯示在這裡——它直接顯示在輸入框游標處（跟原生鍵盤一樣）。
 final class CandidateBar: UIView {
     var onSelect: ((Int) -> Void)?
@@ -103,17 +104,17 @@ final class CandidateBar: UIView {
             scroll.topAnchor.constraint(equalTo: clip.topAnchor),
             scroll.bottomAnchor.constraint(equalTo: clip.bottomAnchor),
 
-            divider.trailingAnchor.constraint(equalTo: clipboardButton.leadingAnchor),
+            divider.trailingAnchor.constraint(equalTo: expandButton.leadingAnchor),
             divider.widthAnchor.constraint(equalToConstant: 1),
             divider.topAnchor.constraint(equalTo: topAnchor, constant: 10),
             divider.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -10),
 
-            clipboardButton.trailingAnchor.constraint(equalTo: expandButton.leadingAnchor),
+            clipboardButton.trailingAnchor.constraint(equalTo: dismissButton.leadingAnchor),
             clipboardButton.topAnchor.constraint(equalTo: topAnchor),
             clipboardButton.bottomAnchor.constraint(equalTo: bottomAnchor),
             clipboardButton.widthAnchor.constraint(equalToConstant: SamsungTheme.barButtonWidth),
 
-            expandButton.trailingAnchor.constraint(equalTo: dismissButton.leadingAnchor),
+            expandButton.trailingAnchor.constraint(equalTo: clipboardButton.leadingAnchor),
             expandButton.topAnchor.constraint(equalTo: topAnchor),
             expandButton.bottomAnchor.constraint(equalTo: bottomAnchor),
             expandButton.widthAnchor.constraint(equalToConstant: SamsungTheme.barButtonWidth),
