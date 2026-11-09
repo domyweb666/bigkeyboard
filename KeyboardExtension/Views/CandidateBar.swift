@@ -28,6 +28,9 @@ final class CandidateBar: UIView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
+        // 全透明的地方系統不把觸控送進來：展開鍵、收鍵盤鍵、候選字的底都是透明的，
+        // 只有圖示和字的筆畫按得到（2026-11-09 多米：⌄ 按好幾次才有反應）。跟鍵區一樣墊一層近乎透明的底
+        backgroundColor = SamsungTheme.keyAreaBackground
         fade.startPoint = CGPoint(x: 0, y: 0.5)
         fade.endPoint = CGPoint(x: 1, y: 0.5)
         fade.colors = [UIColor.black.cgColor, UIColor.black.cgColor, UIColor.clear.cgColor]

@@ -25,7 +25,8 @@ final class CandidateGrid: UIView, UICollectionViewDataSource, UICollectionViewD
         layout.sectionInset = UIEdgeInsets(top: 6, left: 6, bottom: 6, right: 6)
         collection = UICollectionView(frame: .zero, collectionViewLayout: layout)
         super.init(frame: frame)
-        backgroundColor = SamsungTheme.background
+        // 格子之間的縫也要接得到觸控（上下捲），全透明的話系統不送進來
+        backgroundColor = SamsungTheme.keyAreaBackground
         collection.backgroundColor = .clear
         collection.register(Cell.self, forCellWithReuseIdentifier: "c")
         collection.dataSource = self
