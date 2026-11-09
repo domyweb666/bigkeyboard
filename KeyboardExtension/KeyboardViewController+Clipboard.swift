@@ -1,15 +1,17 @@
 import UIKit
 
 /// 剪貼簿：按工具列的剪貼簿鍵 → 讀系統剪貼簿（有變才讀）→ 存進 clipboard.json → 面板列出來 → 點一筆貼上。
-/// 只在使用者按鍵那一下讀：不在背景聽、不在叫出鍵盤時讀。讀不到別的 App 以前複製過的東西，只存得到按鍵當下那一筆
+/// 只在使用者按鍵那一下讀：不在背景聽、不在叫出鍵盤時讀。讀不到別的 App 以前複製過的東西，只存得到按鍵當下那一筆。
+/// 改字、建標籤要打字，在豆鍵 App 裡做；鍵盤裡只有貼上、固定、選標籤、刪除、清空
 extension KeyboardViewController {
     func setUpClipboard() {
         candidateBar.onClipboard = { [weak self] in self?.toggleClipboard() }
         clipboardPanel.onBack = { [weak self] in self?.closeClipboard() }
         clipboardPanel.onPick = { [weak self] entry in self?.pasteClipboard(entry) }
         clipboardPanel.onTogglePin = { [weak self] id in self?.changeClipboard { $0.togglePin(id) } }
+        clipboardPanel.onToggleTag = { [weak self] tag, id in self?.changeClipboard { $0.toggleTag(tag, on: id) } }
         clipboardPanel.onDelete = { [weak self] id in self?.changeClipboard { $0.remove(id) } }
-        clipboardPanel.onClear = { [weak self] in self?.changeClipboard { $0.clearUnpinned() } }
+        clipboardPanel.onClear = { [weak self] in self?.changeClipboard { $0.clearLoose() } }
     }
 
     private func toggleClipboard() {
@@ -23,20 +25,20 @@ extension KeyboardViewController {
     private func openClipboard() {
         clipboardOpen = true
         expanded = false
+        clipboardPanel.reset()
         guard hasFullAccess else {
             clipboardPanel.show(.needsFullAccess)
             refreshBar()
             return
         }
         // 先列出已經存的，系統剪貼簿在背景讀完再補上新的那筆
-        clipboardPanel.show(.entries(ClipboardHistory.load().sorted))
-        clipboardPanel.scrollToTop()
+        clipboardPanel.show(.file(ClipboardHistory.load()))
         refreshBar()
         SystemClipboard.queue.async { [weak self] in
             let file = SystemClipboard.capture()
             DispatchQueue.main.async { [weak self] in
                 guard let self, clipboardOpen else { return }
-                clipboardPanel.show(.entries(file.sorted))
+                clipboardPanel.show(.file(file))
             }
         }
     }
@@ -55,13 +57,13 @@ extension KeyboardViewController {
         refreshContextAssociations()
     }
 
-    /// 釘選、刪除、清空：寫檔放背景，寫完照新內容重列
+    /// 固定、標籤、刪除、清空：寫檔放背景，寫完照新內容重列
     private func changeClipboard(_ change: @escaping @Sendable (inout ClipboardHistory.File) -> Void) {
         SystemClipboard.queue.async { [weak self] in
             guard let file = ClipboardHistory.update(change) else { return }
             DispatchQueue.main.async { [weak self] in
                 guard let self, clipboardOpen else { return }
-                clipboardPanel.show(.entries(file.sorted))
+                clipboardPanel.show(.file(file))
             }
         }
     }

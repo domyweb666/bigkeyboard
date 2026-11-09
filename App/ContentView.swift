@@ -7,6 +7,10 @@ struct ContentView: View {
                 .tabItem {
                     Label("字典", systemImage: "book")
                 }
+            ClipboardView()
+                .tabItem {
+                    Label("剪貼簿", systemImage: "doc.on.clipboard")
+                }
             ThemeView()
                 .tabItem {
                     Label("主題", systemImage: "paintpalette")
