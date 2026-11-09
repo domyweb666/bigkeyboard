@@ -31,24 +31,29 @@ final class EnglishWords {
         }
     }
 
-    private static func parse() -> (keys: [String], freqs: [UInt8], displays: [Int: String]) {
+    /// 讀進來的整份詞表
+    private struct Table {
         var keys: [String] = []
         var freqs: [UInt8] = []
         var displays: [Int: String] = [:]
+    }
+
+    private static func parse() -> Table {
+        var t = Table()
         guard let url = Bundle.main.url(forResource: "english-words", withExtension: "txt"),
-              let text = try? String(contentsOf: url, encoding: .utf8) else { return (keys, freqs, displays) }
-        keys.reserveCapacity(200_000)
-        freqs.reserveCapacity(200_000)
+              let text = try? String(contentsOf: url, encoding: .utf8) else { return t }
+        t.keys.reserveCapacity(200_000)
+        t.freqs.reserveCapacity(200_000)
         for line in text.split(separator: "\n") where !line.hasPrefix("#") {
             let cols = line.split(separator: "\t", omittingEmptySubsequences: false)
             guard cols.count == 3, let f = UInt8(cols[2]) else { continue }
             if !cols[1].isEmpty {
-                displays[keys.count] = String(cols[1])
+                t.displays[t.keys.count] = String(cols[1])
             }
-            keys.append(String(cols[0]))
-            freqs.append(f)
+            t.keys.append(String(cols[0]))
+            t.freqs.append(f)
         }
-        return (keys, freqs, displays)
+        return t
     }
 
     /// 開頭是 prefix（小寫）的字，常用的在前，最多 limit 個

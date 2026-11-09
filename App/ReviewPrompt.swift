@@ -51,9 +51,8 @@ enum ReviewPrompt {
         if defaults.string(forKey: lastAskedVersionKey) == appVersion {
             return false
         }
-        if let last = defaults.object(forKey: lastAskedDateKey) as? Date,
-           days(from: last, to: now) < minDaysBetweenAsks
-        {
+        let last = defaults.object(forKey: lastAskedDateKey) as? Date
+        if let last, days(from: last, to: now) < minDaysBetweenAsks {
             return false
         }
         return true
