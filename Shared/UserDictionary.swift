@@ -39,6 +39,8 @@ enum UserDictionary {
         var keyboardSeen: Date?
         /// 接續紀錄：前面的 1～2 個字 → 用豆鍵在它後面打出的字詞 → 次數。只存字，不存整段文字
         var follows: [String: [String: Int]] = [:]
+        /// 用豆鍵打過的英文字 → 次數（英文預測字把自己常打的排前面）。只存單字，不存整段文字
+        var english: [String: Int] = [:]
     }
 
     static var fileURL: URL? {
@@ -96,6 +98,15 @@ extension UserDictionary.File {
         ignored = try c.decodeIfPresent([String].self, forKey: .ignored) ?? []
         keyboardSeen = try c.decodeIfPresent(Date.self, forKey: .keyboardSeen)
         follows = try c.decodeIfPresent([String: [String: Int]].self, forKey: .follows) ?? [:]
+        english = try c.decodeIfPresent([String: Int].self, forKey: .english) ?? [:]
+    }
+
+    /// 記一個打過的英文字。超過 3000 個時丟掉次數最少的，剩 2500 個
+    mutating func addEnglish(_ word: String) {
+        english[word, default: 0] += 1
+        guard english.count > 3000 else { return }
+        let keep = english.sorted { $0.value > $1.value }.prefix(2500)
+        english = Dictionary(uniqueKeysWithValues: keep.map { ($0.key, $0.value) })
     }
 
     /// 記一筆接續：context（前面 1～2 個字）後面打了 text。每個 context 只留最常用的 30 個；

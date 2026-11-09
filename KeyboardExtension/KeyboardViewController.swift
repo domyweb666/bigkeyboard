@@ -5,6 +5,7 @@ final class KeyboardViewController: UIInputViewController {
     let candidateBar = CandidateBar()
     let keyboardView = KeyboardView()
     let candidateGrid = CandidateGrid()
+    let clipboardPanel = ClipboardPanel()
     private var heightConstraint: NSLayoutConstraint?
     private var barShown: NSLayoutConstraint?
     private var barHidden: NSLayoutConstraint?
@@ -40,6 +41,14 @@ final class KeyboardViewController: UIInputViewController {
     /// 還沒寫進字典檔的接續紀錄（停手 3 秒或收鍵盤時一起寫）
     var pendingFollows: [(context: String, text: String)] = []
     var followFlushTimer: Timer?
+    /// 剪貼簿面板開著
+    var clipboardOpen = false
+    /// 用豆鍵打過的英文字 → 次數（英文預測字排序用）。鍵盤出現時從字典檔讀進來
+    var englishCounts: [String: Int] = [:]
+    /// 還沒寫進字典檔的英文字（跟接續紀錄一起寫）
+    var pendingEnglish: [String] = []
+    /// 剛點了英文建議、自動補了空格（接著打標點時拿掉那個空格）
+    var englishAutoSpace = false
 
     // MARK: - 生命週期
 
@@ -62,12 +71,13 @@ final class KeyboardViewController: UIInputViewController {
         candidateBar.onSelect = { [weak self] i in self?.selectFromBar(i) }
         candidateBar.onToggleExpand = { [weak self] in self?.toggleExpand() }
         candidateGrid.onSelect = { [weak self] i in self?.selectFromBar(i) }
-        keyboardView.onKey = { [weak self] spec in self?.handle(spec) }
+        keyboardView.onKey = { [weak self] spec in self?.handleKey(spec) }
         keyboardView.onLongKey = { [weak self] spec in self?.handleLongPress(spec) }
         keyboardView.onAnyPress = { UIDevice.current.playInputClick() }
         candidateGrid.isHidden = true
+        clipboardPanel.isHidden = true
 
-        for v in [candidateBar, keyboardView, candidateGrid] {
+        for v in [candidateBar, keyboardView, candidateGrid, clipboardPanel] {
             v.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview(v)
         }
@@ -90,16 +100,24 @@ final class KeyboardViewController: UIInputViewController {
             keyboardView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             keyboardView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             keyboardView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-
-            candidateGrid.topAnchor.constraint(equalTo: keyboardView.topAnchor),
-            candidateGrid.leadingAnchor.constraint(equalTo: keyboardView.leadingAnchor),
-            candidateGrid.trailingAnchor.constraint(equalTo: keyboardView.trailingAnchor),
-            candidateGrid.bottomAnchor.constraint(equalTo: keyboardView.bottomAnchor),
         ])
+        coverKeys(with: candidateGrid)
+        coverKeys(with: clipboardPanel)
 
         restoreMode()
         showMode()
         setUpDismiss()
+        setUpClipboard()
+    }
+
+    /// 展開的全部候選、剪貼簿面板：蓋在鍵區上，一樣大
+    private func coverKeys(with v: UIView) {
+        NSLayoutConstraint.activate([
+            v.topAnchor.constraint(equalTo: keyboardView.topAnchor),
+            v.leadingAnchor.constraint(equalTo: keyboardView.leadingAnchor),
+            v.trailingAnchor.constraint(equalTo: keyboardView.trailingAnchor),
+            v.bottomAnchor.constraint(equalTo: keyboardView.bottomAnchor),
+        ])
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -112,6 +130,7 @@ final class KeyboardViewController: UIInputViewController {
         pendingText = ""
         associations = []
         expanded = false
+        clipboardOpen = false
         applyTheme()
         updateAutoCapitalization()
         applyHostTraits()
@@ -133,11 +152,20 @@ final class KeyboardViewController: UIInputViewController {
         // 換到另一個輸入框時：深淺色、換行鍵文字跟著它
         applyHostTraits()
         refreshContextAssociations()
+        refreshEnglishIfNeeded()
     }
 
     override func selectionDidChange(_ textInput: UITextInput?) {
         super.selectionDidChange(textInput)
         refreshContextAssociations()
+        refreshEnglishIfNeeded()
+    }
+
+    /// 英文鍵面：游標移了、輸入框的字被換了，預測字跟著游標前的字
+    private func refreshEnglishIfNeeded() {
+        if mode == .english {
+            refreshBar()
+        }
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -173,10 +201,12 @@ final class KeyboardViewController: UIInputViewController {
             heightConstraint = c
         }
     }
+}
 
-    // MARK: - 模式
+// MARK: - 模式、按鍵 → 引擎 → 輸入框
 
-    private func restoreMode() {
+private extension KeyboardViewController {
+    func restoreMode() {
         let d = UserDefaults.standard
         if let raw = d.string(forKey: Self.languageKey), let m = KeyboardMode(rawValue: raw), m.isLanguage {
             language = m
@@ -188,7 +218,7 @@ final class KeyboardViewController: UIInputViewController {
         }
     }
 
-    private func setMode(_ newMode: KeyboardMode) {
+    func setMode(_ newMode: KeyboardMode) {
         if newMode.isLanguage {
             language = newMode
         }
@@ -199,7 +229,7 @@ final class KeyboardViewController: UIInputViewController {
         showMode()
     }
 
-    private func showMode() {
+    func showMode() {
         let chinese = language == .bopomofo
         switch mode {
         case .bopomofo:
@@ -213,13 +243,17 @@ final class KeyboardViewController: UIInputViewController {
         case .numpad:
             keyboardView.load(NumpadLayout.rows(chinese: chinese))
         }
-        // 工具列只在注音鍵面出現；其他鍵面總高度不變，空間讓給鍵（鍵變高、更好按）
-        let showBar = mode == .bopomofo
+        // 工具列在注音、英文鍵面出現（候選字／預測字）；符號頁、數字鍵盤總高度不變，空間讓給鍵（鍵變高、更好按）
+        let showBar = mode.isLanguage
         barShown?.isActive = false
         barHidden?.isActive = false
         (showBar ? barShown : barHidden)?.isActive = true
         candidateBar.isHidden = !showBar
         expanded = false
+        clipboardOpen = false
+        if mode == .english {
+            preloadEnglishWords()
+        }
         keyboardView.shift = .off
         updateAutoCapitalization()
         keyboardView.setReturnLabel(Self.returnLabel(for: textDocumentProxy.returnKeyType))
@@ -228,7 +262,15 @@ final class KeyboardViewController: UIInputViewController {
 
     // MARK: - 鍵 → 引擎 → 輸入框
 
-    private func handle(_ spec: KeySpec) {
+    /// 按了一顆鍵：英文鍵面先處理自動補的空格、記下打完的字，再照鍵的動作做
+    func handleKey(_ spec: KeySpec) {
+        if language == .english {
+            prepareEnglishKey(spec.action)
+        }
+        handle(spec)
+    }
+
+    func handle(_ spec: KeySpec) {
         switch spec.action {
         case let .bopomofo(symbol):
             associations = []
@@ -291,7 +333,7 @@ final class KeyboardViewController: UIInputViewController {
         refreshBar()
     }
 
-    private func handleSpace() {
+    func handleSpace() {
         if let engine, !engine.candidates.isEmpty {
             selectCandidate(0)
         } else if let engine, !engine.composing.isEmpty {
@@ -304,7 +346,7 @@ final class KeyboardViewController: UIInputViewController {
         }
     }
 
-    private func handleLongPress(_ spec: KeySpec) {
+    func handleLongPress(_ spec: KeySpec) {
         guard let longAction = spec.longAction else { return }
         if case .dismiss = longAction {
             dismissKeyboard()

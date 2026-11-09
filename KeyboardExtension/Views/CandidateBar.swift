@@ -1,12 +1,14 @@
 import UIKit
 
-/// 工具列那排：橫向列出候選字（或打完字後的聯想詞），右邊一顆展開鍵看全部候選，最右邊一顆收鍵盤。
+/// 工具列那排：橫向列出候選字（或打完字後的聯想詞、英文預測字），右邊依序是剪貼簿鍵、展開鍵（看全部候選）、收鍵盤鍵。
 /// 正在組的注音不顯示在這裡——它直接顯示在輸入框游標處（跟原生鍵盤一樣）。
 final class CandidateBar: UIView {
     var onSelect: ((Int) -> Void)?
     var onToggleExpand: (() -> Void)?
     /// 收鍵盤
     var onDismiss: (() -> Void)?
+    /// 打開／關上剪貼簿
+    var onClipboard: (() -> Void)?
 
     /// 一列最多放幾個。常見的音候選有上百個，全放打字會卡；更多的按 ⌄ 展開看
     private static let maxShown = 30
@@ -18,6 +20,7 @@ final class CandidateBar: UIView {
     private let clip = UIView()
     private let scroll = UIScrollView()
     private let stack = UIStackView()
+    private let clipboardButton = KeyButton()
     private let expandButton = KeyButton()
     private let dismissButton = KeyButton()
     private let divider = UIView()
@@ -43,7 +46,7 @@ final class CandidateBar: UIView {
 
         setUpButtons()
 
-        for v in [clip, expandButton, dismissButton, divider] {
+        for v in [clip, clipboardButton, expandButton, dismissButton, divider] {
             v.translatesAutoresizingMaskIntoConstraints = false
             addSubview(v)
         }
@@ -57,8 +60,15 @@ final class CandidateBar: UIView {
         fatalError("not used")
     }
 
-    /// 展開鍵、收鍵盤鍵、分隔線的樣子與動作
+    /// 剪貼簿鍵、展開鍵、收鍵盤鍵、分隔線的樣子與動作
     private func setUpButtons() {
+        clipboardButton.normalColor = .clear
+        clipboardButton.layer.shadowOpacity = 0
+        clipboardButton.setIcon("doc.on.clipboard", pointSize: SamsungTheme.clipboardIconPointSize)
+        clipboardButton.onTap = { [weak self] in self?.onClipboard?() }
+        clipboardButton.firesOnPress = true
+        clipboardButton.accessibilityLabel = "剪貼簿"
+
         expandButton.normalColor = .clear
         expandButton.layer.shadowOpacity = 0
         expandButton.setIcon("chevron.down", pointSize: SamsungTheme.expandIconPointSize)
@@ -93,10 +103,15 @@ final class CandidateBar: UIView {
             scroll.topAnchor.constraint(equalTo: clip.topAnchor),
             scroll.bottomAnchor.constraint(equalTo: clip.bottomAnchor),
 
-            divider.trailingAnchor.constraint(equalTo: expandButton.leadingAnchor),
+            divider.trailingAnchor.constraint(equalTo: clipboardButton.leadingAnchor),
             divider.widthAnchor.constraint(equalToConstant: 1),
             divider.topAnchor.constraint(equalTo: topAnchor, constant: 10),
             divider.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -10),
+
+            clipboardButton.trailingAnchor.constraint(equalTo: expandButton.leadingAnchor),
+            clipboardButton.topAnchor.constraint(equalTo: topAnchor),
+            clipboardButton.bottomAnchor.constraint(equalTo: bottomAnchor),
+            clipboardButton.widthAnchor.constraint(equalToConstant: SamsungTheme.barButtonWidth),
 
             expandButton.trailingAnchor.constraint(equalTo: dismissButton.leadingAnchor),
             expandButton.topAnchor.constraint(equalTo: topAnchor),
@@ -127,6 +142,7 @@ final class CandidateBar: UIView {
     /// 照目前主題上色、換字（候選字按鈕會重複使用，換主題後全部重設）
     func applyTheme() {
         divider.backgroundColor = SamsungTheme.hintText.withAlphaComponent(0.4)
+        clipboardButton.iconView.tintColor = SamsungTheme.keyText
         expandButton.iconView.tintColor = SamsungTheme.keyText
         dismissButton.iconView.tintColor = SamsungTheme.hintText
         for chip in chips {
@@ -155,8 +171,10 @@ final class CandidateBar: UIView {
         clip.layer.mask = fade
     }
 
-    /// highlightFirst：第一個是「按空白會送出的那個」時打亮（組字中）；聯想詞不打亮
-    func update(candidates: [String], highlightFirst: Bool, expanded: Bool) {
+    /// highlightFirst：第一個是「按空白會送出的那個」時打亮（組字中）；聯想詞、英文預測字不打亮。
+    /// clipboardOpen：剪貼簿開著時剪貼簿鍵打亮
+    func update(candidates: [String], highlightFirst: Bool, expanded: Bool, clipboardOpen: Bool) {
+        clipboardButton.normalColor = clipboardOpen ? SamsungTheme.keyWhite : .clear
         let shown = Array(candidates.prefix(Self.maxShown))
         while chips.count < shown.count {
             chips.append(makeChip(chips.count))

@@ -66,15 +66,19 @@ extension KeyboardViewController {
         }
     }
 
-    // MARK: - 工具列：候選字／聯想詞／起頭字
+    // MARK: - 工具列：候選字／聯想詞／起頭字／英文預測字
 
     enum BarSource {
         case candidates
         case associations
         case starters
+        case english
     }
 
     var barSource: BarSource {
+        if mode == .english {
+            return .english
+        }
         if let engine, !engine.composing.isEmpty {
             return .candidates
         }
@@ -86,6 +90,7 @@ extension KeyboardViewController {
         case .candidates: engine?.candidates ?? []
         case .associations: associations
         case .starters: Self.starters
+        case .english: englishSuggestions()
         }
     }
 
@@ -101,6 +106,10 @@ extension KeyboardViewController {
             textDocumentProxy.insertText(text)
             noteFollow(text, after: before)
             associations = suggestions(after: before + text)
+        case .english:
+            let items = barItems
+            guard index < items.count else { return }
+            pickEnglish(items[index])
         }
         expanded = false
         refreshBar()
@@ -170,6 +179,7 @@ extension KeyboardViewController {
     }
 
     func toggleExpand() {
+        clipboardOpen = false
         expanded.toggle()
         refreshBar()
     }
@@ -183,11 +193,13 @@ extension KeyboardViewController {
         candidateBar.update(
             candidates: items,
             highlightFirst: barSource == .candidates,
-            expanded: expanded
+            expanded: expanded,
+            clipboardOpen: clipboardOpen
         )
-        candidateGrid.isHidden = !expanded || mode != .bopomofo
-        // 鍵盤底是透明的：展開候選時把鍵藏起來，不然會從候選後面透出來
-        keyboardView.isHidden = !candidateGrid.isHidden
+        candidateGrid.isHidden = !expanded || !mode.isLanguage || clipboardOpen
+        clipboardPanel.isHidden = !clipboardOpen
+        // 鍵盤底是透明的：展開候選、開剪貼簿時把鍵藏起來，不然會從後面透出來
+        keyboardView.isHidden = !candidateGrid.isHidden || clipboardOpen
         if expanded {
             candidateGrid.update(items)
         }

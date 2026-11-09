@@ -27,6 +27,8 @@ enum SamsungTheme {
     static let expandIconPointSize: CGFloat = 24
     /// 候選列最右邊的收鍵盤鍵
     static let dismissIconPointSize: CGFloat = 21
+    /// 候選列右邊的剪貼簿鍵
+    static let clipboardIconPointSize: CGFloat = 20
     /// 展開鍵、收鍵盤鍵的寬（展開鍵排在收鍵盤鍵左邊，離開螢幕邊緣：邊緣的觸控會被系統延後或取消）
     static let barButtonWidth: CGFloat = 52
 

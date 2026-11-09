@@ -31,6 +31,7 @@ extension KeyboardViewController {
         let file = Self.dictionaryQueue.sync { UserDictionary.load() }
         applyUserWords(file.words)
         follows = file.follows
+        englishCounts = file.english
         guard hasFullAccess else { return }
         Self.dictionaryQueue.async {
             UserDictionary.update { $0.keyboardSeen = Date() }
@@ -95,23 +96,33 @@ extension KeyboardViewController {
             follows[key, default: [:]][text, default: 0] += 1
             pendingFollows.append((context: key, text: text))
         }
+        scheduleDictionaryFlush()
+    }
+
+    /// 停手 3 秒再寫檔（接續紀錄、英文字），收鍵盤時也會寫
+    func scheduleDictionaryFlush() {
         followFlushTimer?.invalidate()
         followFlushTimer = Timer.scheduledTimer(withTimeInterval: 3, repeats: false) { [weak self] _ in
             self?.flushFollows()
         }
     }
 
-    /// 把還沒寫的接續紀錄一次寫進字典檔（每選一個字就寫一次太頻繁）
+    /// 把還沒寫的接續紀錄、英文字一次寫進字典檔（每選一個字就寫一次太頻繁）
     func flushFollows() {
         followFlushTimer?.invalidate()
         followFlushTimer = nil
         let batch = pendingFollows
+        let english = pendingEnglish
         pendingFollows = []
-        guard !batch.isEmpty else { return }
+        pendingEnglish = []
+        guard !batch.isEmpty || !english.isEmpty else { return }
         Self.dictionaryQueue.async {
             UserDictionary.update { file in
                 for item in batch {
                     file.addFollow(item.text, after: item.context)
+                }
+                for word in english {
+                    file.addEnglish(word)
                 }
                 file.keyboardSeen = Date()
             }
