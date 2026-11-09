@@ -22,7 +22,9 @@ enum ReviewPrompt {
     /// 這次打開 App 出過錯或剛買了主題：這次都不問
     private static var heldThisLaunch = false
 
-    private static var defaults: UserDefaults { .standard }
+    private static var defaults: UserDefaults {
+        .standard
+    }
 
     private static var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
@@ -42,15 +44,16 @@ enum ReviewPrompt {
 
     /// 現在問合不合適。keyboardSeen 是 nil 代表鍵盤沒寫過字典（沒開完全取用），不問
     static func shouldAsk(autoWords: Int, keyboardSeen: Date?, now: Date = .now) -> Bool {
-        guard !heldThisLaunch, keyboardSeen != nil, autoWords >= minAutoWords else { return false }
-        guard let firstOpen = defaults.object(forKey: firstOpenKey) as? Date,
+        guard !heldThisLaunch, keyboardSeen != nil, autoWords >= minAutoWords,
+              let firstOpen = defaults.object(forKey: firstOpenKey) as? Date,
               days(from: firstOpen, to: now) >= minDaysSinceFirstOpen
         else { return false }
         if defaults.string(forKey: lastAskedVersionKey) == appVersion {
             return false
         }
         if let last = defaults.object(forKey: lastAskedDateKey) as? Date,
-           days(from: last, to: now) < minDaysBetweenAsks {
+           days(from: last, to: now) < minDaysBetweenAsks
+        {
             return false
         }
         return true
