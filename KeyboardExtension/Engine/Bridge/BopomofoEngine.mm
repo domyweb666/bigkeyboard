@@ -423,8 +423,24 @@ void promotePreferred(std::vector<CachedCandidate> &cache, NSUInteger &defaults,
     } else {
         return NO;
     }
+    [self reopenLastReadingIfBufferEmpty];
     [self rebuildCandidates];
     return YES;
+}
+
+// 刪到正在打的那個音空了，而前一個音沒打聲調（是被下一個接不上的符號擠收起來的）→ 拿回來繼續組。
+// 刪完的樣子要跟重打剩下的符號一樣：打 ㄐ、按錯 ㄍ、刪掉 ㄍ，再打 ㄧㄝ 要接成「ㄐㄧㄝ」，不是「ㄐ ㄧㄝ」。
+// 有聲調的音是使用者自己打完的，留在格子裡。
+- (void)reopenLastReadingIfBufferEmpty {
+    if (!_buffer->isEmpty() || _grid->length() == 0) return;
+    std::string last = _grid->readings().back();
+    if (BPMF::FromComposedString(last).hasToneMarker()) return;
+    _grid->setCursor(_grid->length());
+    _grid->deleteReadingBeforeCursor();
+    for (const auto &ch : splitUTF8(last)) {
+        char k = keyForSymbol(ch);
+        if (k) _buffer->combineKey(k);
+    }
 }
 
 - (void)clear {
