@@ -12,9 +12,11 @@ struct ThemeView: View {
     @State private var products: [String: Product] = [:]
     /// 擁有的付費主題產品 ID
     @State private var owned: Set<String> = []
-    @State private var loaded = false
+    /// 價格載入中：轉圈。載不到（逾時、沒網路）改顯示「點一下重試」，不能讓人看著一直轉
+    @State private var loading = true
     /// 購買、回復購買進行中：整頁先不能點
     @State private var busy = false
+    @State private var reloading = false
     @State private var message: String?
 
     var body: some View {
@@ -114,10 +116,11 @@ struct ThemeView: View {
                 .padding(.vertical, 6)
                 .background(Palette.statusBackground, in: .capsule)
                 .accessibilityLabel("購買，\(product.displayPrice)")
-        } else if !loaded {
+        } else if loading {
             ProgressView()
+                .accessibilityLabel("價格載入中")
         } else {
-            Text("暫時買不到")
+            Label("價格沒載入，點一下重試", systemImage: "arrow.clockwise")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
@@ -133,7 +136,11 @@ struct ThemeView: View {
             select(theme)
             return
         }
-        guard let id = theme.productID, let product = products[id] else { return }
+        guard let id = theme.productID, let product = products[id] else {
+            // 價格沒載入時點了就重新跟 Apple 要一次
+            await reload()
+            return
+        }
         busy = true
         let outcome = await ThemePurchases.buy(product)
         busy = false
@@ -158,19 +165,26 @@ struct ThemeView: View {
         theme.save()
     }
 
-    /// 跟 Apple 對一次：價格、擁有哪些主題；選中的主題不再擁有就換回冷灰
+    /// 跟 Apple 對一次：價格、擁有哪些主題；選中的主題不再擁有就換回冷灰。
+    /// 兩件同時問，都有時限：價格最久約 20 秒（試兩次）、購買紀錄最久約 10 秒，時間到一定停止轉圈
     private func reload() async {
-        async let freshProducts = ThemePurchases.products()
+        // 打開 App 時 .task 和回到前景會同時叫，正在載就不再疊一次
+        guard !reloading else { return }
+        reloading = true
+        loading = true
         async let freshOwned = ThemePurchases.owned()
-        let fetched = await freshProducts
-        // 這次沒拿到（沒網路）就留著上次的價格
-        if !fetched.isEmpty {
+        // 這次沒拿到就留著上次的價格
+        if let fetched = await ThemePurchases.products() {
             products = fetched
         }
-        owned = await freshOwned
-        loaded = true
-        ThemePurchases.checkSavedTheme(owned: owned)
-        selected = KeyboardTheme.saved
+        loading = false
+        // 購買紀錄沒讀完是「不知道」，不是「沒買」：不能拿來把主題換回冷灰
+        if let fresh = await freshOwned {
+            owned = fresh
+            ThemePurchases.checkSavedTheme(owned: fresh)
+            selected = KeyboardTheme.saved
+        }
+        reloading = false
     }
 
     private func restore() async {
