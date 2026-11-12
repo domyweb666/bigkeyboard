@@ -215,6 +215,14 @@ final class KeyboardView: UIView {
         }
     }
 
+    /// 空白鍵底下的小字（組字時顯示「一聲」「選字」）；nil 回到鍵位表寫的
+    func setSpaceFoot(_ text: String?) {
+        for b in buttons {
+            guard let spec = specs[b], case .space = spec.action else { continue }
+            b.footLabel.text = text ?? spec.foot
+        }
+    }
+
     private func applyShiftAppearance() {
         for b in buttons {
             guard let spec = specs[b] else { continue }

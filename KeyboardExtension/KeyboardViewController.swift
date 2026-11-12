@@ -334,7 +334,11 @@ private extension KeyboardViewController {
     }
 
     func handleSpace() {
-        if let engine, !engine.candidates.isEmpty {
+        if let engine, engine.canSealFirstTone {
+            engine.sealFirstTone() // 這個音沒打聲調：空白當一聲，再按一下空白才送字
+            learning.noteTyped()
+            syncMarkedText()
+        } else if let engine, !engine.candidates.isEmpty {
             selectCandidate(0)
         } else if let engine, !engine.composing.isEmpty {
             engine.clear() // 殘留、接不上字的注音，丟掉

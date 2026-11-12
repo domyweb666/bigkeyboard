@@ -184,8 +184,16 @@ extension KeyboardViewController {
         refreshBar()
     }
 
+    /// 空白鍵底下的小字：按下去會當一聲還是送字；沒在組字時用鍵位表寫的（注音）
+    private func currentSpaceFoot() -> String? {
+        guard mode == .bopomofo, let engine else { return nil }
+        if engine.canSealFirstTone { return "一聲" }
+        return engine.candidates.isEmpty ? nil : "選字"
+    }
+
     func refreshBar() {
         keyboardView.emphasis = currentEmphasis()
+        keyboardView.setSpaceFoot(currentSpaceFoot())
         let items = barItems
         if items.isEmpty {
             expanded = false

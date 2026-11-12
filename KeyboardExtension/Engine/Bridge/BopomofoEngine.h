@@ -17,6 +17,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// 正在打的那個音打到哪一段：0 沒在打、1 只有聲母、2 到介音、3 到韻母（打了聲調就收進格子，回到 0）
 @property (nonatomic, readonly) NSInteger composingStage;
 
+/// 空白鍵這一下能不能當一聲：正在打的音沒打聲調、前面的音都打了聲調（或定過一聲），而且這個音有一聲的字。
+@property (nonatomic, readonly) BOOL canSealFirstTone;
+
+/// 把正在打的音定成一聲收起來，之後只查一聲的字。canSealFirstTone 為 NO 時不做事。
+- (void)sealFirstTone;
+
 /// 目前注音對應的候選字，依機率高到低。沒在組字時為空陣列。
 @property (nonatomic, readonly) NSArray<NSString *> *candidates;
 

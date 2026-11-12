@@ -44,6 +44,30 @@ int stage(const BPMF &s) {
     return 0;
 }
 
+// 空白鍵定成一聲的音，在格子裡的讀音後面接這個記號（詞庫裡一聲沒有記號，查詢前要拿掉）。
+// 不帶記號、沒聲調的音是「哪一聲都可以」；帶記號的只查一聲。
+const std::string kToneOneMark = "ˉ";
+
+bool isSealedToneOne(const std::string &syllable) {
+    return syllable.size() > kToneOneMark.size()
+        && syllable.compare(syllable.size() - kToneOneMark.size(), kToneOneMark.size(), kToneOneMark) == 0;
+}
+
+std::string withoutToneOneMark(const std::string &reading) {
+    std::string out;
+    for (size_t pos = 0;;) {
+        size_t hit = reading.find(kToneOneMark, pos);
+        out += reading.substr(pos, hit == std::string::npos ? std::string::npos : hit - pos);
+        if (hit == std::string::npos) return out;
+        pos = hit + kToneOneMark.size();
+    }
+}
+
+// 這個音是不是使用者自己打完的（打了聲調，或用空白鍵定成一聲）
+bool hasToneMark(const std::string &syllable) {
+    return isSealedToneOne(syllable) || BPMF::FromComposedString(syllable).hasToneMarker();
+}
+
 // 把 UTF-8 字串拆成一個一個字元
 std::vector<std::string> splitUTF8(const std::string &s) {
     std::vector<std::string> out;
@@ -172,14 +196,16 @@ private:
         for (size_t idx = 0; idx < syllables.size() && !results.empty(); idx++) {
             const auto &syl = syllables[idx];
             std::vector<std::string> variants;
-            if (hasTone(syl)) {
+            if (isSealedToneOne(syl)) {
+                variants = {syl.substr(0, syl.size() - kToneOneMark.size())};
+            } else if (hasTone(syl)) {
                 variants = {syl};
             } else {
                 variants = {syl, syl + "ˊ", syl + "ˇ", syl + "ˋ", syl + "˙"};
             }
             bool last = idx + 1 == syllables.size();
             std::vector<std::string> next;
-            if (last && isConsonantOnly(syl)) {
+            if (last && isConsonantOnly(syl) && !isSealedToneOne(syl)) {
                 for (const auto &prefix : results) {
                     for (auto &full : completions(idx == 0 ? syl : prefix + "-" + syl)) {
                         completed.push_back(std::move(full));
@@ -356,6 +382,24 @@ void promotePreferred(std::vector<CachedCandidate> &cache, NSUInteger &defaults,
     return ok;
 }
 
+- (BOOL)canSealFirstTone {
+    if (_buffer->isEmpty() || _buffer->syllable().hasToneMarker()) return NO;
+    // 前面有沒打聲調的音 → 這串是不打聲調的快打，空白鍵照舊送字（定成一聲會把「我們」這種輕聲詞查壞）
+    for (const auto &r : _grid->readings()) {
+        if (!hasToneMark(r)) return NO;
+    }
+    // 這個音沒有一聲的字（如 ㄦ、只打了 ㄉ）→ 空白鍵照舊送字
+    return _toneLM->hasUnigrams(_buffer->syllable().composedString() + kToneOneMark);
+}
+
+- (void)sealFirstTone {
+    if (![self canSealFirstTone]) return;
+    _grid->setCursor(_grid->length());
+    _grid->insertReading(_buffer->syllable().composedString() + kToneOneMark);
+    _buffer->clear();
+    [self rebuildCandidates];
+}
+
 - (NSString *)composing {
     // 音與音之間空一格，看得出斷在哪裡
     std::string s;
@@ -398,7 +442,7 @@ void promotePreferred(std::vector<CachedCandidate> &cache, NSUInteger &defaults,
             if (i > 0) joined += "-";
             joined += readings[i];
         }
-        _lastSelectedReading = joined;
+        _lastSelectedReading = withoutToneOneMark(joined);
     }
     _grid->setCursor(span);
     for (size_t i = 0; i < span; i++) _grid->deleteReadingBeforeCursor();
@@ -411,7 +455,7 @@ void promotePreferred(std::vector<CachedCandidate> &cache, NSUInteger &defaults,
     if (!_buffer->isEmpty()) {
         _buffer->backspace();
     } else if (_grid->length() > 0) {
-        // 把最後一個音拿回來，再退掉它最後一個符號
+        // 把最後一個音拿回來，再退掉它最後一個符號（空白鍵定的一聲：只退掉一聲，注音留著）
         std::string last = _grid->readings().back();
         _grid->setCursor(_grid->length());
         _grid->deleteReadingBeforeCursor();
@@ -419,7 +463,7 @@ void promotePreferred(std::vector<CachedCandidate> &cache, NSUInteger &defaults,
             char k = keyForSymbol(ch);
             if (k) _buffer->combineKey(k);
         }
-        _buffer->backspace();
+        if (!isSealedToneOne(last)) _buffer->backspace();
     } else {
         return NO;
     }
@@ -434,7 +478,7 @@ void promotePreferred(std::vector<CachedCandidate> &cache, NSUInteger &defaults,
 - (void)reopenLastReadingIfBufferEmpty {
     if (!_buffer->isEmpty() || _grid->length() == 0) return;
     std::string last = _grid->readings().back();
-    if (BPMF::FromComposedString(last).hasToneMarker()) return;
+    if (hasToneMark(last)) return;
     _grid->setCursor(_grid->length());
     _grid->deleteReadingBeforeCursor();
     for (const auto &ch : splitUTF8(last)) {
