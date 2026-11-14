@@ -79,7 +79,7 @@ struct DataSettingsSection: View {
         }
         .confirmationDialog(
             importTitle,
-            isPresented: Binding(get: { pendingImport != nil }, set: { if !$0 { pendingImport = nil } }),
+            isPresented: importDialogShown,
             titleVisibility: .visible
         ) {
             Button("合併（兩邊的詞都留）") {
@@ -92,6 +92,18 @@ struct DataSettingsSection: View {
                 pendingImport = nil
             }
         }
+    }
+
+    /// 選好備份檔後跳「將匯入 N 個詞」；關掉就丟掉這份
+    private var importDialogShown: Binding<Bool> {
+        Binding(
+            get: { pendingImport != nil },
+            set: { shown in
+                if !shown {
+                    pendingImport = nil
+                }
+            }
+        )
     }
 
     private var importTitle: String {
