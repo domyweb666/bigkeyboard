@@ -84,20 +84,28 @@ struct WhatsNewCard: View {
     let onDone: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Gap.s5) {
-            Text("\(VeggieConfig.current.name) \(release.version) 新功能")
-                .font(Typo.title2.font)
-                .foregroundStyle(Ink.textPrimary)
-                .accessibilityAddTraits(.isHeader)
-            WhatsNewPoints(points: release.points)
-            Spacer(minLength: 0)
+        // 內容比半頁高時（字放大、三點都長）標題會被頂到拉桿後面：內容放進捲動區、從上往下排，按鈕固定在底下
+        VStack(spacing: Gap.s4) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: Gap.s5) {
+                    Text("\(VeggieConfig.current.name) \(release.version) 新功能")
+                        .font(Typo.title2.font)
+                        .foregroundStyle(Ink.textPrimary)
+                        .accessibilityAddTraits(.isHeader)
+                    WhatsNewPoints(points: release.points)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, Gap.s8)
+            }
+            .scrollBounceBehavior(.basedOnSize)
             Button("好", action: onDone)
                 .buttonStyle(DomyButtonStyle())
         }
-        .padding(Gap.s6)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, Gap.s6)
+        .padding(.bottom, Gap.s6)
         .background(Brand.theme.canvas)
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.fraction(0.7), .large])
+        .presentationDragIndicator(.visible)
     }
 }
 

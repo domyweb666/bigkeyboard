@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 /// 設定：照《蔬菜家族 App 共用基本元素規格》的標準結構排——
 /// 豆鍵自己的（空白鍵）→ 一般 → 資料（DataSettingsSection）→ 購買 → 支援 → 關於 → 版本頁尾。
@@ -31,7 +30,7 @@ struct SettingsView: View {
                     purchaseSection
                     supportSection
                     aboutSection
-                    versionFooter
+                    VeggieFooter(show: show)
                 }
                 .padding(.horizontal, Metric.screenMargin)
                 .padding(.top, Gap.s2)
@@ -190,26 +189,6 @@ struct SettingsView: View {
             }
             .buttonStyle(.plain)
         }
-    }
-
-    // MARK: - 頁尾
-
-    /// 「豆鍵 1.0 (73)」＋「Made by DOMYWEB」；長按複製診斷資訊
-    private var versionFooter: some View {
-        VStack(spacing: Gap.s1) {
-            Text(config.versionLine)
-            Text(VeggieText.madeBy)
-        }
-        .font(Typo.footnote.font)
-        .foregroundStyle(Ink.textTertiary)
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, Gap.s4)
-        .contentShape(Rectangle())
-        .onLongPressGesture {
-            UIPasteboard.general.string = Feedback.diagnostics
-            show(VeggieText.diagnosticsCopied)
-        }
-        .accessibilityHint("長按複製版本資訊")
     }
 
     // MARK: - 小工具

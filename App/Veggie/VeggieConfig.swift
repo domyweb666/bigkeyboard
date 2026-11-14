@@ -21,6 +21,8 @@ struct VeggieConfig {
     let resetScope: String
     /// 隱私權政策網頁（要跟 App Store Connect 填的同一頁）。nil 時那一列隱藏
     let privacyURL: URL?
+    /// 設定頁最下面的連結（網站、FB、IG），照順序排
+    let links: [VeggieLink]
 
     var appStoreURL: URL? {
         appStoreID.flatMap { URL(string: "https://apps.apple.com/app/id\($0)") }
@@ -50,8 +52,42 @@ extension VeggieConfig {
         dataCounter: "個",
         resetScope: "所有詞和剪貼簿",
         // 豆鍵上架時的網頁在 /tools/bigkeyboard/，不是規格寫的 /apps/{slug}/
-        privacyURL: URL(string: "https://domyweb.org/tools/bigkeyboard/privacy/")
+        privacyURL: URL(string: "https://domyweb.org/tools/bigkeyboard/privacy/"),
+        links: [
+            VeggieLink(kind: .website, address: "https://domyweb.org/"),
+            VeggieLink(kind: .facebook, address: "https://www.facebook.com/profile.php?id=61556891560581"),
+            VeggieLink(kind: .instagram, address: "https://www.instagram.com/domyweb_fc/"),
+        ]
     )
+}
+
+/// 設定頁最下面的一顆連結鈕
+struct VeggieLink: Identifiable {
+    enum Kind {
+        case website
+        case facebook
+        case instagram
+    }
+
+    let kind: Kind
+    let address: String
+
+    var id: String {
+        address
+    }
+
+    var url: URL? {
+        URL(string: address)
+    }
+
+    /// 給語音朗讀的名稱
+    var label: String {
+        switch kind {
+        case .website: "網站"
+        case .facebook: "Facebook"
+        case .instagram: "Instagram"
+        }
+    }
 }
 
 /// 蔬菜家族的其他 app。豆鍵預設不連網，只用這份內建清單（規格是讀網路上的 apps.json；2026-11-14 多米選內建）。
