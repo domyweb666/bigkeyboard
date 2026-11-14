@@ -23,8 +23,8 @@ struct ClipboardView: View {
         content
             .overlay(alignment: .bottomTrailing) {
                 DomyAddButton(label: "新增", action: addNew)
-                .padding(.trailing, Metric.screenMargin)
-                .padding(.bottom, DomyTabBar.clearance)
+                    .padding(.trailing, Metric.screenMargin)
+                    .padding(.bottom, DomyTabBar.clearance)
             }
             .sheet(item: $editing) { entry in
                 NoteEditorView(
