@@ -1,33 +1,31 @@
 import SwiftUI
 
-/// 使用說明：加入鍵盤、讓豆鍵自動學詞、收鍵盤
+/// 使用說明：加入鍵盤、讓豆鍵自動學詞、收鍵盤。
+/// 放在設定頁的下半段（2026-11-14 多米：說明併進設定，分頁剩四格），自己不捲動、沒有畫面外框
 struct GuideView: View {
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Gap.s6) {
-                DomyTitle("使用說明")
-                startCard
-                DomySection("照你的寫法排候選") {
-                    paragraph("豆鍵會看游標前面的一兩個字，把你平常接在它後面打的字詞排在候選和聯想的最前面。")
-                    DomyDivider()
-                    note("只記「前面一兩個字 → 你打了什麼」，整段文字不會存下來。")
-                }
-                DomySection("收起鍵盤") {
-                    iconRow("keyboard.chevron.compact.down", title: "注音鍵盤", detail: "點候選列最右邊那顆鍵盤圖示。")
-                    DomyDivider()
-                    iconRow("return", title: "英文、符號、數字鍵盤", detail: "按住換行鍵（鍵上有個小 ⌄）。")
-                }
-                DomySection("表情符號") {
-                    iconRow("globe", title: "按住左下角的地球鍵", detail: Self.emojiDetail)
-                }
-                privacy
-                review
+        VStack(alignment: .leading, spacing: Gap.s6) {
+            Text("使用說明")
+                .font(Typo.title1.font)
+                .foregroundStyle(Ink.textPrimary)
+                .accessibilityAddTraits(.isHeader)
+            startCard
+            DomySection("照你的寫法排候選") {
+                paragraph("豆鍵會看游標前面的一兩個字，把你平常接在它後面打的字詞排在候選和聯想的最前面。")
+                DomyDivider()
+                note("只記「前面一兩個字 → 你打了什麼」，整段文字不會存下來。")
             }
-            .padding(.horizontal, Metric.screenMargin)
-            .padding(.top, Gap.s2)
+            DomySection("收起鍵盤") {
+                iconRow("keyboard.chevron.compact.down", title: "注音鍵盤", detail: "點候選列最右邊那顆鍵盤圖示。")
+                DomyDivider()
+                iconRow("return", title: "英文、符號、數字鍵盤", detail: "按住換行鍵（鍵上有個小 ⌄）。")
+            }
+            DomySection("表情符號") {
+                iconRow("globe", title: "按住左下角的地球鍵", detail: Self.emojiDetail)
+            }
+            privacy
+            review
         }
-        .background(Brand.theme.canvas)
-        .tabBarClearance()
     }
 
     /// 開始用的三步。第三步（完全取用）是選用的：不開也能打字（審核指南 4.4.1），文案不能寫成必開

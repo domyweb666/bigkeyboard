@@ -1,12 +1,11 @@
 import SwiftUI
 
-/// App 底部的五個分頁
+/// App 底部的四個分頁。使用說明併在設定頁裡
 enum AppTab: Hashable, CaseIterable {
     case dictionary
     case clipboard
     case themes
     case settings
-    case guide
 
     var title: String {
         switch self {
@@ -14,7 +13,6 @@ enum AppTab: Hashable, CaseIterable {
         case .clipboard: "剪貼簿"
         case .themes: "主題"
         case .settings: "設定"
-        case .guide: "說明"
         }
     }
 
@@ -24,7 +22,6 @@ enum AppTab: Hashable, CaseIterable {
         case .clipboard: "doc.on.clipboard"
         case .themes: "paintpalette"
         case .settings: "gearshape"
-        case .guide: "questionmark.circle"
         }
     }
 }

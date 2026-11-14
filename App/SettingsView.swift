@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 設定：空白鍵按下去是當一聲，還是直接選第一個候選
+/// 設定：空白鍵按下去是當一聲，還是直接選第一個候選。下半段接使用說明（GuideView）
 struct SettingsView: View {
     @AppStorage(SpaceKeySetting.storageKey, store: SpaceKeySetting.defaults)
     private var spaceSelectsFirstCandidate = false
@@ -16,6 +16,8 @@ struct SettingsView: View {
                         .tint(Brand.theme.accent)
                         .frame(minHeight: Metric.row)
                 }
+                GuideView()
+                    .padding(.top, Gap.s2)
             }
             .padding(.horizontal, Metric.screenMargin)
             .padding(.top, Gap.s2)

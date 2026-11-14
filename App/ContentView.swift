@@ -18,9 +18,6 @@ struct ContentView: View {
             SettingsView()
                 .toolbar(.hidden, for: .tabBar)
                 .tag(AppTab.settings)
-            GuideView()
-                .toolbar(.hidden, for: .tabBar)
-                .tag(AppTab.guide)
         }
         .overlay {
             VStack {
