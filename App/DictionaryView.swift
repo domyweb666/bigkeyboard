@@ -1,6 +1,5 @@
 import StoreKit
 import SwiftUI
-import UIKit
 
 /// 字典頁：自動學到的詞和手動加的詞，可篩選、搜尋、左滑刪除，右下角＋加詞
 struct DictionaryView: View {
@@ -12,8 +11,8 @@ struct DictionaryView: View {
         var title: String {
             switch self {
             case .all: "所有"
-            case .auto: "自動添加"
-            case .manual: "手動添加"
+            case .auto: "自動"
+            case .manual: "手動"
             }
         }
 
@@ -37,36 +36,36 @@ struct DictionaryView: View {
     @State private var saveFailed = false
 
     var body: some View {
-        NavigationStack {
-            list
-                .navigationTitle("字典")
-                .searchable(text: $search, prompt: "搜尋字詞")
-                .overlay(alignment: .bottomTrailing) {
-                    addButton
+        list
+            .overlay(alignment: .bottomTrailing) {
+                DomyAddButton(label: "加詞") {
+                    adding = true
                 }
-                .sheet(isPresented: $adding, onDismiss: afterAdding) {
-                    AddWordView { text, reading in
-                        change { $0.addManual(text, reading: reading) }
-                        justAdded = true
-                    }
-                }
-                .alert("字典存不進去", isPresented: $saveFailed) {
-                    Button("好") {}
-                } message: {
-                    Text("App 跟鍵盤共用的資料夾打不開，請截圖給開發者。")
-                }
-        }
-        .onAppear(perform: reload)
-        .onChange(of: scenePhase) {
-            if scenePhase == .active {
-                reload()
+                .padding(.trailing, Metric.screenMargin)
+                .padding(.bottom, DomyTabBar.clearance)
             }
-        }
-        // 字典頁出現（或從背景回來）停一下才問；切走分頁、進背景時 task 會被取消
-        .task(id: scenePhase) {
-            guard scenePhase == .active else { return }
-            await askForReviewIfReady(after: .seconds(1.5))
-        }
+            .sheet(isPresented: $adding, onDismiss: afterAdding) {
+                AddWordView { text, reading in
+                    change { $0.addManual(text, reading: reading) }
+                    justAdded = true
+                }
+            }
+            .alert("字典存不進去", isPresented: $saveFailed) {
+                Button("好") {}
+            } message: {
+                Text("App 跟鍵盤共用的資料夾打不開，請截圖給開發者。")
+            }
+            .onAppear(perform: reload)
+            .onChange(of: scenePhase) {
+                if scenePhase == .active {
+                    reload()
+                }
+            }
+            // 字典頁出現（或從背景回來）停一下才問；切走分頁、進背景時 task 會被取消
+            .task(id: scenePhase) {
+                guard scenePhase == .active else { return }
+                await askForReviewIfReady(after: .seconds(1.5))
+            }
     }
 
     private func afterAdding() {
@@ -85,54 +84,70 @@ struct DictionaryView: View {
         requestReview()
     }
 
+    /// 上半段（標題、搜尋、狀態、篩選）是透明底的列，下半段的詞是一張白卡；左滑刪除要 List 才有
     private var list: some View {
         List {
-            statusRow
-            filterRow
-            if file.words.isEmpty {
-                emptyRow
+            Section {
+                DomyTitle("字典")
+                DomySearchField(prompt: "搜尋字詞或注音", text: $search)
+                statusRow
+                filterRow
             }
-            ForEach(shown) { word in
-                WordRow(word: word)
-                    .swipeActions {
-                        Button("刪除", role: .destructive) {
-                            change { $0.remove(word) }
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: Gap.s2, leading: 0, bottom: Gap.s2, trailing: 0))
+            Section {
+                if shown.isEmpty {
+                    emptyRow
+                }
+                ForEach(shown) { word in
+                    WordRow(word: word)
+                        .swipeActions {
+                            Button("刪除", role: .destructive) {
+                                change { $0.remove(word) }
+                            }
                         }
-                    }
+                }
+                .listRowBackground(Ink.surface)
+                .listRowSeparatorTint(Ink.separator)
             }
         }
-        .listStyle(.plain)
-        .overlay {
-            if shown.isEmpty, !search.isEmpty {
-                ContentUnavailableView.search(text: search)
-            }
-        }
+        .listStyle(.insetGrouped)
+        .listSectionSpacing(Gap.s2)
+        .scrollContentBackground(.hidden)
+        .background(Brand.theme.canvas)
+        .tabBarClearance()
     }
 
     /// 鍵盤寫過資料：顯示「自動學習中」；還沒：教你開完全取用
     @ViewBuilder private var statusRow: some View {
         if let seen = file.keyboardSeen {
-            HStack(spacing: 8) {
+            HStack(spacing: Gap.s2) {
                 Circle()
-                    .fill(Palette.teal)
-                    .frame(width: 8, height: 8)
-                Text("自動學習中・\(seen.formatted(.relative(presentation: .named)))更新")
+                    .fill(Brand.theme.accent)
+                    .frame(width: Gap.s2, height: Gap.s2)
+                Text("**自動學習中**・\(seen.formatted(.relative(presentation: .named)))更新")
+                    .font(Typo.subheadline.font)
+                    .foregroundStyle(Brand.theme.strong)
+                Spacer(minLength: Gap.s2)
+                Text("\(file.words.count) 個詞")
+                    .font(Typo.footnote.font)
+                    .foregroundStyle(Ink.textSecondary)
             }
-            .font(.subheadline)
-            .foregroundStyle(Palette.statusText)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Palette.statusBackground, in: RoundedRectangle(cornerRadius: 12))
-            .listRowSeparator(.hidden)
+            .padding(.horizontal, Gap.s4)
+            .padding(.vertical, Gap.s3)
+            .background(Brand.theme.tint, in: RoundedRectangle(cornerRadius: Corner.lg))
+            .overlay {
+                RoundedRectangle(cornerRadius: Corner.lg)
+                    .stroke(Brand.theme.soft, lineWidth: Metric.hairline)
+            }
         } else {
             FullAccessCard()
-                .listRowSeparator(.hidden)
         }
     }
 
     private var filterRow: some View {
-        HStack(spacing: 2) {
+        HStack(spacing: Gap.s1 / 2) {
             ForEach(Filter.allCases, id: \.self) { item in
                 Button {
                     filter = item
@@ -142,55 +157,37 @@ struct DictionaryView: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(4)
-        .background(Color(.systemGray6), in: Capsule())
-        .listRowSeparator(.hidden)
+        .padding(Gap.s1)
+        .background(Ink.surfaceMuted, in: Capsule())
     }
 
     private func pill(_ item: Filter) -> some View {
         let selected = filter == item
-        return HStack(spacing: 4) {
+        return HStack(spacing: Gap.s1) {
             if let icon = item.icon {
                 Image(systemName: icon)
-                    .foregroundStyle(item == .auto ? Palette.teal : Color.secondary)
+                    .imageScale(.small)
+                    .foregroundStyle(item == .auto ? Brand.theme.accent : Ink.textSecondary)
             }
             Text(item.title)
         }
-        .font(.subheadline.weight(selected ? .semibold : .regular))
-        .frame(maxWidth: .infinity, minHeight: 38)
-        .background(selected ? Color(.systemBackground) : Color.clear, in: Capsule())
-        .shadow(color: .black.opacity(selected ? 0.12 : 0), radius: 2, y: 1)
+        .font(Typo.subheadline.font.weight(selected ? .semibold : .regular))
+        .foregroundStyle(selected ? Ink.textPrimary : Ink.textSecondary)
+        .frame(maxWidth: .infinity, minHeight: Metric.buttonCompact)
+        .background(selected ? Ink.surface : Color.clear, in: Capsule())
+        .shadow(color: Ink.shadow.opacity(selected ? 0.1 : 0), radius: 3, y: 1)
+        .contentShape(Capsule())
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
     private var emptyRow: some View {
-        VStack(spacing: 10) {
-            Text("還沒有字詞")
-                .font(.title3.weight(.bold))
-            Text(Self.emptyHint)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 32)
+        DomyEmptyState(
+            icon: file.words.isEmpty ? "book" : nil,
+            title: file.words.isEmpty ? "還沒有字詞" : "找不到符合的",
+            message: file.words.isEmpty ? Self.emptyHint : "換個關鍵字或篩選看看。"
+        )
+        .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
-    }
-
-    private var addButton: some View {
-        Button {
-            adding = true
-        } label: {
-            Image(systemName: "plus")
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(Color(.systemBackground))
-                .frame(width: 60, height: 60)
-                .background(Color.primary, in: Circle())
-                .shadow(color: .black.opacity(0.22), radius: 8, y: 4)
-        }
-        .accessibilityLabel("加詞")
-        .padding(.trailing, 20)
-        .padding(.bottom, 24)
     }
 
     /// 篩選＋搜尋後要顯示的詞，新的在上面
@@ -230,24 +227,22 @@ private struct WordRow: View {
     let word: UserDictionary.Word
 
     var body: some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
+        HStack(spacing: Gap.s3) {
+            VStack(alignment: .leading, spacing: Gap.s1 / 2) {
                 Text(word.text)
-                    .font(.title3.weight(.medium))
+                    .font(Typo.title3.font.weight(.medium))
+                    .foregroundStyle(Ink.textPrimary)
                 Text(word.displayReading)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .font(Typo.footnote.font)
+                    .foregroundStyle(Ink.textSecondary)
             }
             Spacer()
-            Label {
-                Text(word.source == .auto ? "自動" : "手動")
-            } icon: {
-                Image(systemName: word.source == .auto ? "sparkle" : "pencil")
-                    .foregroundStyle(word.source == .auto ? Palette.teal : Color.secondary)
+            if word.source == .auto {
+                DomyPill(text: "自動", icon: "sparkle")
+            } else {
+                DomyPill(text: "手動", icon: "pencil", tone: .muted)
             }
-            .font(.footnote)
-            .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, Gap.s1 + Gap.s1 / 2)
     }
 }

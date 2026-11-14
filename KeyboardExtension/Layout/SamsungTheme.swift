@@ -91,6 +91,26 @@ enum SamsungTheme {
         themed(\.tone)
     }
 
+    // 鍵盤外框用的產品色（剪貼簿面板的篩選、卡片上的標籤與圖釘、長按選單）：Domy 設計系統的鼠尾草綠。
+    // 值抄自 domy-design 的 tokens.json（themes.sage、neutral），那邊改了這裡要跟著改。
+    // 鍵盤擴充不載入 SwiftUI，所以不直接用 App 那份 DomyTokens.swift
+
+    static let accent = brand(light: 0x4F6B57, dark: 0x9DC2A5)
+    /// 壓在 accent 上的字
+    static let onAccent = brand(light: 0xFFFFFF, dark: 0x12251A)
+    /// 產品色的字（卡片上的標籤、勾選的標籤）
+    static let accentStrong = brand(light: 0x3F5746, dark: 0xBFD9C4)
+    /// 產品色淡底（勾選的標籤）
+    static let accentSoft = brand(light: 0xE3ECE5, dark: 0x22322A)
+    static let destructive = brand(light: 0xC4372C, dark: 0xFF6B5E)
+    static let destructiveSoft = brand(light: 0xFBEDEB, dark: 0x3A1E1B)
+
+    private static func brand(light: Int, dark: Int) -> UIColor {
+        UIColor { trait in
+            KeyboardTheme.color(trait.userInterfaceStyle == .dark ? dark : light)
+        }
+    }
+
     static var keyCornerRadius: CGFloat {
         theme.cornerRadius
     }

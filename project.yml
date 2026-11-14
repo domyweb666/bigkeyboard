@@ -19,6 +19,8 @@ targets:
     sources:
       - App
       - Shared
+      # Domy 設計系統的代號（從 domy-design 產生的檔，不手改）。只給 App 用：鍵盤擴充不載入 SwiftUI
+      - Design
     entitlements:
       path: Entitlements/BigKeyboard.entitlements
       properties:

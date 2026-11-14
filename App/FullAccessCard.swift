@@ -2,33 +2,48 @@ import SwiftUI
 
 /// 還沒收到鍵盤的資料時，教你打開「允許完全取用」。這是選用的：不開也能打字（審核指南 4.4.1），文案不能寫成必開
 struct FullAccessCard: View {
+    private static let steps = [
+        "按下面的「前往設定」",
+        "點「鍵盤」",
+        "打開「允許完全取用」，跳出警告時按「允許」",
+    ]
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("想讓豆鍵自動學詞？")
-                .font(.headline)
-            Text(Self.reason)
-                .font(.subheadline)
-            VStack(alignment: .leading, spacing: 4) {
-                Text("1. 按下面的「前往設定」")
-                Text("2. 點「鍵盤」")
-                Text("3. 打開「允許完全取用」，跳出警告時按「允許」")
+        VStack(alignment: .leading, spacing: Gap.s4) {
+            VStack(alignment: .leading, spacing: Gap.s2) {
+                DomyPill(text: "選用")
+                Text("想讓豆鍵自動學詞？")
+                    .font(Typo.title3.font)
+                    .foregroundStyle(Ink.textPrimary)
+                Text(Self.reason)
+                    .font(Typo.subheadline.font)
+                    .foregroundStyle(Ink.textPrimary)
             }
-            .font(.subheadline)
-            Button {
+            VStack(alignment: .leading, spacing: Gap.s2) {
+                ForEach(Array(Self.steps.enumerated()), id: \.offset) { i, step in
+                    HStack(alignment: .firstTextBaseline, spacing: Gap.s3) {
+                        Text("\(i + 1)")
+                            .font(Typo.footnote.font.weight(.bold))
+                            .foregroundStyle(Brand.theme.strong)
+                            .frame(width: Gap.s6, height: Gap.s6)
+                            .background(Ink.surface, in: Circle())
+                        Text(step)
+                            .font(Typo.subheadline.font)
+                            .foregroundStyle(Ink.textPrimary)
+                    }
+                }
+            }
+            Button("前往設定") {
                 AppSettings.open()
-            } label: {
-                Text("前往設定")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity, minHeight: 48)
-                    .background(Palette.ink, in: RoundedRectangle(cornerRadius: 12))
             }
-            .buttonStyle(.plain)
-            .padding(.top, 6)
+            .buttonStyle(DomyButtonStyle())
         }
-        .foregroundStyle(Palette.cardText)
-        .padding(18)
-        .background(Palette.cardBackground, in: RoundedRectangle(cornerRadius: 16))
+        .padding(Gap.s5)
+        .background(Brand.theme.tint, in: RoundedRectangle(cornerRadius: Corner.xl))
+        .overlay {
+            RoundedRectangle(cornerRadius: Corner.xl)
+                .stroke(Brand.theme.soft, lineWidth: Metric.hairline)
+        }
     }
 
     private static let reason = "不開「允許完全取用」也能用豆鍵打字。"

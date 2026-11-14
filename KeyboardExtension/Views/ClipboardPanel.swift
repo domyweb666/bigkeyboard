@@ -82,7 +82,7 @@ final class ClipboardPanel: UIView, UICollectionViewDataSource {
         backButton.accessibilityLabel = "回到鍵盤"
 
         chipStack.axis = .horizontal
-        chipStack.spacing = 4
+        chipStack.spacing = 6
         chipScroll.showsHorizontalScrollIndicator = false
         chipScroll.addSubview(chipStack)
         chipStack.translatesAutoresizingMaskIntoConstraints = false
@@ -238,13 +238,14 @@ private extension ClipboardPanel {
     func makeChip(_ item: Filter, title: String) -> KeyButton {
         let selected = item == filter
         let b = KeyButton()
-        b.normalColor = selected ? SamsungTheme.keyWhite : .clear
+        // 選中的是產品色實底，其他是鍵帽色的膠囊
+        b.normalColor = selected ? SamsungTheme.accent : SamsungTheme.keyWhite
         b.layer.shadowOpacity = 0
         b.layer.cornerRadius = 15
         b.tapsWhenCancelled = false
         b.label.text = title
         b.label.font = .systemFont(ofSize: 14, weight: selected ? .semibold : .regular)
-        b.label.textColor = selected ? SamsungTheme.keyText : SamsungTheme.hintText
+        b.label.textColor = selected ? SamsungTheme.onAccent : SamsungTheme.keyText
         b.accessibilityTraits = selected ? [.button, .selected] : .button
         b.onTap = { [weak self] in
             guard let self else { return }
@@ -253,7 +254,7 @@ private extension ClipboardPanel {
             applyFilter()
             grid.setContentOffset(.zero, animated: false)
         }
-        b.widthAnchor.constraint(greaterThanOrEqualTo: b.label.widthAnchor, constant: 20).isActive = true
+        b.widthAnchor.constraint(greaterThanOrEqualTo: b.label.widthAnchor, constant: 24).isActive = true
         return b
     }
 

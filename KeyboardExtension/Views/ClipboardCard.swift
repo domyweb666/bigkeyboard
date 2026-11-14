@@ -4,7 +4,7 @@ import UIKit
 /// 整張是一顆鍵（KeyButton）：點了貼上、按住跳選單；在可捲動的清單裡，開始捲就不算點
 final class ClipboardCard: UICollectionViewCell {
     static let font = UIFont.systemFont(ofSize: 15)
-    static let tagFont = UIFont.systemFont(ofSize: 12)
+    static let tagFont = UIFont.systemFont(ofSize: 12, weight: .semibold)
     static let maxLines: CGFloat = 4
     static let padX: CGFloat = 10
     static let padY: CGFloat = 9
@@ -73,8 +73,8 @@ final class ClipboardCard: UICollectionViewCell {
         button.normalColor = SamsungTheme.keyWhite
         button.layer.cornerRadius = SamsungTheme.keyCornerRadius
         textLabel.textColor = SamsungTheme.keyText
-        tagLabel.textColor = SamsungTheme.hintText
-        pinView.tintColor = SamsungTheme.hintText
+        tagLabel.textColor = SamsungTheme.accentStrong
+        pinView.tintColor = SamsungTheme.accent
         textLabel.text = Self.preview(entry.text)
         tagLabel.text = Self.tagLine(entry.tags)
         pinView.isHidden = !entry.pinned

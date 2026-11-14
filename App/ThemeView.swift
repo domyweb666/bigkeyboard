@@ -1,13 +1,28 @@
 import StoreKit
 import SwiftUI
-import UIKit
+
+/// 一款主題在主題頁上的狀態
+enum ThemeStatus: Equatable {
+    /// 擁有，而且鍵盤正在用
+    case inUse
+    /// 擁有，沒在用
+    case owned
+    /// 沒買，Apple 給的價格
+    case price(String)
+    /// 沒買，還在跟 Apple 問價格
+    case loading
+    /// 沒買，價格沒載到（逾時、沒網路）
+    case unavailable
+}
 
 /// 主題頁：選鍵盤的鍵帽配色、字體、圓角。冷灰免費，其他主題要先買（App 內購買，非消耗性）。
-/// 選好後鍵盤下次叫出來就換上
+/// 點主題卡只換上面的大預覽，看完再按預覽下面的按鈕換上或購買。選好後鍵盤下次叫出來就換上
 struct ThemeView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
     @State private var selected = KeyboardTheme.saved
+    /// 上面大預覽正在看的那款
+    @State private var previewing = KeyboardTheme.saved
     /// 跟 Apple 拿到的商品（價格），以產品 ID 為 key
     @State private var products: [String: Product] = [:]
     /// 擁有的付費主題產品 ID
@@ -20,40 +35,57 @@ struct ThemeView: View {
     @State private var message: String?
 
     var body: some View {
-        NavigationStack {
-            List {
-                Section {
-                    ForEach(KeyboardTheme.allCases) { theme in
-                        Button {
-                            Task { await tap(theme) }
-                        } label: {
-                            row(theme)
-                        }
-                        .foregroundStyle(.primary)
-                    }
-                } footer: {
-                    Text("鍵盤正開著的話，收起來再叫出來就會換上。")
+        ScrollView {
+            VStack(alignment: .leading, spacing: Gap.s5) {
+                DomyTitle("主題")
+                ThemeHero(theme: previewing, dark: dark, status: status(previewing)) {
+                    Task { await tap(previewing) }
                 }
-                Section {
-                    Button("前往設定") {
+                grid
+                Text("鍵盤正開著的話，收起來再叫出來就會換上。")
+                    .font(Typo.footnote.font)
+                    .foregroundStyle(Ink.textSecondary)
+                    .padding(.horizontal, Gap.s1)
+                DomySection(footer: "要開「允許完全取用」，鍵盤才換得了主題；沒開時鍵盤一律用冷灰。") {
+                    Button {
                         AppSettings.open()
+                    } label: {
+                        HStack {
+                            Text("前往設定")
+                                .foregroundStyle(Ink.textPrimary)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(Ink.textTertiary)
+                                .accessibilityHidden(true)
+                        }
+                        .font(Typo.body.font)
+                        .frame(minHeight: Metric.row)
+                        .contentShape(Rectangle())
                     }
-                } footer: {
-                    Text("要開「允許完全取用」，鍵盤才換得了主題；沒開時鍵盤一律用冷灰。")
+                    .buttonStyle(.plain)
                 }
-                Section {
-                    Button("回復購買") {
+                DomySection(footer: "換手機或重裝 App 後，用這個把買過的主題拿回來。") {
+                    Button {
                         Task { await restore() }
+                    } label: {
+                        Text("回復購買")
+                            .font(Typo.body.font)
+                            .foregroundStyle(Brand.theme.strong)
+                            .frame(maxWidth: .infinity, minHeight: Metric.row, alignment: .leading)
+                            .contentShape(Rectangle())
                     }
-                } footer: {
-                    Text("換手機或重裝 App 後，用這個把買過的主題拿回來。")
+                    .buttonStyle(.plain)
                 }
             }
-            .navigationTitle("主題")
-            .disabled(busy)
-            .alert(message ?? "", isPresented: messageShown) {
-                Button("好") {}
-            }
+            .padding(.horizontal, Metric.screenMargin)
+            .padding(.top, Gap.s2)
+        }
+        .background(Brand.theme.canvas)
+        .tabBarClearance()
+        .disabled(busy)
+        .alert(message ?? "", isPresented: messageShown) {
+            Button("好") {}
         }
         .task {
             await reload()
@@ -64,6 +96,40 @@ struct ThemeView: View {
             }
         }
     }
+
+    private var dark: Bool {
+        colorScheme == .dark
+    }
+
+    /// 8 款主題排成兩欄，同一排的兩張卡一樣高
+    private var grid: some View {
+        Grid(horizontalSpacing: Gap.s2 + Gap.s1 / 2, verticalSpacing: Gap.s2 + Gap.s1 / 2) {
+            ForEach(Self.pairs, id: \.self) { pair in
+                GridRow {
+                    ForEach(pair) { theme in
+                        Button {
+                            previewing = theme
+                        } label: {
+                            ThemeCard(
+                                theme: theme,
+                                dark: dark,
+                                status: status(theme),
+                                previewing: theme == previewing
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(theme == previewing ? .isSelected : [])
+                    }
+                }
+            }
+        }
+    }
+
+    /// 主題兩個一組（一排兩張卡）
+    private static let pairs: [[KeyboardTheme]] = {
+        let all = KeyboardTheme.allCases
+        return stride(from: 0, to: all.count, by: 2).map { Array(all[$0 ..< min($0 + 2, all.count)]) }
+    }()
 
     private var messageShown: Binding<Bool> {
         Binding(
@@ -76,61 +142,21 @@ struct ThemeView: View {
         )
     }
 
-    /// 價格放在說明下面：放右邊會把說明擠成一行三、四個字（字放大時更明顯）
-    private func row(_ theme: KeyboardTheme) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            ThemePreview(colors: colorScheme == .dark ? theme.dark : theme.light, dark: colorScheme == .dark)
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text(theme.name)
-                        .font(Font(theme.font(ofSize: 18) as CTFont))
-                    Spacer(minLength: 0)
-                    if isOwned(theme), theme == selected {
-                        Image(systemName: "checkmark")
-                            .fontWeight(.semibold)
-                            .foregroundStyle(Palette.teal)
-                            .accessibilityLabel("使用中")
-                    }
-                }
-                Text(theme.summary)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                status(theme)
-            }
-        }
-        .padding(.vertical, 4)
-        .contentShape(Rectangle())
-    }
-
-    /// 說明下面：沒買的顯示 Apple 給的價格；還在問價格時轉圈；買過的不顯示
-    @ViewBuilder
-    private func status(_ theme: KeyboardTheme) -> some View {
+    private func status(_ theme: KeyboardTheme) -> ThemeStatus {
         if isOwned(theme) {
-            EmptyView()
-        } else if let id = theme.productID, let product = products[id] {
-            Text(product.displayPrice)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Palette.statusText)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(Palette.statusBackground, in: .capsule)
-                .accessibilityLabel("購買，\(product.displayPrice)")
-        } else if loading {
-            ProgressView()
-                .accessibilityLabel("價格載入中")
-        } else {
-            Label("價格沒載入，點一下重試", systemImage: "arrow.clockwise")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+            return theme == selected ? .inUse : .owned
         }
+        if let id = theme.productID, let product = products[id] {
+            return .price(product.displayPrice)
+        }
+        return loading ? .loading : .unavailable
     }
 
     private func isOwned(_ theme: KeyboardTheme) -> Bool {
         theme.productID.map(owned.contains) ?? true
     }
 
-    /// 擁有的就選用；沒買的跳出 Apple 的購買視窗，買到就直接選用
+    /// 預覽下面那顆按鈕：擁有的就換上；沒買的跳出 Apple 的購買視窗，買到就直接換上
     private func tap(_ theme: KeyboardTheme) async {
         if isOwned(theme) {
             select(theme)
@@ -198,52 +224,5 @@ struct ThemeView: View {
         }
         owned = restored
         message = restored.isEmpty ? "這個 Apple 帳號沒有買過主題。" : "已回復 \(restored.count) 款主題。"
-    }
-}
-
-/// 主題的小縮圖：注音鍵盤其中三排，每顆鍵一個色塊（k 字鍵、t 聲調、m 介音、f 韻母、x 功能鍵、- 半顆空位）
-private struct ThemePreview: View {
-    let colors: KeyboardTheme.Colors
-    let dark: Bool
-
-    private static let rows = ["kkttkttffff", "-kkkkkkmfff-", "kkkkkkmfffx"]
-
-    var body: some View {
-        VStack(spacing: 3) {
-            ForEach(Self.rows, id: \.self) { row in
-                HStack(spacing: 2) {
-                    ForEach(Array(row.enumerated()), id: \.offset) { _, zone in
-                        chip(zone)
-                    }
-                }
-            }
-        }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 6)
-        .frame(width: 132)
-        // 系統畫在鍵盤底下的底色（淺色約 #E2E3E7）
-        .background(Color(uiColor: KeyboardTheme.color(dark ? 0x2C2C2E : 0xE2E3E7)), in: .rect(cornerRadius: 10))
-        .accessibilityHidden(true)
-    }
-
-    @ViewBuilder
-    private func chip(_ zone: Character) -> some View {
-        if zone == "-" {
-            Color.clear.frame(width: 3, height: 14)
-        } else {
-            RoundedRectangle(cornerRadius: 3)
-                .fill(Color(uiColor: KeyboardTheme.color(hex(zone))))
-                .frame(height: 14)
-        }
-    }
-
-    private func hex(_ zone: Character) -> Int {
-        switch zone {
-        case "t": colors.tone
-        case "m": colors.medial
-        case "f": colors.finals
-        case "x": colors.function
-        default: colors.key
-        }
     }
 }
