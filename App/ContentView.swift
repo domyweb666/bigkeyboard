@@ -6,6 +6,8 @@ struct ContentView: View {
     @State private var tab = AppTab.dictionary
     /// 更新後第一次打開要跳的新功能卡片
     @State private var whatsNew = WhatsNew.pending
+    /// 新安裝第一次打開：帶加入鍵盤、試打
+    @State private var setupPending = SetupFlow.isPending
 
     var body: some View {
         // 系統的分頁列藏起來，換成 Domy 的懸浮膠囊分頁列（疊在最上層）
@@ -35,6 +37,12 @@ struct ContentView: View {
         .tint(Brand.theme.strong)
         .sheet(item: $whatsNew, onDismiss: WhatsNew.clearPending) { release in
             WhatsNewCard(release: release) { whatsNew = nil }
+        }
+        .fullScreenCover(isPresented: $setupPending) {
+            SetupFlowView {
+                setupPending = false
+                tab = .dictionary
+            }
         }
         // 設定頁選的外觀，選完立刻生效
         .preferredColorScheme(appearance.colorScheme)

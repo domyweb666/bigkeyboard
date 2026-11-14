@@ -9,6 +9,7 @@ struct BigKeyboardApp: App {
         ThemePurchases.listenForUpdates()
         // 要在 recordLaunch 之前：靠「第一次打開」的紀錄分出新安裝和更新
         WhatsNew.prepare()
+        SetupFlow.prepare()
         ReviewPrompt.recordLaunch()
         DictionarySync.start()
     }

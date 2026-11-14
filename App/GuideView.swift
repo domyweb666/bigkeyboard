@@ -44,7 +44,7 @@ struct GuideView: View {
                 .font(Typo.title2.font)
                 .foregroundStyle(Ink.textPrimary)
                 .accessibilityAddTraits(.isHeader)
-            step(1, title: "加入鍵盤", detail: "設定 → 一般 → 鍵盤 → 鍵盤 → 新增鍵盤 → 豆鍵")
+            step(1, title: "加入鍵盤", detail: "按下面的「前往設定」→ 點「鍵盤」→ 打開「豆鍵」")
             step(2, title: "切到豆鍵", detail: Self.switchDetail)
             step(3, title: "讓豆鍵自動學詞", detail: Self.fullAccessDetail, optional: true)
             Button("前往設定") {
