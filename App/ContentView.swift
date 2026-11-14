@@ -15,6 +15,10 @@ struct ContentView: View {
                 .tabItem {
                     Label("主題", systemImage: "paintpalette")
                 }
+            SettingsView()
+                .tabItem {
+                    Label("設定", systemImage: "gearshape")
+                }
             GuideView()
                 .tabItem {
                     Label("使用說明", systemImage: "questionmark.circle")

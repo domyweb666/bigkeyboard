@@ -49,6 +49,13 @@ final class KeyboardViewController: UIInputViewController {
     var pendingEnglish: [String] = []
     /// 剛點了英文建議、自動補了空格（接著打標點時拿掉那個空格）
     var englishAutoSpace = false
+    /// App 設定：空白鍵一律送第一個候選（不當一聲）。鍵盤每次叫出來時重讀
+    var spaceSelectsFirstCandidate = false
+
+    /// 這一下空白鍵要不要當一聲
+    var spaceSealsFirstTone: Bool {
+        !spaceSelectsFirstCandidate && (engine?.canSealFirstTone ?? false)
+    }
 
     // MARK: - 生命週期
 
@@ -131,6 +138,7 @@ final class KeyboardViewController: UIInputViewController {
         associations = []
         expanded = false
         clipboardOpen = false
+        spaceSelectsFirstCandidate = hasFullAccess && SpaceKeySetting.selectsFirstCandidate
         applyTheme()
         updateAutoCapitalization()
         applyHostTraits()
@@ -334,7 +342,7 @@ private extension KeyboardViewController {
     }
 
     func handleSpace() {
-        if let engine, engine.canSealFirstTone {
+        if let engine, spaceSealsFirstTone {
             engine.sealFirstTone() // 這個音沒打聲調：空白當一聲，再按一下空白才送字
             learning.noteTyped()
             syncMarkedText()
