@@ -6,6 +6,13 @@ struct GuideView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Gap.s6) {
             startCard
+            DomySection("空白鍵") {
+                paragraph(Self.spaceDetail)
+                DomyDivider()
+                paragraph("想要空白鍵直接送出第一個候選字，到設定頁打開「空白鍵直接選第一個字」。")
+                DomyDivider()
+                note("要打開「允許完全取用」，鍵盤才讀得到這個設定；沒打開時空白鍵是當一聲。")
+            }
             DomySection("照你的寫法排候選") {
                 paragraph("豆鍵會看游標前面的一兩個字，把你平常接在它後面打的字詞排在候選和聯想的最前面。")
                 DomyDivider()
@@ -18,6 +25,13 @@ struct GuideView: View {
             }
             DomySection("表情符號") {
                 iconRow("globe", title: "按住左下角的地球鍵", detail: Self.emojiDetail)
+            }
+            DomySection("iCloud 同步與備份") {
+                paragraph(Self.iCloudDetail)
+                DomyDivider()
+                paragraph(Self.offlineDetail)
+                DomyDivider()
+                paragraph(Self.backupDetail)
             }
             privacy
         }
@@ -42,6 +56,19 @@ struct GuideView: View {
         .background(Ink.surface, in: RoundedRectangle(cornerRadius: Corner.xxl))
         .domyShadow(DomyTokens.Elevation.level1)
     }
+
+    private static let spaceDetail = "打 ㄉㄧ 按空白，會先定成一聲，候選只剩 低、滴 這些一聲字，再按一下空白送出。"
+        + "打了聲調的音，按一下空白就送出。"
+
+    private static let iCloudDetail = "在設定頁打開「iCloud 同步」，"
+        + "字典裡的詞（自動學到的、自己加的）會存到你自己的 iCloud，"
+        + "同一個 Apple ID 的其他 iPhone 打開豆鍵 App 就會合併過去。剪貼簿和打字紀錄不會上傳。"
+
+    private static let offlineDetail = "鍵盤本身不連網，鍵盤學到的新詞，要打開豆鍵 App 才會同步。"
+        + "手機沒登入 iCloud 時，字典照常存在手機上。"
+
+    private static let backupDetail = "「匯出資料」會把整本字典（不含剪貼簿）存成一個檔案，可以放到「檔案」裡，"
+        + "換手機時再用「匯入資料」放回來。"
 
     private static let switchDetail = "打字時按左下角的地球鍵。"
         + "加入鍵盤後就能打注音、選候選字和聯想詞，也能切英文、符號、數字鍵盤。"

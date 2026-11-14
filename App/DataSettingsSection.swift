@@ -22,7 +22,7 @@ struct DataSettingsSection: View {
     private let config = VeggieConfig.current
 
     var body: some View {
-        DomySection("資料", footer: Self.iCloudFooter) {
+        DomySection("資料") {
             VeggieToggleRow(icon: "icloud", title: VeggieText.sync, isOn: $iCloudSync)
                 .onChange(of: iCloudSync) {
                     if iCloudSync {
@@ -54,13 +54,6 @@ struct DataSettingsSection: View {
             resetRow
         }
     }
-
-    private static let iCloudFooter = "打開 iCloud 同步後，字典裡的詞（自動學到的、自己加的）會存到你自己的 iCloud，"
-        + "同一個 Apple ID 的其他 iPhone 打開豆鍵 App 就會合併過去。"
-        + "剪貼簿和打字紀錄不會上傳。\n"
-        + "鍵盤本身不連網：鍵盤學到的新詞，要打開豆鍵 App 才會同步。"
-        + "手機沒登入 iCloud 時，字典照常存在手機上。\n"
-        + "匯出的備份檔是整本字典（不含剪貼簿），可以存到「檔案」，換手機時再匯入。"
 
     private var importRow: some View {
         Button {

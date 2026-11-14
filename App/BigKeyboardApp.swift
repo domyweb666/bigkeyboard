@@ -7,6 +7,8 @@ struct BigKeyboardApp: App {
         ReadingLookup.warmUp()
         Self.registerThemeFonts()
         ThemePurchases.listenForUpdates()
+        // 要在 recordLaunch 之前：靠「第一次打開」的紀錄分出新安裝和更新
+        WhatsNew.prepare()
         ReviewPrompt.recordLaunch()
         DictionarySync.start()
     }

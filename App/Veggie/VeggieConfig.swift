@@ -19,8 +19,8 @@ struct VeggieConfig {
     let dataCounter: String
     /// 清除所有資料會刪掉什麼，用在「所有詞和剪貼簿都會刪除」
     let resetScope: String
-    /// domyweb.org/apps/{slug}/privacy 已經上線才填 true，不然點了是空頁
-    let legalPagesLive: Bool
+    /// 隱私權政策網頁（要跟 App Store Connect 填的同一頁）。nil 時那一列隱藏
+    let privacyURL: URL?
 
     var appStoreURL: URL? {
         appStoreID.flatMap { URL(string: "https://apps.apple.com/app/id\($0)") }
@@ -28,10 +28,6 @@ struct VeggieConfig {
 
     var writeReviewURL: URL? {
         appStoreID.flatMap { URL(string: "https://apps.apple.com/app/id\($0)?action=write-review") }
-    }
-
-    var privacyURL: URL? {
-        legalPagesLive ? URL(string: "https://domyweb.org/apps/\(slug)/privacy") : nil
     }
 
     /// 「豆鍵 1.0 (73)」
@@ -48,12 +44,13 @@ extension VeggieConfig {
         name: "豆鍵",
         slug: "doujian",
         tagline: "字大鍵緊，少按錯的注音鍵盤",
-        appStoreID: nil,
-        supportEmail: nil,
+        appStoreID: "6829152938",
+        supportEmail: "charlie@domyweb.org",
         dataNoun: "詞",
         dataCounter: "個",
         resetScope: "所有詞和剪貼簿",
-        legalPagesLive: false
+        // 豆鍵上架時的網頁在 /tools/bigkeyboard/，不是規格寫的 /apps/{slug}/
+        privacyURL: URL(string: "https://domyweb.org/tools/bigkeyboard/privacy/")
     )
 }
 
@@ -102,6 +99,7 @@ enum VeggieText {
     static let feedback = "意見回饋"
     static let rate = "在 App Store 給我們評分"
     static let share = "分享給朋友"
+    static let whatsNew = "新功能"
     static let family = "蔬菜家族的其他 app"
     static let privacy = "隱私權政策"
     static let licenses = "開源授權"

@@ -58,17 +58,9 @@ struct SettingsView: View {
     // MARK: - 豆鍵自己的
 
     private var spaceSection: some View {
-        DomySection("空白鍵", footer: spaceFooter) {
+        DomySection("空白鍵") {
             VeggieToggleRow(icon: "space", title: "空白鍵直接選第一個字", isOn: $spaceSelectsFirstCandidate)
         }
-    }
-
-    private var spaceFooter: String {
-        let behavior = spaceSelectsFirstCandidate
-            ? "打 ㄉㄧ 按空白，直接送出候選列第一個字。"
-            : "打 ㄉㄧ 按空白，先定成一聲，候選只剩 低、滴 這些一聲字，再按一下空白送出。"
-            + "打了聲調的音，按一下空白就送出。"
-        return behavior + "\n要打開「允許完全取用」，鍵盤才讀得到這個設定；沒打開時空白鍵是當一聲。"
     }
 
     // MARK: - 一般
@@ -161,6 +153,13 @@ struct SettingsView: View {
                 }
                 .buttonStyle(.plain)
             }
+            DomyDivider()
+            NavigationLink {
+                WhatsNewHistoryView()
+            } label: {
+                VeggieRow(icon: "gift", title: VeggieText.whatsNew, accessory: .push)
+            }
+            .buttonStyle(.plain)
         }
     }
 
