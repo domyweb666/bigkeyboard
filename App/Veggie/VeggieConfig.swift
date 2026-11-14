@@ -75,7 +75,7 @@ struct VeggieApp: Identifiable {
     }
 
     static let family: [VeggieApp] = [
-        VeggieApp(slug: "qieji", name: "茄記", tagline: "像桌面一樣的記事本", appStoreID: nil, webURL: nil),
+        VeggieApp(slug: "qieji", name: "茄記", tagline: "想到就記", appStoreID: "6829151838", webURL: nil),
         VeggieApp(slug: "doujia", name: "豆莢", tagline: "番茄鐘", appStoreID: nil, webURL: nil),
     ]
 
