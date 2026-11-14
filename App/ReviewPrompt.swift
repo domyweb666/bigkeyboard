@@ -12,9 +12,6 @@ enum ReviewPrompt {
     /// 兩次請求至少隔這麼多天：連著兩個小改版不要各用掉一次
     static let minDaysBetweenAsks = 90
 
-    /// App Store Connect → App 資訊 → Apple ID（一串數字）。填了「使用說明」才會出現「到 App Store 寫評論」
-    static let appStoreID: String? = nil
-
     private static let firstOpenKey = "review.firstOpen"
     private static let lastAskedVersionKey = "review.lastAskedVersion"
     private static let lastAskedDateKey = "review.lastAskedDate"
@@ -62,12 +59,6 @@ enum ReviewPrompt {
     static func markAsked(now: Date = .now) {
         defaults.set(appVersion, forKey: lastAskedVersionKey)
         defaults.set(now, forKey: lastAskedDateKey)
-    }
-
-    /// App Store 的寫評論頁；沒填 App Store ID 時是 nil
-    static var writeReviewURL: URL? {
-        guard let appStoreID else { return nil }
-        return URL(string: "https://apps.apple.com/app/id\(appStoreID)?action=write-review")
     }
 
     private static func days(from start: Date, to end: Date) -> Int {

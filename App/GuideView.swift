@@ -1,14 +1,10 @@
 import SwiftUI
 
 /// 使用說明：加入鍵盤、讓豆鍵自動學詞、收鍵盤。
-/// 放在設定頁的下半段（2026-11-14 多米：說明併進設定，分頁剩四格），自己不捲動、沒有畫面外框
+/// 從設定頁「支援 → 使用說明」點進來（GuidePage 包外框和標題），自己不捲動
 struct GuideView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Gap.s6) {
-            Text("使用說明")
-                .font(Typo.title1.font)
-                .foregroundStyle(Ink.textPrimary)
-                .accessibilityAddTraits(.isHeader)
             startCard
             DomySection("照你的寫法排候選") {
                 paragraph("豆鍵會看游標前面的一兩個字，把你平常接在它後面打的字詞排在候選和聯想的最前面。")
@@ -24,7 +20,6 @@ struct GuideView: View {
                 iconRow("globe", title: "按住左下角的地球鍵", detail: Self.emojiDetail)
             }
             privacy
-            review
         }
     }
 
@@ -131,7 +126,7 @@ struct GuideView: View {
                 Image(systemName: "lock")
                     .foregroundStyle(Brand.theme.accent)
                     .accessibilityHidden(true)
-                Text("豆鍵預設不連網，字典只存在這支手機上。打開上面的「用 iCloud 同步字典」，字典才會存到你自己的 iCloud。")
+                Text("豆鍵預設不連網，字典只存在這支手機上。在設定頁打開「iCloud 同步」，字典才會存到你自己的 iCloud。")
                     .foregroundStyle(Brand.theme.strong)
             }
             .font(Typo.body.font)
@@ -142,25 +137,6 @@ struct GuideView: View {
             .overlay {
                 RoundedRectangle(cornerRadius: Corner.xl)
                     .stroke(Brand.theme.soft, lineWidth: Metric.hairline)
-            }
-        }
-    }
-
-    @ViewBuilder private var review: some View {
-        if let url = ReviewPrompt.writeReviewURL {
-            DomySection("喜歡豆鍵的話") {
-                Link(destination: url) {
-                    HStack {
-                        Text("到 App Store 寫評論")
-                            .foregroundStyle(Brand.theme.strong)
-                        Spacer()
-                        Image(systemName: "arrow.up.right")
-                            .foregroundStyle(Ink.textTertiary)
-                            .accessibilityHidden(true)
-                    }
-                    .font(Typo.body.font)
-                    .frame(minHeight: Metric.row)
-                }
             }
         }
     }

@@ -14,7 +14,7 @@ enum DictionarySync {
     /// 鍵值儲存整個 App 上限 1MB，留一點餘裕
     private static let maxBytes = 900_000
     /// 刪除紀錄只留最近的這麼多筆（太舊的刪除，兩支手機早就對齊了）
-    private static let maxRemoved = 3000
+    nonisolated static let maxRemoved = 3000
     private static var store: NSUbiquitousKeyValueStore {
         .default
     }

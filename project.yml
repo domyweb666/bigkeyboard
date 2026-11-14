@@ -21,6 +21,15 @@ targets:
       - Shared
       # Domy 設計系統的代號（從 domy-design 產生的檔，不手改）。只給 App 用：鍵盤擴充不載入 SwiftUI
       - Design
+      # 設定頁「開源授權」顯示的授權全文：直接用原始授權檔，不另抄一份
+      - path: KeyboardExtension/Engine/Vendor/McBopomofo/LICENSE.txt
+        buildPhase: resources
+      - path: KeyboardExtension/Resources/LICENSE-AOSP-LatinIME.txt
+        buildPhase: resources
+      - path: KeyboardExtension/Resources/Fonts/OFL-NotoSerifTC.txt
+        buildPhase: resources
+      - path: KeyboardExtension/Resources/Fonts/OFL-LXGWWenKaiTC.txt
+        buildPhase: resources
     entitlements:
       path: Entitlements/BigKeyboard.entitlements
       properties:

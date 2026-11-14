@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
+    @AppStorage(Appearance.storageKey) private var appearance = Appearance.system
     @State private var tab = AppTab.dictionary
 
     var body: some View {
@@ -30,6 +31,8 @@ struct ContentView: View {
             .ignoresSafeArea(.keyboard, edges: .bottom)
         }
         .tint(Brand.theme.strong)
+        // 設定頁選的外觀，選完立刻生效
+        .preferredColorScheme(appearance.colorScheme)
         // 回到前景：鍵盤這段時間學到的詞跟 iCloud 對一次（沒打開同步時不做事）
         .onChange(of: scenePhase) {
             if scenePhase == .active {

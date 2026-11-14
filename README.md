@@ -35,13 +35,12 @@
 
 ### 豆鍵 App
 
-App 底部有五個分頁：
+App 底部有四個分頁：
 
 - 字典：鍵盤自動學到的詞、自己手動加的詞，可以篩選、搜尋、左滑刪除。手動加詞時注音從詞庫自動帶出
 - 主題：8 款主題，冷灰免費，另外 7 款各 NT$60（App 內購買，買一次永久有，有「回復購買」）
 - 剪貼簿：鍵盤存下來的剪貼內容，可以改字、加標籤、固定
-- 設定：空白鍵要當一聲，還是直接選第一個字
-- 使用說明：怎麼加入鍵盤、為什麼要開完全取用、怎麼收鍵盤
+- 設定：照蔬菜家族共用的設定頁排。空白鍵要當一聲還是直接選字；外觀；iCloud 同步、匯出匯入字典、清除所有資料；恢復購買；使用說明（怎麼加入鍵盤、為什麼要開完全取用、怎麼收鍵盤）；開源授權；版本號
 
 ---
 
@@ -136,12 +135,13 @@ gh run rerun <run id> --repo domyweb666/bigkeyboard
 
 ```
 App/                         豆鍵 App（SwiftUI）
-  ContentView.swift            五個分頁：字典、剪貼簿、主題、設定、使用說明
-  SettingsView.swift           設定頁：空白鍵當一聲或直接選字
+  ContentView.swift            四個分頁：字典、剪貼簿、主題、設定
+  SettingsView.swift           設定頁（資料那一區在 DataSettingsSection.swift）
+  Veggie/                      蔬菜家族共用元素：設定檔 VeggieConfig、設定列、外觀、備份、意見回饋、開源授權頁。之後搬成 VeggieKit
   DictionaryView.swift         字典頁；AddWordView.swift 加詞
   ThemeView.swift              主題頁：選主題、購買、回復購買
   ThemePurchases.swift         StoreKit 2：拿商品、買、對帳、回復購買
-  GuideView.swift              使用說明
+  GuideView.swift              使用說明（從設定頁點進去）
 KeyboardExtension/           鍵盤擴充
   KeyboardViewController*.swift  鍵盤殼：模式切換、組字、學詞、收鍵盤、跟著輸入框的深淺色
   Layout/KeyboardLayout.swift    四張鍵面的鍵位表（資料，不是程式邏輯）
