@@ -251,8 +251,8 @@ private extension KeyboardViewController {
         case .numpad:
             keyboardView.load(NumpadLayout.rows(chinese: chinese))
         }
-        // 工具列在注音、英文鍵面出現（候選字／預測字）；符號頁、數字鍵盤總高度不變，空間讓給鍵（鍵變高、更好按）
-        let showBar = mode.isLanguage
+        // 工具列只在注音鍵面出現（候選字）；英文、符號頁、數字鍵盤總高度不變，空間讓給鍵（鍵變高、更好按）
+        let showBar = mode == .bopomofo
         barShown?.isActive = false
         barHidden?.isActive = false
         (showBar ? barShown : barHidden)?.isActive = true
