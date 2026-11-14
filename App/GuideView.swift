@@ -131,7 +131,7 @@ struct GuideView: View {
                 Image(systemName: "lock")
                     .foregroundStyle(Brand.theme.accent)
                     .accessibilityHidden(true)
-                Text("豆鍵沒有連網功能，字典只存在這支手機上。")
+                Text("豆鍵預設不連網，字典只存在這支手機上。打開上面的「用 iCloud 同步字典」，字典才會存到你自己的 iCloud。")
                     .foregroundStyle(Brand.theme.strong)
             }
             .font(Typo.body.font)

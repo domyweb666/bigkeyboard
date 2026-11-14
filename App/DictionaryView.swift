@@ -56,6 +56,9 @@ struct DictionaryView: View {
                 Text("App 跟鍵盤共用的資料夾打不開，請截圖給開發者。")
             }
             .onAppear(perform: reload)
+            .onReceive(NotificationCenter.default.publisher(for: DictionarySync.didChangeLocal)) { _ in
+                reload()
+            }
             .onChange(of: scenePhase) {
                 if scenePhase == .active {
                     reload()
@@ -211,6 +214,7 @@ struct DictionaryView: View {
     private func change(_ edit: (inout UserDictionary.File) -> Void) {
         if UserDictionary.update(edit) {
             reload()
+            DictionarySync.sync()
         } else {
             saveFailed = true
             ReviewPrompt.hold()

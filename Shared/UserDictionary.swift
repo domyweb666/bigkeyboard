@@ -35,6 +35,8 @@ enum UserDictionary {
         var words: [Word] = []
         /// 在 App 裡刪掉的自動學詞（id），鍵盤不再自動學回來
         var ignored: [String] = []
+        /// 刪掉的詞（id → 刪的時間）。iCloud 同步合併時用：比那個詞最後更新還晚的刪除才算數，另一支手機才不會把它傳回來
+        var removed: [String: Date] = [:]
         /// 鍵盤最後一次寫入的時間（App 用來顯示「自動學習中」）
         var keyboardSeen: Date?
         /// 接續紀錄：前面的 1～2 個字 → 用豆鍵在它後面打出的字詞 → 次數。只存字，不存整段文字
@@ -96,6 +98,7 @@ extension UserDictionary.File {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         words = try c.decodeIfPresent([UserDictionary.Word].self, forKey: .words) ?? []
         ignored = try c.decodeIfPresent([String].self, forKey: .ignored) ?? []
+        removed = try c.decodeIfPresent([String: Date].self, forKey: .removed) ?? [:]
         keyboardSeen = try c.decodeIfPresent(Date.self, forKey: .keyboardSeen)
         follows = try c.decodeIfPresent([String: [String: Int]].self, forKey: .follows) ?? [:]
         english = try c.decodeIfPresent([String: Int].self, forKey: .english) ?? [:]
@@ -131,6 +134,7 @@ extension UserDictionary.File {
     mutating func learn(_ text: String, reading: String) {
         let id = UserDictionary.key(text, reading: reading)
         guard !ignored.contains(id) else { return }
+        removed[id] = nil
         if let i = words.firstIndex(where: { $0.id == id }) {
             words[i].count += 1
             words[i].updated = Date()
@@ -143,6 +147,7 @@ extension UserDictionary.File {
     mutating func addManual(_ text: String, reading: String) {
         let id = UserDictionary.key(text, reading: reading)
         ignored.removeAll { $0 == id }
+        removed[id] = nil
         if let i = words.firstIndex(where: { $0.id == id }) {
             words[i].source = .manual
             words[i].updated = Date()
@@ -151,9 +156,10 @@ extension UserDictionary.File {
         }
     }
 
-    /// 刪掉一個詞；自動學到的記進 ignored，鍵盤不再學回來
+    /// 刪掉一個詞；自動學到的記進 ignored，鍵盤不再學回來；都記下刪的時間（同步用）
     mutating func remove(_ word: UserDictionary.Word) {
         words.removeAll { $0.id == word.id }
+        removed[word.id] = Date()
         if word.source == .auto, !ignored.contains(word.id) {
             ignored.append(word.id)
         }

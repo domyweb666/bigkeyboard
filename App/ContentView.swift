@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var tab = AppTab.dictionary
 
     var body: some View {
@@ -29,5 +30,11 @@ struct ContentView: View {
             .ignoresSafeArea(.keyboard, edges: .bottom)
         }
         .tint(Brand.theme.strong)
+        // 回到前景：鍵盤這段時間學到的詞跟 iCloud 對一次（沒打開同步時不做事）
+        .onChange(of: scenePhase) {
+            if scenePhase == .active {
+                DictionarySync.sync()
+            }
+        }
     }
 }

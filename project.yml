@@ -26,6 +26,8 @@ targets:
       properties:
         com.apple.security.application-groups:
           - group.org.domyweb.bigkeyboard
+        # 字典 iCloud 同步（鍵值儲存）。只給 App；鍵盤擴充不碰 iCloud
+        com.apple.developer.ubiquity-kvstore-identifier: $(TeamIdentifierPrefix)$(CFBundleIdentifier)
     info:
       path: App/Info.plist
       properties:

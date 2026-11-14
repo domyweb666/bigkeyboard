@@ -1,4 +1,4 @@
-# 片 D22：字典 iCloud 同步（2026-11-14 排定，還沒動工）
+# 片 D22：字典 iCloud 同步（2026-11-14 排定，同日實作完、待測）
 
 多米 2026-11-14 要求：鍵盤記住的字可以上傳 iCloud，設定頁加開關讓人自己選。
 
@@ -41,3 +41,10 @@
 - 使用說明「隱私」段、FullAccessCard 的「豆鍵沒有連網功能，字典只存在這支手機上」→ 改成預設不上傳、打開 iCloud 同步才存到自己的 iCloud
 - App Store 隱私標籤：資料存在使用者自己的 iCloud、開發者看不到。Apple 沒有明文說這種情況算不算「收集」，論壇上也沒有定論。送審前再決定要維持「不收集資料」還是保守申報
 - 送審備註寫明：同步預設關、只同步字典、只存使用者自己的 iCloud
+
+## 實作紀錄（2026-11-14）
+- 多米已在 Apple Developer 幫 org.domyweb.bigkeyboard 勾 iCloud（Include CloudKit support、容器 0 個）
+- App 加 entitlement `com.apple.developer.ubiquity-kvstore-identifier`；鍵盤擴充沒加
+- 程式：App/DictionarySync.swift（合併、壓縮、超過 900KB 先丟舊刪除紀錄再丟最久沒用的自動詞）；字典檔加 `removed`（刪除紀錄＋時間）
+- 合併規則用 Python 一比一模擬過九個情境（加詞、刪詞不回魂、自動詞刪了不再學、手動加回、新手機合併），全過；Swift 沒編譯過
+- 跟計畫不同：「沒登入 iCloud 時開關旁寫原因」改成說明文字固定寫「沒登入時字典照常存在手機上」。查登入狀態的 API（ubiquityIdentityToken）是給 iCloud 文件用的，只開鍵值儲存時可能一直回報沒登入，會誤導
