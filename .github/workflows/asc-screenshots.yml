@@ -1,0 +1,21 @@
+name: 上架截圖換進 App Store Connect
+
+# 推到 asc-screenshots 分支就跑：把 .aso/截圖/out 的 6.3、6.9 兩組換進 1.1 版本。
+# 先傳新的、Apple 處理完才刪舊的。不動文字、不選 build、不送審。
+on:
+  push:
+    branches: [asc-screenshots]
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: 換截圖並讀回來確認
+        run: |
+          pip install -q pyjwt cryptography requests
+          python3 -I .aso/asc_screenshots.py
