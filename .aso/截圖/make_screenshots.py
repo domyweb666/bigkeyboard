@@ -1,160 +1,181 @@
-# 把 iPhone 截圖合成 App Store 上架圖（1206 x 2622，放「配備動態島的 iPhone（中型顯示器）」那一格）。
-# 用法：python -I make_screenshots.py <原圖資料夾> <輸出資料夾>
-# 原圖檔名照格號：1.png、3.png、4.png⋯⋯（第 2 張用 1.png 裁切放大，不用另外截）。
-# 要改字、順序、裁切範圍，改 SHOTS 再跑一次。腳本表在 .aso/05-素材文案.md。
+# 豆鍵商店展示圖：真機截圖（1206×2622）＋大標＋描述句 → 6.3 吋與 6.9 吋兩種尺寸。
+# 版型照茄記（E:\茄記\qieji-1.1\.aso\tools\store_shots.py，多米 2026-11-15 定）：
+#   整組同一個漸層底；每張兩行大標（第二行強調色）＋一句描述；手機放大到 1000 寬、從底部出血；
+#   重點那一塊放大跳出手機框；第一張是主視覺大字。顏色換成豆鍵 icon 的深綠、米白、珊瑚紅。
+# 用法：python -I .aso/截圖/make_screenshots.py
+# 要換圖或換字，改下面 SHOTS。原圖放 .aso/截圖/raw/（檔名照格號）。
+import shutil
 import sys
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-W, H = 1206, 2622
-SCREEN_W = 950
-BEZEL = 15
-SCREEN_RADIUS = 128
-SCREEN_TOP = 457
-FONT_PATH = r"C:\Windows\Fonts\NotoSansTC-VF.ttf"
-FONT_SIZE = 117
-LINE_GAP = 31
-TEXT_CENTER_Y = 233
-SS = 4  # 圓角遮罩的超取樣倍數
+sys.stdout.reconfigure(encoding="utf-8")
+HERE = Path(__file__).parent
+ROOT = HERE.parent.parent
+RAW = HERE / "raw"
+OUT = HERE / "out"
+ICON = ROOT / "App/Assets.xcassets/AppIcon.appiconset/icon-1024.png"
+FONT = r"C:\Windows\Fonts\NotoSansTC-VF.ttf"
+SIZES = {"6.3": (1206, 2622), "6.9": (1320, 2868)}
 
-# 顏色取自新 icon（docs/icon/douJian.svg）：深綠漸層底、米白豆子；第二行用毛豆綠亮色
-BG_TOP = "#0F4A36"
-BG_BOTTOM = "#04201A"
-LINE1 = "#F8EAD2"
-LINE2 = "#9DC2A5"
+# 豆鍵 icon 的深綠：上深下淺
+BG_TOP, BG_BOTTOM = (5, 34, 27), (28, 102, 74)
+CREAM = (248, 234, 210)   # 大標（icon 的豆子）
+CORAL = (240, 98, 102)    # 第二行強調（icon 的鍵帽）
+SAGE = (196, 222, 204)    # 描述句
+BEZEL = (6, 18, 14)       # 手機邊框
+SHADOW = (0, 14, 8)
 
-# 裁切放大：原圖上要留下的範圍（左、上、右、下，0～1 的比例），只用在第 2 張
-KEYBOARD_CROP = (0.0, 0.548, 1.0, 0.930)  # 從候選列到空白鍵那排底，泡泡完整（2026-11-15 照實機原圖對過）
-
-# 順序就是上傳順序：(原圖, 輸出檔名, 兩行說明, 裁切範圍或 None)
+# name 檔名｜raw 原圖｜title 兩行大標｜sub 描述句｜top 手機上緣（1206 寬時的 y）
+# pops 把原圖裡的一塊放大、跳出手機外：[(x0, y0, x1, y1, 倍率, 圓角)]，座標是原圖像素
 SHOTS = [
-    ("1.png", "1-字大", ["字大的注音鍵盤", "少按錯"], None),
-    ("1.png", "2-分色", ["介音藍、韻母橘", "一眼找到要按的鍵"], KEYBOARD_CROP),
-    ("3.png", "3-排法", ["排法跟你習慣的一樣", "不用重學"], None),
-    ("4.png", "4-隱私", ["打的字只留在手機上", "同步要你自己開"], None),
-    ("5.png", "5-一聲", ["沒打聲調？", "按空白當一聲"], None),
-    ("6.png", "6-字典", ["改選過的詞", "下次排前面"], None),
-    ("7.png", "7-剪貼簿", ["複製過的字", "鍵盤裡點一下就貼"], None),
-    ("8.png", "8-主題", ["8 款豆子主題", "冷灰免費"], None),
-    ("9.png", "9-紅豆", ["紅豆主題", "楷書鍵帽字"], None),  # 選做：沒有 9.png 就跳過
+    dict(name="01-字大", raw="1.PNG", hero=True, title=["字大鍵緊"], sub="少按錯的注音鍵盤",
+         pills=["排法不用重學", "鍵盤不連網", "冷灰主題免費"]),
+    dict(name="02-分色", raw="1.PNG", title=["介音藍", "韻母橘"], sub="聲母在左、韻母在右，一眼分得出來",
+         pops=[(0, 1565, 1206, 2222, 1.1, 40)]),
+    dict(name="03-排法", raw="3.PNG", title=["排法不用", "重新學"], sub="標準注音排法，換過來就能打"),
+    dict(name="04-隱私", raw="4.PNG", title=["打的字", "只留在手機上"], sub="鍵盤不連網，iCloud 同步預設是關的",
+         pops=[(62, 1338, 1146, 1488, 1.2, 50)]),
+    dict(name="05-一聲", raw="5.PNG", title=["沒打聲調？", "按空白當一聲"], sub="空白鍵上的小字，寫著這一下是一聲還是選字",
+         pops=[(0, 1438, 1206, 1546, 1.15, 30), (436, 2228, 892, 2380, 1.7, 36)]),
+    dict(name="06-字典", raw="6.PNG", title=["改選過的詞", "下次排前面"], sub="鍵盤學到的詞，打開 App 就看得到",
+         pops=[(48, 686, 1160, 912, 1.15, 40)]),
+    dict(name="07-剪貼簿", raw="7.PNG", title=["複製過的字", "點一下就貼"], sub="常用的可以固定、加標籤",
+         pops=[(0, 1590, 1206, 1862, 1.15, 30)]),
+    dict(name="08-主題", raw="8.PNG", title=["8 款豆子主題", "冷灰免費"], sub="換顏色、字體和圓角，鍵位不變",
+         pops=[(104, 540, 1104, 1172, 1.12, 50)]),
+    dict(name="09-紅豆", raw="9.PNG", title=["紅豆主題", "楷書鍵帽字"], sub="每款都有淺色、深色兩套",
+         pops=[(0, 1565, 1206, 2222, 1.1, 40)]),
 ]
 
 
-def rounded_mask(size, radius):
-    big = Image.new("L", (size[0] * SS, size[1] * SS), 0)
-    ImageDraw.Draw(big).rounded_rectangle(
-        (0, 0, big.width - 1, big.height - 1), radius * SS, fill=255
-    )
-    return big.resize(size, Image.LANCZOS)
+def font(size, weight=900):
+    f = ImageFont.truetype(FONT, int(size))
+    f.set_variation_by_axes([weight])
+    return f
 
 
-def gradient(size, top, bottom):
-    """上到下的直向漸層"""
+def fit(d, text, size, max_w, weight=900):
+    """字太長就縮到放得下。"""
+    f = font(size, weight)
+    while d.textlength(text, font=f) > max_w:
+        size -= 2
+        f = font(size, weight)
+    return f
+
+
+def center(d, w, y, text, f, fill):
+    d.text(((w - d.textlength(text, font=f)) / 2, y), text, font=f, fill=fill)
+
+
+def gradient(size):
     w, h = size
     col = Image.new("RGB", (1, h))
-    t, b = Image.new("RGB", (1, 1), top).getpixel((0, 0)), Image.new("RGB", (1, 1), bottom).getpixel((0, 0))
     for y in range(h):
-        k = y / (h - 1)
-        col.putpixel((0, y), tuple(round(t[i] + (b[i] - t[i]) * k) for i in range(3)))
-    return col.resize((w, h))
+        t = y / (h - 1)
+        col.putpixel((0, y), tuple(int(a + (b - a) * t) for a, b in zip(BG_TOP, BG_BOTTOM)))
+    return col.resize(size)
 
 
-def headline_font():
-    font = ImageFont.truetype(FONT_PATH, FONT_SIZE)
-    font.set_variation_by_axes([900])
-    return font
+def mask(size, radius):
+    ss = 3
+    m = Image.new("L", (size[0] * ss, size[1] * ss), 0)
+    ImageDraw.Draw(m).rounded_rectangle([0, 0, size[0] * ss - 1, size[1] * ss - 1], radius * ss, fill=255)
+    return m.resize(size, Image.LANCZOS)
 
 
-def draw_headline(canvas, lines):
-    draw = ImageDraw.Draw(canvas)
-    font = headline_font()
-    ascent, descent = font.getmetrics()
-    line_h = ascent + descent
-    total = line_h * len(lines) + LINE_GAP * (len(lines) - 1)
-    y = TEXT_CENTER_Y - total / 2
-    for i, line in enumerate(lines):
-        width = draw.textlength(line, font=font)
-        if width > W - 120:
-            raise ValueError(f"標題太寬：{line}（{width:.0f}px，上限 {W - 120}）")
-        draw.text((W / 2, y), line, font=font, fill=LINE1 if i == 0 else LINE2, anchor="ma")
-        y += line_h + LINE_GAP
+def pill_row(d, w, y, texts, f, k, gap=22):
+    widths = [d.textlength(t, font=f) + 56 * k for t in texts]
+    x = (w - sum(widths) - gap * k * (len(texts) - 1)) / 2
+    ph = f.size * 1.9
+    for t, pw in zip(texts, widths):
+        d.rounded_rectangle([x, y, x + pw, y + ph], ph / 2, outline=SAGE, width=max(2, int(3 * k)))
+        d.text((x + 28 * k, y + (ph - f.size * 1.45) / 2), t, font=f, fill=CREAM)
+        x += pw + gap * k
 
 
-def paste_framed(canvas, shot, radius, bezel, center=False):
-    """把畫面加外框、陰影，水平置中貼在標題下面；center=True 時在剩下的空間垂直置中"""
-    outer = (shot.width + bezel * 2, shot.height + bezel * 2)
-    x = (W - outer[0]) // 2
-    y = SCREEN_TOP if not center else SCREEN_TOP + max(0, (H - SCREEN_TOP - outer[1]) // 2 - 60)
-    if y + outer[1] > H:
-        raise ValueError(f"畫面超出底部：{y + outer[1]} > {H}")
-    outer_mask = rounded_mask(outer, radius + bezel)
-
-    shadow = Image.new("L", (W, H), 0)
-    shadow.paste(outer_mask.point(lambda v: v * 0.45), (x, y + 18))
-    shadow = shadow.filter(ImageFilter.GaussianBlur(36))
-    canvas.paste(Image.new("RGB", (W, H), "#000000"), (0, 0), shadow)
-
-    canvas.paste(Image.new("RGB", outer, "#0E0E10"), (x, y), outer_mask)
-    canvas.paste(shot, (x + bezel, y + bezel), rounded_mask(shot.size, radius))
+def shadow(im, box, radius, blur, alpha=130, dy=18):
+    sh = Image.new("RGBA", im.size, (0, 0, 0, 0))
+    x0, y0, x1, y1 = box
+    ImageDraw.Draw(sh).rounded_rectangle([x0, y0 + dy, x1, y1 + dy], radius, fill=(*SHADOW, alpha))
+    return Image.alpha_composite(im.convert("RGBA"), sh.filter(ImageFilter.GaussianBlur(blur))).convert("RGB")
 
 
-def compose(src, lines, crop):
-    canvas = gradient((W, H), BG_TOP, BG_BOTTOM)
-    draw_headline(canvas, lines)
-    shot = Image.open(src).convert("RGB")
-    if crop:
-        box = tuple(round(v * (shot.width if i % 2 == 0 else shot.height)) for i, v in enumerate(crop))
-        shot = shot.crop(box)
-        target_w = W - 80
-        shot = shot.resize((target_w, round(shot.height * target_w / shot.width)), Image.LANCZOS)
-        paste_framed(canvas, shot, radius=56, bezel=0, center=True)
+def compose(size, raw, title, sub, top=None, pops=None, hero=False, pills=None, name=None):
+    w, h = size
+    k = w / 1206
+    im = gradient(size)
+    d = ImageDraw.Draw(im)
+    phone_w = 1000
+    if hero:
+        # 主視覺：圖示＋名字、特大字、描述句、三顆小標；手機小一點，鍵盤才露得完整
+        icon = Image.open(ICON).convert("RGB").resize((int(104 * k),) * 2, Image.LANCZOS)
+        fn = font(62 * k, 800)
+        tw = d.textlength("豆鍵", font=fn)
+        x0 = (w - (icon.width + 24 * k + tw)) / 2
+        y0 = int(96 * k)
+        im.paste(icon, (int(x0), y0), mask(icon.size, int(24 * k)))
+        d.text((x0 + icon.width + 24 * k, y0 + (icon.height - fn.size * 1.45) / 2), "豆鍵", font=fn, fill=CREAM)
+        center(d, w, 214 * k, title[0], fit(d, title[0], 250 * k, w * 0.9), CREAM)
+        center(d, w, 580 * k, sub, font(80 * k, 800), CORAL)
+        pill_row(d, w, 728 * k, pills, font(42 * k, 700), k)
+        top = top or 880
+        phone_w = 900
     else:
-        shot = shot.resize((SCREEN_W, round(shot.height * SCREEN_W / shot.width)), Image.LANCZOS)
-        paste_framed(canvas, shot, radius=SCREEN_RADIUS, bezel=BEZEL)
-    return canvas
-
-
-def search_preview(images, path):
-    """前三張縮成搜尋結果那麼小（一張約 200 像素寬），給閘門 4 的 5 秒測試用"""
-    thumb_w, gap = 200, 12
-    thumb_h = round(H * thumb_w / W)
-    sheet = Image.new("RGB", (thumb_w * 3 + gap * 4, thumb_h + gap * 2), "#FFFFFF")
-    for i, im in enumerate(images[:3]):
-        sheet.paste(im.resize((thumb_w, thumb_h), Image.LANCZOS), (gap + i * (thumb_w + gap), gap))
-    sheet.save(path, quality=90)
-
-
-def contact_sheet(images, path):
-    thumb_w, gap, cols = 400, 24, 3
-    thumb_h = round(H * thumb_w / W)
-    rows = (len(images) + cols - 1) // cols
-    sheet = Image.new("RGB", (thumb_w * cols + gap * (cols + 1), thumb_h * rows + gap * (rows + 1)), "#FFFFFF")
-    for i, im in enumerate(images):
-        sheet.paste(
-            im.resize((thumb_w, thumb_h), Image.LANCZOS),
-            (gap + (i % cols) * (thumb_w + gap), gap + (i // cols) * (thumb_h + gap)),
-        )
-    sheet.save(path, quality=88)
+        size_t = min(fit(d, t, 138 * k, w * 0.9).size for t in title)
+        ft = font(size_t)
+        y = 96 * k
+        for i, t in enumerate(title):
+            center(d, w, y, t, ft, CORAL if i == len(title) - 1 and len(title) > 1 else CREAM)
+            y += size_t * 1.2
+        y += 44 * k
+        center(d, w, y, sub, fit(d, sub, 56 * k, w * 0.9, 500), SAGE)
+        y += 110 * k
+        top = top or (y / k + 40)
+    shot = Image.open(RAW / raw).convert("RGB")
+    sc = phone_w * k / shot.width          # 手機畫面放大，底部出血
+    pw, ph = int(shot.width * sc), int(shot.height * sc)
+    x, y = (w - pw) // 2, int(top * k)
+    r, b = int(92 * k * phone_w / 1000), int(18 * k)
+    im = shadow(im, (x - b, y - b, x + pw + b, y + ph + b), r + b, int(w * 0.025))
+    ImageDraw.Draw(im).rounded_rectangle([x - b, y - b, x + pw + b, y + ph + b], r + b, fill=BEZEL)
+    im.paste(shot.resize((pw, ph), Image.LANCZOS), (x, y), mask((pw, ph), r))
+    for x0, y0, x1, y1, zoom, rad in pops or []:
+        # 重點那一塊放大，疊在原位置上，超出手機邊框
+        piece = shot.crop((x0, y0, x1, y1))
+        qw, qh = int(piece.width * sc * zoom), int(piece.height * sc * zoom)
+        cx, cy = x + (x0 + x1) / 2 * sc, y + (y0 + y1) / 2 * sc
+        qx = int(min(max(cx - qw / 2, 14 * k), w - qw - 14 * k))
+        qy = int(min(cy - qh / 2, h - qh - 40 * k))
+        qr = int(rad * sc * zoom)
+        im = shadow(im, (qx, qy, qx + qw, qy + qh), qr, int(w * 0.022), alpha=170, dy=24)
+        im.paste(piece.resize((qw, qh), Image.LANCZOS), (qx, qy), mask((qw, qh), qr))
+    return im
 
 
 def main():
-    sys.stdout.reconfigure(encoding="utf-8")
-    src_dir, out_dir = Path(sys.argv[1]), Path(sys.argv[2])
-    out_dir.mkdir(parents=True, exist_ok=True)
-    images = []
-    for filename, name, lines, crop in SHOTS:
-        src = src_dir / filename
-        if not src.exists():
-            print(f"跳過 {name}：沒有 {src}")
-            continue
-        im = compose(src, lines, crop)
-        im.save(out_dir / f"{name}.png", optimize=True)
-        images.append(im)
-        print(f"完成 {name}")
-    if images:
-        search_preview(images, out_dir / "搜尋結果預覽（不用上傳）.jpg")
-        contact_sheet(images, out_dir / "總覽（不用上傳）.jpg")
+    for label, size in SIZES.items():
+        out_dir = OUT / label
+        shutil.rmtree(out_dir, ignore_errors=True)
+        out_dir.mkdir(parents=True)
+        for s in SHOTS:
+            compose(size, **s).save(out_dir / f"{s['name']}.jpg", quality=94)
+    # 總覽給人看；搜尋結果預覽給 5 秒測試用（前三張縮到約 200 寬）
+    W = 400
+    H = int(W * 2622 / 1206)
+    names = [s["name"] for s in SHOTS]
+    sheet = Image.new("RGB", (W * 5 + 12 * 4, H * 2 + 12), (245, 245, 245))
+    for i, n in enumerate(names):
+        im = Image.open(OUT / "6.3" / f"{n}.jpg").resize((W, H), Image.LANCZOS)
+        sheet.paste(im, ((i % 5) * (W + 12), (i // 5) * (H + 12)))
+    sheet.save(OUT / "總覽（不用上傳）.jpg", quality=88)
+    tw, th, gap = 200, int(200 * 2622 / 1206), 12
+    pre = Image.new("RGB", (tw * 3 + gap * 4, th + gap * 2), "#FFFFFF")
+    for i, n in enumerate(names[:3]):
+        pre.paste(Image.open(OUT / "6.3" / f"{n}.jpg").resize((tw, th), Image.LANCZOS), (gap + i * (tw + gap), gap))
+    pre.save(OUT / "搜尋結果預覽（不用上傳）.jpg", quality=90)
+    print("完成", len(SHOTS), "張 ×", len(SIZES), "種尺寸")
 
 
 if __name__ == "__main__":

@@ -26,7 +26,7 @@ python -I .aso/check_copy.py
 ```
 
 ```bash
-python -I .aso/截圖/make_screenshots.py .aso/截圖/raw .aso/截圖/out
+python -I .aso/截圖/make_screenshots.py
 ```
 
 ```bash
