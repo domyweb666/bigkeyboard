@@ -180,8 +180,22 @@ def main():
                {k: f[k] for k in VERSION_FIELDS},
                {k: zh_v[k] for k in ("supportUrl", "marketingUrl") if zh_v.get(k)})
 
+    # 網址：英文語系是 Apple 自動建的，支援網址、行銷網址、隱私權政策網址缺的就照繁中填
+    vloc, iloc = read()
+    for loc in copy:
+        for table, kind, src, keys in ((vloc, "appStoreVersionLocalizations", zh_v, ("supportUrl", "marketingUrl")),
+                                       (iloc, "appInfoLocalizations", zh_i, ("privacyPolicyUrl",))):
+            cur = table[loc]
+            fill = {k: src[k] for k in keys if src.get(k) and not cur["attributes"].get(k)}
+            if fill:
+                asc.call("PATCH", f"/{kind}/{cur['id']}", {"data": {"type": kind, "id": cur["id"], "attributes": fill}})
+                print(f"  {loc} 補上 {', '.join(fill)}")
+
     print("\n寫完，重新讀一次比對：")
     vloc, iloc = read()
+    for loc in copy:
+        v, i = vloc[loc]["attributes"], iloc[loc]["attributes"]
+        print(f"  {loc} 支援網址：{v.get('supportUrl')}｜行銷網址：{v.get('marketingUrl')}｜隱私權政策：{i.get('privacyPolicyUrl')}")
     bad = 0
     for loc, f in copy.items():
         cur = {**(iloc.get(loc, {}).get("attributes") or {}), **(vloc.get(loc, {}).get("attributes") or {})}
