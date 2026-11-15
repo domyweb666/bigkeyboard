@@ -35,4 +35,6 @@ python -I .aso/影片/make_preview.py .aso/影片/rec .aso/影片/out/豆鍵-預
 
 文案寫進 App Store Connect：改完 04、05 後，把目前的 commit 推到 `asc-metadata` 分支，GitHub Actions 會跑 `asc_push.py`，寫進 1.1 版本並逐欄比對。commit 訊息不能帶 `[skip ci]`，帶了不會跑。只改文字，不動截圖、不送審。
 
+截圖換進 App Store Connect：重跑 `make_screenshots.py`、commit 之後，推到 `asc-screenshots` 分支，GitHub Actions 會跑 `asc_screenshots.py`：清空 1.1 繁中的 6.3、6.9 兩組，照 01～09 傳上去，讀回來比對。一組最多 10 張。
+
 1.0 的文案和截圖還在 `.vibe/上架文案.md`、`.vibe/上架截圖/`，1.1 定稿後以這個資料夾為準。
