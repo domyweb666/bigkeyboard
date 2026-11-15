@@ -14,6 +14,12 @@ typealias Metric = DomyTokens.Size
 typealias Ink = DomyTokens.Neutral
 typealias Typo = DomyTokens.TypeScale
 
+/// 用 ScrollView 排的分頁（剪貼簿、主題、設定）大標題上方的留白，跟字典頁對齊。
+/// 字典頁是 List，系統在第一段上面自帶約 34pt 留白；ScrollView 沒有，要自己補
+enum PageMetric {
+    static let titleTop = Gap.s2 + Gap.s8
+}
+
 extension View {
     /// Domy 的陰影（level1：卡片、圓鈕；level2：懸浮分頁列、＋按鈕）
     func domyShadow(_ level: DomyShadow) -> some View {

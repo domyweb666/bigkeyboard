@@ -33,7 +33,7 @@ struct SettingsView: View {
                     VeggieFooter(show: show)
                 }
                 .padding(.horizontal, Metric.screenMargin)
-                .padding(.top, Gap.s2)
+                .padding(.top, PageMetric.titleTop)
             }
             .background(Brand.theme.canvas)
             .tabBarClearance()

@@ -79,7 +79,7 @@ struct ThemeView: View {
                 }
             }
             .padding(.horizontal, Metric.screenMargin)
-            .padding(.top, Gap.s2)
+            .padding(.top, PageMetric.titleTop)
         }
         .background(Brand.theme.canvas)
         .tabBarClearance()
