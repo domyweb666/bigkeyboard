@@ -1,0 +1,22 @@
+name: 上架文案寫進 App Store Connect
+
+# 推到 asc-metadata 分支就跑：把 .aso 的定稿寫進 1.1 版本的繁中與英文（英國）欄位。
+# 不動截圖、不選 build、不送審。不推 main 也能跑（workflow_dispatch 要在 main 上才看得到）。
+on:
+  push:
+    branches: [asc-metadata]
+  workflow_dispatch:
+
+jobs:
+  metadata:
+    runs-on: ubuntu-latest
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: 寫入文案並逐欄比對
+        run: |
+          pip install -q pyjwt cryptography requests
+          python3 -I .aso/asc_push.py
