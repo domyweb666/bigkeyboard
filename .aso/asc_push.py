@@ -174,6 +174,8 @@ def main():
         upsert(asc, "appInfoLocalizations", "appInfo", "appInfos", info_id, iloc, loc,
                {k: f[k] for k in INFO_FIELDS},
                {"privacyPolicyUrl": zh_i.get("privacyPolicyUrl")} if zh_i.get("privacyPolicyUrl") else None)
+        # 新增 App 資訊的語系時，Apple 會順手建好同語系的版本語系，先重讀再決定 PATCH 還是 POST
+        vloc, iloc = read()
         upsert(asc, "appStoreVersionLocalizations", "appStoreVersion", "appStoreVersions", version_id, vloc, loc,
                {k: f[k] for k in VERSION_FIELDS},
                {k: zh_v[k] for k in ("supportUrl", "marketingUrl") if zh_v.get(k)})
