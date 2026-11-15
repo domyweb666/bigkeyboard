@@ -22,31 +22,26 @@ SIZES = {"6.3": (1206, 2622), "6.9": (1320, 2868)}
 # 豆鍵 icon 的深綠：上深下淺
 BG_TOP, BG_BOTTOM = (5, 34, 27), (28, 102, 74)
 CREAM = (248, 234, 210)   # 大標（icon 的豆子）
-CORAL = (240, 98, 102)    # 第二行強調（icon 的鍵帽）
+ACCENT = (242, 212, 118)  # 第二行強調：毛豆黃（2026-11-15 多米嫌珊瑚紅怪，換掉）
 SAGE = (196, 222, 204)    # 描述句
 BEZEL = (6, 18, 14)       # 手機邊框
 SHADOW = (0, 14, 8)
 
 # name 檔名｜raw 原圖｜title 兩行大標｜sub 描述句｜top 手機上緣（1206 寬時的 y）
-# pops 把原圖裡的一塊放大、跳出手機外：[(x0, y0, x1, y1, 倍率, 圓角)]，座標是原圖像素
+# pops 把原圖裡的一塊稍微放大、跳出手機外。多米 2026-11-15：太刻意，只留真的要指給人看的那一兩張：[(x0, y0, x1, y1, 倍率, 圓角)]，座標是原圖像素
 SHOTS = [
     dict(name="01-字大", raw="1.PNG", hero=True, title=["字大鍵緊"], sub="少按錯的注音鍵盤",
          pills=["排法不用重學", "鍵盤不連網", "冷灰主題免費"]),
-    dict(name="02-分色", raw="1.PNG", title=["介音藍", "韻母橘"], sub="聲母在左、韻母在右，一眼分得出來",
-         pops=[(0, 1565, 1206, 2222, 1.1, 40)]),
+    dict(name="02-分色", raw="1.PNG", title=["介音藍", "韻母橘"], sub="聲母在左、韻母在右，一眼分得出來"),
     dict(name="03-排法", raw="3.PNG", title=["排法不用", "重新學"], sub="標準注音排法，換過來就能打"),
     dict(name="04-隱私", raw="4.PNG", title=["打的字", "只留在手機上"], sub="鍵盤不連網，iCloud 同步預設是關的",
-         pops=[(62, 1338, 1146, 1488, 1.2, 50)]),
+         pops=[(62, 1338, 1146, 1488, 1.08, 50)]),
     dict(name="05-一聲", raw="5.PNG", title=["沒打聲調？", "按空白當一聲"], sub="空白鍵上的小字，寫著這一下是一聲還是選字",
-         pops=[(0, 1438, 1206, 1546, 1.15, 30), (436, 2228, 892, 2380, 1.7, 36)]),
-    dict(name="06-字典", raw="6.PNG", title=["改選過的詞", "下次排前面"], sub="鍵盤學到的詞，打開 App 就看得到",
-         pops=[(48, 686, 1160, 912, 1.15, 40)]),
-    dict(name="07-剪貼簿", raw="7.PNG", title=["複製過的字", "點一下就貼"], sub="常用的可以固定、加標籤",
-         pops=[(0, 1590, 1206, 1862, 1.15, 30)]),
-    dict(name="08-主題", raw="8.PNG", title=["8 款豆子主題", "冷灰免費"], sub="換顏色、字體和圓角，鍵位不變",
-         pops=[(104, 540, 1104, 1172, 1.12, 50)]),
-    dict(name="09-紅豆", raw="9.PNG", title=["紅豆主題", "楷書鍵帽字"], sub="每款都有淺色、深色兩套",
-         pops=[(0, 1565, 1206, 2222, 1.1, 40)]),
+         pops=[(0, 1438, 1206, 1546, 1.08, 30)]),
+    dict(name="06-字典", raw="6.PNG", title=["改選過的詞", "下次排前面"], sub="鍵盤學到的詞，打開 App 就看得到"),
+    dict(name="07-剪貼簿", raw="7.PNG", title=["複製過的字", "點一下就貼"], sub="常用的可以固定、加標籤"),
+    dict(name="08-主題", raw="8.PNG", title=["8 款豆子主題", "冷灰免費"], sub="換顏色、字體和圓角，鍵位不變"),
+    dict(name="09-紅豆", raw="9.PNG", title=["紅豆主題", "楷書鍵帽字"], sub="每款都有淺色、深色兩套"),
 ]
 
 
@@ -118,7 +113,7 @@ def compose(size, raw, title, sub, top=None, pops=None, hero=False, pills=None, 
         im.paste(icon, (int(x0), y0), mask(icon.size, int(24 * k)))
         d.text((x0 + icon.width + 24 * k, y0 + (icon.height - fn.size * 1.45) / 2), "豆鍵", font=fn, fill=CREAM)
         center(d, w, 214 * k, title[0], fit(d, title[0], 250 * k, w * 0.9), CREAM)
-        center(d, w, 580 * k, sub, font(80 * k, 800), CORAL)
+        center(d, w, 580 * k, sub, font(80 * k, 800), ACCENT)
         pill_row(d, w, 728 * k, pills, font(42 * k, 700), k)
         top = top or 880
         phone_w = 900
@@ -127,7 +122,7 @@ def compose(size, raw, title, sub, top=None, pops=None, hero=False, pills=None, 
         ft = font(size_t)
         y = 96 * k
         for i, t in enumerate(title):
-            center(d, w, y, t, ft, CORAL if i == len(title) - 1 and len(title) > 1 else CREAM)
+            center(d, w, y, t, ft, ACCENT if i == len(title) - 1 and len(title) > 1 else CREAM)
             y += size_t * 1.2
         y += 44 * k
         center(d, w, y, sub, fit(d, sub, 56 * k, w * 0.9, 500), SAGE)
@@ -149,7 +144,7 @@ def compose(size, raw, title, sub, top=None, pops=None, hero=False, pills=None, 
         qx = int(min(max(cx - qw / 2, 14 * k), w - qw - 14 * k))
         qy = int(min(cy - qh / 2, h - qh - 40 * k))
         qr = int(rad * sc * zoom)
-        im = shadow(im, (qx, qy, qx + qw, qy + qh), qr, int(w * 0.022), alpha=170, dy=24)
+        im = shadow(im, (qx, qy, qx + qw, qy + qh), qr, int(w * 0.022), alpha=120, dy=16)
         im.paste(piece.resize((qw, qh), Image.LANCZOS), (qx, qy), mask((qw, qh), qr))
     return im
 
