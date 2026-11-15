@@ -1,6 +1,6 @@
 # 把 .aso/截圖/out 的上架圖換進 App Store Connect 的 1.1 版本（繁中；英文（英國）有自己的截圖組才一起換）。
 # 在 GitHub Actions 跑（.github/workflows/asc-screenshots.yml）。
-# 順序：先傳新的、等 Apple 處理完成，全部成功才刪舊的，最後排順序。中途失敗，舊截圖留著不動。
+# 順序：清空那一組（一組最多 10 張）、傳 9 張、等 Apple 處理完成、排順序、讀回來比對。重跑是安全的。
 # 不動文字、不選 build、不送審。
 import hashlib
 import os
@@ -84,15 +84,14 @@ def wait_done(asc, ids):
 def replace_set(asc, s):
     stype = s["attributes"]["screenshotDisplayType"]
     label = TYPE_DIR[stype]
+    # 一組最多 10 張，舊 6＋新 9 放不下，所以先清空再傳（1.1 是草稿，暫時空著不影響架上的 1.0）
     old = [x["id"] for x in asc.call("GET", f"/appScreenshotSets/{s['id']}/appScreenshots")["data"]]
-    print(f"  {stype}（{label}）：舊的 {len(old)} 張，傳新的 9 張")
-    new = [upload(asc, s["id"], f) for f in files_for(label)]
-    if not wait_done(asc, new):
-        for i in new:
-            asc.call("DELETE", f"/appScreenshots/{i}")
-        sys.exit("新截圖沒處理成功，已撤掉新傳的，舊截圖保留。停。")
+    print(f"  {stype}（{label}）：清掉舊的 {len(old)} 張，傳新的 9 張")
     for i in old:
         asc.call("DELETE", f"/appScreenshots/{i}")
+    new = [upload(asc, s["id"], f) for f in files_for(label)]
+    if not wait_done(asc, new):
+        sys.exit("新截圖沒處理成功。這組現在不完整，修好後重跑一次就會清掉重傳。停。")
     asc.call("PATCH", f"/appScreenshotSets/{s['id']}/relationships/appScreenshots",
              {"data": [{"type": "appScreenshots", "id": i} for i in new]})
     return new
