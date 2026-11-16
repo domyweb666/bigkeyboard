@@ -49,6 +49,14 @@ final class KeyboardViewController: UIInputViewController {
     var pendingEnglish: [String] = []
     /// 剛點了英文建議、自動補了空格（接著打標點時拿掉那個空格）
     var englishAutoSpace = false
+    /// 目前輸入框的種類（email、網址、數字欄會換鍵面）
+    private var hostKeyboardType = UIKeyboardType.default
+    private var hostField = HostField.normal
+    /// 鍵面是輸入框種類決定的：這時切鍵面不記進「上次的鍵面」，離開這個輸入框就回到平常的
+    private var hostOverridesMode = false
+    /// App 設定：按鍵震動（要開完全取用才讀得到、才震得了）。鍵盤每次叫出來時重讀
+    var keyHaptics = false
+    let keyHaptic = UIImpactFeedbackGenerator(style: .light)
     /// 按住空白鍵拖游標中（沒在拖時是 nil）
     var cursorDrag: CursorDrag?
     /// App 設定：空白鍵一律送第一個候選（不當一聲）。鍵盤每次叫出來時重讀
@@ -82,7 +90,12 @@ final class KeyboardViewController: UIInputViewController {
         candidateGrid.onSelect = { [weak self] i in self?.selectFromBar(i) }
         keyboardView.onKey = { [weak self] spec in self?.handleKey(spec) }
         keyboardView.onLongKey = { [weak self] spec in self?.handleLongPress(spec) }
-        keyboardView.onAnyPress = { UIDevice.current.playInputClick() }
+        keyboardView.onAnyPress = { [weak self] in
+            UIDevice.current.playInputClick()
+            self?.tapHaptic()
+        }
+        keyboardView.onRepeatTick = { [weak self] in self?.tapHaptic() }
+        keyboardView.onFastDelete = { [weak self] in self?.fastDelete() }
         keyboardView.onCursorDragBegin = { [weak self] in self?.beginCursorDrag() }
         keyboardView.onCursorDragMove = { [weak self] p in self?.moveCursorDrag(to: p) }
         keyboardView.onCursorDragEnd = { [weak self] in self?.endCursorDrag() }
@@ -144,9 +157,11 @@ final class KeyboardViewController: UIInputViewController {
         expanded = false
         clipboardOpen = false
         spaceSelectsFirstCandidate = hasFullAccess && SpaceKeySetting.selectsFirstCandidate
+        keyHaptics = hasFullAccess && KeyHapticSetting.isOn
         applyTheme()
         keyboardView.shift = .off
         applyHostTraits()
+        applyHostKeyboardType()
         refreshBar()
     }
 
@@ -162,8 +177,9 @@ final class KeyboardViewController: UIInputViewController {
 
     override func textDidChange(_ textInput: UITextInput?) {
         super.textDidChange(textInput)
-        // 換到另一個輸入框時：深淺色、換行鍵文字跟著它
+        // 換到另一個輸入框時：深淺色、換行鍵文字、鍵面跟著它
         applyHostTraits()
+        applyHostKeyboardType()
         refreshContextAssociations()
         refreshEnglishIfNeeded()
     }
@@ -221,6 +237,7 @@ final class KeyboardViewController: UIInputViewController {
 private extension KeyboardViewController {
     func restoreMode() {
         let d = UserDefaults.standard
+        language = .bopomofo
         if let raw = d.string(forKey: Self.languageKey), let m = KeyboardMode(rawValue: raw), m.isLanguage {
             language = m
         }
@@ -236,9 +253,32 @@ private extension KeyboardViewController {
             language = newMode
         }
         mode = newMode
-        let d = UserDefaults.standard
-        d.set(mode.rawValue, forKey: Self.modeKey)
-        d.set(language.rawValue, forKey: Self.languageKey)
+        if !hostOverridesMode {
+            let d = UserDefaults.standard
+            d.set(mode.rawValue, forKey: Self.modeKey)
+            d.set(language.rawValue, forKey: Self.languageKey)
+        }
+        showMode()
+    }
+
+    /// 輸入框種類換了：email、網址欄換英文鍵面（底排多 @ 或 / .com），數字欄換數字鍵盤；其他回到平常記住的鍵面
+    func applyHostKeyboardType() {
+        let type = textDocumentProxy.keyboardType ?? .default
+        guard type != hostKeyboardType else { return }
+        hostKeyboardType = type
+        commitAllComposing()
+        associations = []
+        let plan = Self.hostPlan(for: type)
+        hostField = plan.field
+        hostOverridesMode = plan.mode != nil
+        if let forced = plan.mode {
+            mode = forced
+            if forced.isLanguage {
+                language = forced
+            }
+        } else {
+            restoreMode()
+        }
         showMode()
     }
 
@@ -248,7 +288,7 @@ private extension KeyboardViewController {
         case .bopomofo:
             keyboardView.load(BopomofoLayout.rows)
         case .english:
-            keyboardView.load(EnglishLayout.rows)
+            keyboardView.load(EnglishLayout.rows(for: hostField))
         case .symbols1:
             keyboardView.load(SymbolLayout.page1(chinese: chinese))
         case .symbols2:

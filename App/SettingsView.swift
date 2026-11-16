@@ -1,11 +1,13 @@
 import SwiftUI
 
 /// 設定：照《蔬菜家族 App 共用基本元素規格》的標準結構排——
-/// 豆鍵自己的（空白鍵）→ 一般 → 資料（DataSettingsSection）→ 購買 → 支援 → 關於 → 版本頁尾。
+/// 豆鍵自己的（空白鍵、按鍵震動）→ 一般 → 資料（DataSettingsSection）→ 購買 → 支援 → 關於 → 版本頁尾。
 /// 值沒填（VeggieConfig 是 nil）的那一列整列隱藏
 struct SettingsView: View {
     @AppStorage(SpaceKeySetting.storageKey, store: SpaceKeySetting.defaults)
     private var spaceSelectsFirstCandidate = false
+    @AppStorage(KeyHapticSetting.storageKey, store: SpaceKeySetting.defaults)
+    private var keyHaptics = false
     @AppStorage(Appearance.storageKey) private var appearance = Appearance.system
     @Environment(\.openURL) private var openURL
 
@@ -21,6 +23,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: Gap.s6) {
                     DomyTitle("設定")
                     spaceSection
+                    keySection
                     generalSection
                     DataSettingsSection(
                         spaceSelectsFirstCandidate: $spaceSelectsFirstCandidate,
@@ -59,6 +62,12 @@ struct SettingsView: View {
     private var spaceSection: some View {
         DomySection("空白鍵") {
             VeggieToggleRow(icon: "space", title: "空白鍵直接選第一個字", isOn: $spaceSelectsFirstCandidate)
+        }
+    }
+
+    private var keySection: some View {
+        DomySection("按鍵") {
+            VeggieToggleRow(icon: "iphone.radiowaves.left.and.right", title: "按鍵震動", isOn: $keyHaptics)
         }
     }
 

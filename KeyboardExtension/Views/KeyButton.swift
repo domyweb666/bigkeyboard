@@ -33,6 +33,8 @@ final class KeyButton: UIControl {
     private var longPressTimer: Timer?
     private var repeatTimer: Timer?
     private var longPressFired = false
+    /// 這次按住已經連發了幾下（按下那一下是 0）
+    private(set) var repeatCount = 0
     /// 快打時被下一顆鍵搶先送出了，放開時不再送一次
     private var firedEarly = false
     /// 按下的位置、最後一次移動的位置（判斷「手指幾乎沒動」用）
@@ -155,6 +157,7 @@ final class KeyButton: UIControl {
         }
         onPressChanged?(true)
         if let onRepeat {
+            repeatCount = 0
             onRepeat()
             repeatTimer?.invalidate()
             repeatTimer = Timer.scheduledTimer(
@@ -184,7 +187,9 @@ final class KeyButton: UIControl {
             withTimeInterval: SamsungTheme.repeatInterval,
             repeats: true
         ) { [weak self] _ in
-            self?.onRepeat?()
+            guard let self else { return }
+            repeatCount += 1
+            onRepeat?()
         }
     }
 

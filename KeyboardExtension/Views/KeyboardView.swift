@@ -6,6 +6,10 @@ final class KeyboardView: UIView {
     var onLongKey: ((KeySpec) -> Void)?
     /// 任何一顆鍵被按下（給按鍵聲用）
     var onAnyPress: (() -> Void)?
+    /// 刪除鍵按久了：改成一次刪一截
+    var onFastDelete: (() -> Void)?
+    /// 刪除鍵按住連刪的每一下（給震動用；按下那一下走 onAnyPress）
+    var onRepeatTick: (() -> Void)?
     /// 按住空白鍵拖游標：進入觸控板、手指移動（螢幕座標）、放開
     var onCursorDragBegin: (() -> Void)?
     var onCursorDragMove: ((CGPoint) -> Void)?
@@ -76,12 +80,14 @@ final class KeyboardView: UIView {
             return self
         }
         let active = expectedEmphasis()
+        // 人習慣按在目標偏下方：落點先往上修一點再找最近的鍵
+        let lifted = CGPoint(x: location.x, y: location.y - SamsungTheme.touchLiftPoints)
         var nearest: KeyButton?
         var nearestDistance = CGFloat.greatestFiniteMagnitude
         for b in buttons {
             let f = b.convert(b.bounds, to: self)
-            let dx = max(f.minX - location.x, 0, location.x - f.maxX)
-            let dy = max(f.minY - location.y, 0, location.y - f.maxY)
+            let dx = max(f.minX - lifted.x, 0, lifted.x - f.maxX)
+            let dy = max(f.minY - lifted.y, 0, lifted.y - f.maxY)
             var d = (dx * dx + dy * dy).squareRoot()
             if let spec = specs[b], Self.isLikely(spec, after: active) {
                 d -= SamsungTheme.likelyKeyTouchMargin
@@ -164,7 +170,7 @@ final class KeyboardView: UIView {
 
         if case .backspace = spec.action {
             // 刪除鍵：按下立刻刪、按住連刪
-            b.onRepeat = { [weak self] in self?.onKey?(spec) }
+            b.onRepeat = { [weak self, weak b] in self?.backspaceFired(spec, repeats: b?.repeatCount ?? 0) }
         } else {
             b.onTap = { [weak self] in self?.onKey?(spec) }
         }
@@ -214,6 +220,21 @@ final class KeyboardView: UIView {
         switch spec.action {
         case .bopomofo, .letter, .text, .space, .shift: true
         default: false
+        }
+    }
+
+    /// 刪除鍵：按下刪一個；按住連刪，連刪夠久之後每幾下刪一截
+    private func backspaceFired(_ spec: KeySpec, repeats: Int) {
+        let fast = repeats - SamsungTheme.fastDeleteAfterRepeats
+        if fast < 0 {
+            onKey?(spec)
+        } else if fast % SamsungTheme.fastDeleteEveryRepeats == 0 {
+            onFastDelete?()
+        } else {
+            return
+        }
+        if repeats > 0 {
+            onRepeatTick?()
         }
     }
 

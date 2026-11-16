@@ -14,6 +14,15 @@ enum KeyboardMode: String {
     }
 }
 
+/// 輸入框是哪一種：英文鍵面的底排跟著變（跟原生鍵盤一樣）
+enum HostField {
+    case normal
+    /// email 欄：逗號換成 @
+    case email
+    /// 網址欄：逗號換成 /，句點右邊多一顆 .com
+    case url
+}
+
 /// 一顆鍵的資料。鍵位表是資料，不是程式。
 struct KeySpec {
     enum Action {
@@ -200,24 +209,43 @@ enum EnglishLayout {
         s.map { KeySpec(String($0), .letter(String($0))) }
     }
 
-    static let rows: [KeyRow] = [
-        ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"].map {
-            KeySpec($0, .text($0), tint: SamsungTheme.keyTone)
-        },
-        letters("qwertyuiop"),
-        [KeySpec.halfGap] + letters("asdfghjkl") + [KeySpec.halfGap],
-        [KeySpec("⇧", .shift, width: 1.4, function: true, icon: "shift")]
-            + letters("zxcvbnm")
-            + [FunctionKeys.backspace(width: 1.4)],
-        [
+    /// 底排照輸入框種類：一般「, 空白 .」；email「@ 空白 .」；網址「/ 空白 . .com」（.com 的寬度從空白鍵讓出來）
+    private static func bottom(for field: HostField) -> KeyRow {
+        let comWidth: CGFloat = 1.3
+        let left: String
+        switch field {
+        case .normal: left = ","
+        case .email: left = "@"
+        case .url: left = "/"
+        }
+        let isURL = field == .url
+        var row: KeyRow = [
             FunctionKeys.symbols("!#1"),
             FunctionKeys.toBopomofo,
-            KeySpec(",", .text(",")),
-            FunctionKeys.space(width: FunctionKeys.languageSpace, foot: "English"),
+            KeySpec(left, .text(left)),
+            FunctionKeys.space(width: FunctionKeys.languageSpace - (isURL ? comWidth : 0), foot: "English"),
             KeySpec(".", .text(".")),
-            FunctionKeys.languageNewline,
-        ],
-    ]
+        ]
+        if isURL {
+            row.append(KeySpec(".com", .text(".com"), width: comWidth))
+        }
+        row.append(FunctionKeys.languageNewline)
+        return row
+    }
+
+    static func rows(for field: HostField = .normal) -> [KeyRow] {
+        [
+            ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"].map {
+                KeySpec($0, .text($0), tint: SamsungTheme.keyTone)
+            },
+            letters("qwertyuiop"),
+            [KeySpec.halfGap] + letters("asdfghjkl") + [KeySpec.halfGap],
+            [KeySpec("⇧", .shift, width: 1.4, function: true, icon: "shift")]
+                + letters("zxcvbnm")
+                + [FunctionKeys.backspace(width: 1.4)],
+            bottom(for: field),
+        ]
+    }
 }
 
 // MARK: - 符號頁 1/2、2/2（照三星截圖；中文模式用全形標點）

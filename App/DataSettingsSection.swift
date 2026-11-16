@@ -161,6 +161,7 @@ struct DataSettingsSection: View {
         let cleared = UserDictionary.update { $0 = UserDictionary.File() }
         ClipboardHistory.update { $0 = ClipboardHistory.File() }
         spaceSelectsFirstCandidate = false
+        SpaceKeySetting.defaults?.removeObject(forKey: KeyHapticSetting.storageKey)
         appearance = .system
         NotificationCenter.default.post(name: DictionarySync.didChangeLocal, object: nil)
         show(cleared ? "已清除所有資料" : VeggieText.errorGeneric)

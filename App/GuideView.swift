@@ -13,6 +13,16 @@ struct GuideView: View {
                 DomyDivider()
                 note("要打開「允許完全取用」，鍵盤才讀得到這個設定；沒打開時空白鍵是當一聲。")
             }
+            DomySection("改錯字") {
+                iconRow("space", title: "按住空白鍵移游標", detail: Self.cursorDetail)
+                DomyDivider()
+                iconRow("delete.left", title: "按住刪除鍵", detail: "先一個字一個字刪，按住兩秒左右，改成一次刪一截。")
+            }
+            DomySection("按鍵震動") {
+                paragraph("想要每按一顆鍵震一下，到設定頁打開「按鍵震動」。")
+                DomyDivider()
+                note("要打開「允許完全取用」才會震。")
+            }
             DomySection("照你的寫法排候選") {
                 paragraph("豆鍵會看游標前面的一兩個字，把你平常接在它後面打的字詞排在候選和聯想的最前面。")
                 DomyDivider()
@@ -59,6 +69,9 @@ struct GuideView: View {
 
     private static let spaceDetail = "打 ㄉㄧ 按空白，會先定成一聲，候選只剩 低、滴 這些一聲字，再按一下空白送出。"
         + "打了聲調的音，按一下空白就送出。"
+
+    private static let cursorDetail = "按住半秒，鍵上的字會淡掉，這時左右拖，游標就跟著走。"
+        + "往上拖到這一行的開頭，往下拖到這一行的結尾。放開手指就回到鍵盤。"
 
     private static let iCloudDetail = "在設定頁打開「iCloud 同步」，"
         + "字典裡的詞（自動學到的、自己加的）會存到你自己的 iCloud，"

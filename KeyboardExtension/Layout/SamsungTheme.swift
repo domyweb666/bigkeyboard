@@ -35,12 +35,24 @@ enum SamsungTheme {
     /// 動態感應範圍：打了聲母後介音、韻母（打了介音後只剩韻母）多吃旁邊鍵這麼寬的邊；外觀不變
     static let likelyKeyTouchMargin: CGFloat = 10
 
+    /// 落點往上修正：人按鍵習慣按在目標偏下方，算「離哪顆鍵最近」之前先把落點往上移這麼多 pt（原生鍵盤也這樣）。
+    /// 真機調：覺得常按到上一排就調小，0 = 不修正
+    static let touchLiftPoints: CGFloat = 3
+
     static let longPressSeconds: TimeInterval = 0.4
     /// 按下後移動不到這距離就放開，一律算按到這顆鍵（不管放開時在不在鍵上、觸控有沒有被系統取消）
     static let tapSlop: CGFloat = 20
 
     /// 刪除鍵按住後的連刪間隔
     static let repeatInterval: TimeInterval = 0.08
+    /// 刪除鍵連刪這麼多下之後加速：改成一次刪一截（英文一個詞、中文最多幾個字，碰到標點停）。20 下 ≈ 按住 2 秒
+    static let fastDeleteAfterRepeats = 20
+    /// 加速後每幾下連刪間隔刪一截（3 × 0.08 秒：太快會來不及放手）
+    static let fastDeleteEveryRepeats = 3
+    /// 加速後中文一次最多刪幾個字
+    static let fastDeleteMaxCharacters = 4
+    /// 按鍵震動的力道（0～1，輕一點才像原生）
+    static let keyHapticIntensity: CGFloat = 0.7
 
     // 按住空白鍵拖游標（手感參數，真機調）
     /// 左右拖這麼多 pt 移一個字（慢慢拖時）
