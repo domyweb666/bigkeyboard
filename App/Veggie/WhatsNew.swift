@@ -36,7 +36,7 @@ enum WhatsNew {
             ),
             Point(
                 icon: "paintpalette",
-                text: "換了新的外觀和圖示；英文鍵盤拿掉上面那排工具列，鍵變大了。"
+                text: "換了新的外觀和圖示；英文鍵盤拿掉上面那排工具列，鍵變大了，也不會再自動大寫。"
             ),
         ]),
         Release(version: "1.0", points: [
