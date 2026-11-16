@@ -1,13 +1,15 @@
 import SwiftUI
 
 /// 設定：照《蔬菜家族 App 共用基本元素規格》的標準結構排——
-/// 豆鍵自己的（空白鍵、按鍵震動）→ 一般 → 資料（DataSettingsSection）→ 購買 → 支援 → 關於 → 版本頁尾。
+/// 豆鍵自己的（空白鍵、按鍵震動、按鍵聲）→ 一般 → 資料（DataSettingsSection）→ 購買 → 支援 → 關於 → 版本頁尾。
 /// 值沒填（VeggieConfig 是 nil）的那一列整列隱藏
 struct SettingsView: View {
     @AppStorage(SpaceKeySetting.storageKey, store: SpaceKeySetting.defaults)
     private var spaceSelectsFirstCandidate = false
     @AppStorage(KeyHapticSetting.storageKey, store: SpaceKeySetting.defaults)
     private var keyHaptics = false
+    @AppStorage(KeySoundStyle.storageKey, store: SpaceKeySetting.defaults)
+    private var keySound = KeySoundStyle.system
     @AppStorage(Appearance.storageKey) private var appearance = Appearance.system
     @Environment(\.openURL) private var openURL
 
@@ -68,6 +70,17 @@ struct SettingsView: View {
     private var keySection: some View {
         DomySection("按鍵") {
             VeggieToggleRow(icon: "iphone.radiowaves.left.and.right", title: "按鍵震動", isOn: $keyHaptics)
+            DomyDivider()
+            Menu {
+                Picker("按鍵聲", selection: $keySound) {
+                    ForEach(KeySoundStyle.allCases) { option in
+                        Text(option.title).tag(option)
+                    }
+                }
+            } label: {
+                VeggieRow(icon: "speaker.wave.2", title: "按鍵聲", value: keySound.title, accessory: .push)
+            }
+            .buttonStyle(.plain)
         }
     }
 

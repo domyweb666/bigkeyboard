@@ -42,6 +42,8 @@ enum SamsungTheme {
     static let longPressSeconds: TimeInterval = 0.4
     /// 按下後移動不到這距離就放開，一律算按到這顆鍵（不管放開時在不在鍵上、觸控有沒有被系統取消）
     static let tapSlop: CGFloat = 20
+    /// 滑到別的鍵再放開：手指滑出鍵盤超過這麼遠，就不算在任何一顆鍵上（放開不送字）
+    static let slideOutMargin: CGFloat = 30
 
     /// 刪除鍵按住後的連刪間隔
     static let repeatInterval: TimeInterval = 0.08

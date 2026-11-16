@@ -56,6 +56,8 @@ final class KeyboardViewController: UIInputViewController {
     private var hostOverridesMode = false
     /// App 設定：按鍵震動（要開完全取用才讀得到、才震得了）。鍵盤每次叫出來時重讀
     var keyHaptics = false
+    /// App 設定：按鍵聲要哪一種（系統預設、三種按鍵聲、關閉）。鍵盤每次叫出來時重讀
+    var keySound = KeySoundStyle.system
     let keyHaptic = UIImpactFeedbackGenerator(style: .light)
     /// 按住空白鍵拖游標中（沒在拖時是 nil）
     var cursorDrag: CursorDrag?
@@ -90,10 +92,11 @@ final class KeyboardViewController: UIInputViewController {
         candidateGrid.onSelect = { [weak self] i in self?.selectFromBar(i) }
         keyboardView.onKey = { [weak self] spec in self?.handleKey(spec) }
         keyboardView.onLongKey = { [weak self] spec in self?.handleLongPress(spec) }
-        keyboardView.onAnyPress = { [weak self] in
-            UIDevice.current.playInputClick()
+        keyboardView.onAnyPress = { [weak self] spec in
+            self?.playKeySound(for: spec)
             self?.tapHaptic()
         }
+        keyboardView.peekRows = { [weak self] spec in self.flatMap { $0.peekRows(for: spec) } }
         keyboardView.onRepeatTick = { [weak self] in self?.tapHaptic() }
         keyboardView.onFastDelete = { [weak self] in self?.fastDelete() }
         keyboardView.onCursorDragBegin = { [weak self] in self?.beginCursorDrag() }
@@ -158,6 +161,7 @@ final class KeyboardViewController: UIInputViewController {
         clipboardOpen = false
         spaceSelectsFirstCandidate = hasFullAccess && SpaceKeySetting.selectsFirstCandidate
         keyHaptics = hasFullAccess && KeyHapticSetting.isOn
+        keySound = hasFullAccess ? KeySoundStyle.saved : .system
         applyTheme()
         keyboardView.shift = .off
         applyHostTraits()

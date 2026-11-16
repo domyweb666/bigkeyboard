@@ -15,6 +15,17 @@ final class KeyButton: UIControl {
     var onRepeat: (() -> Void)?
     /// 手指按下／放開（給預覽泡泡用）
     var onPressChanged: ((Bool) -> Void)?
+    /// 手指按著移動（還沒長按、還沒送出）：回報手指位置（螢幕座標）、離按下的地方多遠。給「滑到別的鍵再放開」用
+    var onTrackMove: ((CGPoint, CGFloat) -> Void)?
+    /// 滑到別的鍵之後手指離開：true 是放開，false 是觸控被系統取消
+    var onSlideEnd: ((Bool) -> Void)?
+    /// 別的鍵滑過來、手指正停在這顆上：畫成按下的樣子
+    var showsPressed = false {
+        didSet {
+            refreshBackground()
+        }
+    }
+
     /// 長按觸發後手指繼續拖：回報手指位置（螢幕座標）。空白鍵拖游標用
     var onDragAfterLongPress: ((CGPoint) -> Void)?
     /// 長按觸發後手指放開（或觸控被取消）
@@ -26,7 +37,7 @@ final class KeyButton: UIControl {
 
     var normalColor: UIColor = SamsungTheme.keyWhite {
         didSet {
-            backgroundColor = normalColor
+            refreshBackground()
         }
     }
 
@@ -37,6 +48,8 @@ final class KeyButton: UIControl {
     private(set) var repeatCount = 0
     /// 快打時被下一顆鍵搶先送出了，放開時不再送一次
     private var firedEarly = false
+    /// 手指已經滑到別的鍵上：這顆不再算按著，放開時送哪顆由鍵盤決定
+    private var sliding = false
     /// 按下的位置、最後一次移動的位置（判斷「手指幾乎沒動」用）
     private var trackStart = CGPoint.zero
     private var trackLast = CGPoint.zero
@@ -107,8 +120,13 @@ final class KeyButton: UIControl {
 
     override var isHighlighted: Bool {
         didSet {
-            backgroundColor = isHighlighted ? SamsungTheme.keyPressed : normalColor
+            refreshBackground()
         }
+    }
+
+    private func refreshBackground() {
+        let pressed = showsPressed || (isHighlighted && !sliding)
+        backgroundColor = pressed ? SamsungTheme.keyPressed : normalColor
     }
 
     /// 讓鍵的觸控範圍吃掉鍵與鍵之間的縫：縫裡按下去算最近的那顆鍵，減少「按在縫上沒反應」
@@ -137,6 +155,8 @@ final class KeyButton: UIControl {
         trackLast = touch.location(in: nil)
         if longPressFired {
             onDragAfterLongPress?(trackLast)
+        } else if !firedEarly, !firesOnPress, onRepeat == nil {
+            onTrackMove?(trackLast, hypot(trackLast.x - trackStart.x, trackLast.y - trackStart.y))
         }
         return super.continueTracking(touch, with: event)
     }
@@ -151,6 +171,7 @@ final class KeyButton: UIControl {
     @objc private func touchDown() {
         longPressFired = false
         firedEarly = false
+        sliding = false
         if firesOnPress {
             onTap?()
             return
@@ -210,24 +231,30 @@ final class KeyButton: UIControl {
     @objc private func touchUpInside() {
         stopTimers()
         endLongPressIfNeeded()
+        if finishSliding(released: true) {
+            return
+        }
         guard !firesOnPress, !firedEarly, !longPressFired else { return }
         finishTap()
     }
 
     /// 在鍵外放開：按在鍵縫、錯開的半顆空位時，落點本來就在這顆鍵的範圍外
     @objc private func touchUpOutside() {
-        touchEnded(canTap: true)
+        touchEnded(canTap: true, cancelled: false)
     }
 
     /// 觸控被取消：最左最右兩欄的觸控常被系統邊緣手勢取消
     @objc private func touchCancelled() {
-        touchEnded(canTap: tapsWhenCancelled)
+        touchEnded(canTap: tapsWhenCancelled, cancelled: true)
     }
 
     /// 手指幾乎沒移動就照樣算按到
-    private func touchEnded(canTap: Bool) {
+    private func touchEnded(canTap: Bool, cancelled: Bool) {
         stopTimers()
         endLongPressIfNeeded()
+        if finishSliding(released: !cancelled) {
+            return
+        }
         guard !firesOnPress, !firedEarly, !longPressFired else { return }
         let moved = hypot(trackLast.x - trackStart.x, trackLast.y - trackStart.y)
         if canTap, moved < SamsungTheme.tapSlop {
@@ -235,6 +262,28 @@ final class KeyButton: UIControl {
         } else {
             onPressChanged?(false)
         }
+    }
+
+    /// 手指滑到別的鍵上了：這顆不再變色、不再等長按，放開時交給鍵盤決定送哪顆
+    func beginSliding() {
+        sliding = true
+        stopTimers()
+        refreshBackground()
+    }
+
+    /// 滑動中被下一顆鍵搶先（快打）：鍵盤已經送出滑到的那顆，這顆放開時什麼都不做
+    func commitSlideEarly() {
+        sliding = false
+        firedEarly = true
+        refreshBackground()
+    }
+
+    private func finishSliding(released: Bool) -> Bool {
+        guard sliding else { return false }
+        sliding = false
+        refreshBackground()
+        onSlideEnd?(released)
+        return true
     }
 
     private func endLongPressIfNeeded() {

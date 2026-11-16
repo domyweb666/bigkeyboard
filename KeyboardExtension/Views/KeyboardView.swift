@@ -4,8 +4,10 @@ import UIKit
 final class KeyboardView: UIView {
     var onKey: ((KeySpec) -> Void)?
     var onLongKey: ((KeySpec) -> Void)?
-    /// 任何一顆鍵被按下（給按鍵聲用）
-    var onAnyPress: (() -> Void)?
+    /// 任何一顆鍵被按下（給按鍵聲、震動用）
+    var onAnyPress: ((KeySpec) -> Void)?
+    /// 按住切鍵面的鍵（「符」「!#1」）滑出去：要先跑出來的那張鍵面；nil 表示這顆鍵不這樣用
+    var peekRows: ((KeySpec) -> [KeyRow]?)?
     /// 刪除鍵按久了：改成一次刪一截
     var onFastDelete: (() -> Void)?
     /// 刪除鍵按住連刪的每一下（給震動用；按下那一下走 onAnyPress）
@@ -41,28 +43,39 @@ final class KeyboardView: UIView {
 
     var emphasis: Emphasis = .none
 
-    private let rowsStack = UIStackView()
-    private let bubble = KeyPreviewBubble()
-    private var buttons: [KeyButton] = []
-    private var specs: [KeyButton: KeySpec] = [:]
+    let rowsStack = UIStackView()
+    /// 按住「符」滑出去時先蓋上來的符號頁。原本的鍵留在底下不拆：拆掉的話按著的那根手指就斷了
+    let peekStack = UIStackView()
+    var peekButtons: [KeyButton] = []
+    var peekSpecs: [KeyButton: KeySpec] = [:]
+    var slide: Slide?
+    /// 換行鍵目前顯示的字（先跑出來的符號頁也要一樣）
+    private var returnLabel: String?
+    let bubble = KeyPreviewBubble()
+    private(set) var buttons: [KeyButton] = []
+    private(set) var specs: [KeyButton: KeySpec] = [:]
     /// 目前按著還沒放開的那顆（快打時判斷「上一顆還沒放、下一顆已按下」）
-    private weak var heldKey: KeyButton?
+    weak var heldKey: KeyButton?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
         backgroundColor = SamsungTheme.keyAreaBackground
-        rowsStack.axis = .vertical
-        rowsStack.spacing = SamsungTheme.rowGap
-        rowsStack.distribution = .fillEqually
-        rowsStack.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(rowsStack)
+        for stack in [rowsStack, peekStack] {
+            stack.axis = .vertical
+            stack.spacing = SamsungTheme.rowGap
+            stack.distribution = .fillEqually
+            stack.translatesAutoresizingMaskIntoConstraints = false
+            addSubview(stack)
+            NSLayoutConstraint.activate([
+                stack.topAnchor.constraint(equalTo: topAnchor, constant: SamsungTheme.rowGap),
+                stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -SamsungTheme.rowGap),
+                stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: SamsungTheme.sideInset),
+                stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -SamsungTheme.sideInset),
+            ])
+        }
+        peekStack.isHidden = true
+        peekStack.isUserInteractionEnabled = false
         addSubview(bubble)
-        NSLayoutConstraint.activate([
-            rowsStack.topAnchor.constraint(equalTo: topAnchor, constant: SamsungTheme.rowGap),
-            rowsStack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -SamsungTheme.rowGap),
-            rowsStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: SamsungTheme.sideInset),
-            rowsStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -SamsungTheme.sideInset),
-        ])
     }
 
     @available(*, unavailable)
@@ -75,21 +88,30 @@ final class KeyboardView: UIView {
     /// 下一顆可能按的鍵：距離先扣掉一段，按在它旁邊那顆鍵的邊上也算按到它
     override func hitTest(_ location: CGPoint, with _: UIEvent?) -> UIView? {
         guard !isHidden, isUserInteractionEnabled, bounds.contains(location) else { return nil }
-        // 觸控板中：別的手指碰到鍵盤不算按鍵（拖游標那根手指一直綁在空白鍵上）
-        if cursorDragging {
+        // 觸控板中、符號頁先跑出來時：別的手指碰到鍵盤不算按鍵（原本那根手指一直綁在它按下的那顆鍵上）
+        if cursorDragging || slide?.peeking == true {
             return self
         }
+        return nearestKey(at: location, among: buttons, specs: specs) ?? self
+    }
+
+    /// 離手指最近的那顆鍵（落點先往上修、下一顆可能按的鍵多吃一點邊）
+    func nearestKey(
+        at location: CGPoint,
+        among pool: [KeyButton],
+        specs table: [KeyButton: KeySpec]
+    ) -> KeyButton? {
         let active = expectedEmphasis()
         // 人習慣按在目標偏下方：落點先往上修一點再找最近的鍵
         let lifted = CGPoint(x: location.x, y: location.y - SamsungTheme.touchLiftPoints)
         var nearest: KeyButton?
         var nearestDistance = CGFloat.greatestFiniteMagnitude
-        for b in buttons {
+        for b in pool {
             let f = b.convert(b.bounds, to: self)
             let dx = max(f.minX - lifted.x, 0, lifted.x - f.maxX)
             let dy = max(f.minY - lifted.y, 0, lifted.y - f.maxY)
             var d = (dx * dx + dy * dy).squareRoot()
-            if let spec = specs[b], Self.isLikely(spec, after: active) {
+            if let spec = table[b], Self.isLikely(spec, after: active) {
                 d -= SamsungTheme.likelyKeyTouchMargin
             }
             if d < nearestDistance {
@@ -97,7 +119,7 @@ final class KeyboardView: UIView {
                 nearest = b
             }
         }
-        return nearest ?? self
+        return nearest
     }
 
     /// 快打時上一顆注音還按著、還沒送進引擎：照它是哪一類先推算（聲母之後一定是只有聲母、介音之後一定到介音）
@@ -119,10 +141,25 @@ final class KeyboardView: UIView {
 
     func load(_ rows: [KeyRow]) {
         bubble.applyTheme()
-        rowsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        // 鍵面整個換掉：滑到一半、符號頁先跑出來的都作廢
+        slide = nil
+        hidePeek()
         cursorDragging = false
         buttons.removeAll()
         specs.removeAll()
+        fill(rowsStack, with: rows) { spec in
+            let b = self.makeButton(spec)
+            self.specs[b] = spec
+            self.buttons.append(b)
+            return b
+        }
+        bringSubviewToFront(bubble)
+        applyShiftAppearance()
+    }
+
+    /// 把一張鍵位表排進一個直向的 stack（原本的鍵面和先跑出來的符號頁共用）
+    func fill(_ stack: UIStackView, with rows: [KeyRow], make: (KeySpec) -> KeyButton) {
+        stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         for row in rows {
             let rowStack = UIStackView()
             rowStack.axis = .horizontal
@@ -135,7 +172,7 @@ final class KeyboardView: UIView {
                 let b: UIView = if case .spacer = spec.action {
                     UIView()
                 } else {
-                    makeButton(spec)
+                    make(spec)
                 }
                 rowStack.addArrangedSubview(b)
                 b.widthAnchor.constraint(
@@ -144,13 +181,12 @@ final class KeyboardView: UIView {
                     constant: -gaps * spec.width / total
                 ).isActive = true
             }
-            rowsStack.addArrangedSubview(rowStack)
+            stack.addArrangedSubview(rowStack)
         }
-        bringSubviewToFront(bubble)
-        applyShiftAppearance()
     }
 
-    private func makeButton(_ spec: KeySpec) -> KeyButton {
+    /// 一顆鍵的長相（字、圖示、小字、底色），還沒接上按下去要做的事
+    func styledButton(_ spec: KeySpec) -> KeyButton {
         let b = KeyButton()
         b.label.text = spec.label
         if spec.isTone {
@@ -167,7 +203,11 @@ final class KeyboardView: UIView {
         b.footLabel.text = spec.foot
         b.setIcon(spec.icon)
         b.normalColor = spec.tint ?? (spec.isFunction ? SamsungTheme.keyGray : SamsungTheme.keyWhite)
+        return b
+    }
 
+    private func makeButton(_ spec: KeySpec) -> KeyButton {
+        let b = styledButton(spec)
         if case .backspace = spec.action {
             // 刪除鍵：按下立刻刪、按住連刪
             b.onRepeat = { [weak self, weak b] in self?.backspaceFired(spec, repeats: b?.repeatCount ?? 0) }
@@ -182,7 +222,14 @@ final class KeyboardView: UIView {
         } else if spec.longAction != nil {
             b.onLongPress = { [weak self] in self?.onLongKey?(spec) }
         }
-        let showsBubble = !spec.isFunction && !spec.label.isEmpty
+        if Self.canSlide(from: spec) {
+            b.onTrackMove = { [weak self, weak b] point, moved in
+                guard let self, let b else { return }
+                touchMoved(b, to: point, moved: moved)
+            }
+            b.onSlideEnd = { [weak self] released in self?.endSlide(commit: released) }
+        }
+        let showsBubble = Self.showsBubble(spec)
         b.onPressChanged = { [weak self, weak b] pressed in
             guard let self, let b else { return }
             trackHeld(b, pressed: pressed)
@@ -194,9 +241,11 @@ final class KeyboardView: UIView {
                 bubble.hide()
             }
         }
-        specs[b] = spec
-        buttons.append(b)
         return b
+    }
+
+    static func showsBubble(_ spec: KeySpec) -> Bool {
+        !spec.isFunction && !spec.label.isEmpty
     }
 
     /// 記住按著的那顆。快打時上一顆還沒放開、下一顆已經按下：上一顆先算按完，送字順序才不會顛倒
@@ -207,11 +256,19 @@ final class KeyboardView: UIView {
             }
             return
         }
-        if let held = heldKey, held !== b, let s = specs[held], Self.firesEarlyOnRollover(s) {
-            held.fireNow()
+        if let held = heldKey, held !== b {
+            if slide?.origin === held {
+                // 上一根手指正滑在別的鍵上：先把它滑到的那顆送出
+                endSlide(commit: true, byRollover: true)
+                held.commitSlideEarly()
+            } else if let s = specs[held], Self.firesEarlyOnRollover(s) {
+                held.fireNow()
+            }
         }
         heldKey = b
-        onAnyPress?()
+        if let spec = specs[b] {
+            onAnyPress?(spec)
+        }
     }
 
     /// 被下一顆鍵搶先時可以提早送出的鍵：送字的鍵和 shift（按住 shift 再按字母＝大寫）。
@@ -256,11 +313,16 @@ final class KeyboardView: UIView {
 
     /// 換行鍵依輸入框顯示「搜尋」「傳送」等字；nil 表示一般換行（顯示圖示）
     func setReturnLabel(_ text: String?) {
-        for b in buttons {
-            guard let spec = specs[b], case .newline = spec.action else { continue }
-            if let text {
+        returnLabel = text
+        applyReturnLabel(to: buttons, specs: specs)
+    }
+
+    func applyReturnLabel(to pool: [KeyButton], specs table: [KeyButton: KeySpec]) {
+        for b in pool {
+            guard let spec = table[b], case .newline = spec.action else { continue }
+            if let returnLabel {
                 b.setIcon(nil)
-                b.label.text = text
+                b.label.text = returnLabel
             } else {
                 b.setIcon(spec.icon)
                 b.label.text = spec.label

@@ -18,10 +18,19 @@ struct GuideView: View {
                 DomyDivider()
                 iconRow("delete.left", title: "按住刪除鍵", detail: "先一個字一個字刪，按住兩秒左右，改成一次刪一截。")
             }
-            DomySection("按鍵震動") {
+            DomySection("滑著打") {
+                paragraph("按錯了先別放開，滑到對的那顆鍵再放開，打出來的是放開時那顆。")
+                DomyDivider()
+                paragraph(Self.peekDetail)
+                DomyDivider()
+                paragraph("英文鍵盤按住 ⇧ 滑到字母再放開，打出一個大寫。")
+            }
+            DomySection("按鍵震動和聲音") {
                 paragraph("想要每按一顆鍵震一下，到設定頁打開「按鍵震動」。")
                 DomyDivider()
-                note("要打開「允許完全取用」才會震。")
+                paragraph(Self.soundDetail)
+                DomyDivider()
+                note("這兩個都要打開「允許完全取用」才有作用。")
             }
             DomySection("照你的寫法排候選") {
                 paragraph("豆鍵會看游標前面的一兩個字，把你平常接在它後面打的字詞排在候選和聯想的最前面。")
@@ -72,6 +81,13 @@ struct GuideView: View {
 
     private static let cursorDetail = "按住半秒，鍵上的字會淡掉，這時左右拖，游標就跟著走。"
         + "往上拖到這一行的開頭，往下拖到這一行的結尾。放開手指就回到鍵盤。"
+
+    private static let peekDetail = "按住「符」往上滑，符號頁會先跑出來。滑到要的符號再放開，"
+        + "打完還在注音鍵盤，不用自己切回來。英文鍵盤的「!#1」也一樣。"
+
+    private static let soundDetail = "設定頁的「按鍵聲」有三種可以選。「系統預設」是 iPhone 原本的按鍵聲。"
+        + "「三種按鍵聲」是字母、刪除鍵、空白和功能鍵的聲音各不一樣，聽聲音就知道按到哪一類。"
+        + "不想要聲音就選「關閉」。"
 
     private static let iCloudDetail = "在設定頁打開「iCloud 同步」，"
         + "字典裡的詞（自動學到的、自己加的）會存到你自己的 iCloud，"

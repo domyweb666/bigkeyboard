@@ -20,6 +20,12 @@ extension KeyboardViewController {
         }
     }
 
+    /// 按住「符」／「!#1」滑出去時先跑出來的那張鍵面：只有語言鍵面上那顆去符號頁的鍵這樣用
+    func peekRows(for spec: KeySpec) -> [KeyRow]? {
+        guard mode.isLanguage, case .switchMode(.symbols1) = spec.action else { return nil }
+        return SymbolLayout.page1(chinese: language == .bopomofo)
+    }
+
     static func returnLabel(for type: UIReturnKeyType?) -> String? {
         switch type {
         case .search, .google, .yahoo: "搜尋"

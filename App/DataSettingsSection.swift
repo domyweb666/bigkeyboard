@@ -162,6 +162,7 @@ struct DataSettingsSection: View {
         ClipboardHistory.update { $0 = ClipboardHistory.File() }
         spaceSelectsFirstCandidate = false
         SpaceKeySetting.defaults?.removeObject(forKey: KeyHapticSetting.storageKey)
+        SpaceKeySetting.defaults?.removeObject(forKey: KeySoundStyle.storageKey)
         appearance = .system
         NotificationCenter.default.post(name: DictionarySync.didChangeLocal, object: nil)
         show(cleared ? "已清除所有資料" : VeggieText.errorGeneric)
