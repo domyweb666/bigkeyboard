@@ -140,7 +140,7 @@ final class KeyboardViewController: UIInputViewController {
         clipboardOpen = false
         spaceSelectsFirstCandidate = hasFullAccess && SpaceKeySetting.selectsFirstCandidate
         applyTheme()
-        updateAutoCapitalization()
+        keyboardView.shift = .off
         applyHostTraits()
         refreshBar()
     }
@@ -263,7 +263,6 @@ private extension KeyboardViewController {
             preloadEnglishWords()
         }
         keyboardView.shift = .off
-        updateAutoCapitalization()
         keyboardView.setReturnLabel(Self.returnLabel(for: textDocumentProxy.returnKeyType))
         refreshBar()
     }
@@ -276,6 +275,14 @@ private extension KeyboardViewController {
             prepareEnglishKey(spec.action)
         }
         handle(spec)
+    }
+
+    /// 會送字進輸入框的鍵：只有這些鍵按完才看要不要自動大寫
+    private static func typesText(_ action: KeySpec.Action) -> Bool {
+        switch action {
+        case .letter, .text, .space, .newline: true
+        default: false
+        }
     }
 
     func handle(_ spec: KeySpec) {
@@ -335,7 +342,7 @@ private extension KeyboardViewController {
         case .dismiss, .spacer: // 收鍵盤只從長按來（handleLongPress）
             break
         }
-        if mode == .english {
+        if mode == .english, Self.typesText(spec.action) {
             updateAutoCapitalization()
         }
         refreshBar()

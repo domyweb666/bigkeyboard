@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>豆鍵吉祥物預覽</title>
+<!-- 照 App/Mascot.swift 一比一搬成 JS Canvas：同樣的骨架、角度、顏色、0.28 秒過渡。改了 Swift 那邊記得這裡也要跟 -->
+<style>
+  :root {
+    --canvas: #F5F5F7; --surface: #FFFFFF; --text: #1C1C1E; --text2: #6B6B70;
+    --accent: #4F6B57; --onAccent: #FFFFFF; --border: #E3E3E8;
+    --limb: #39323A;
+  }
+  :root[data-theme="dark"] {
+    --canvas: #000000; --surface: #1C1C1E; --text: #F2F2F7; --text2: #A1A1A6;
+    --accent: #9DC2A5; --onAccent: #12251A; --border: #2C2C2E;
+    --limb: #E9E4EC;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--canvas); color: var(--text);
+    font-family: -apple-system, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    padding: 24px 16px 48px;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  header { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  h1 { font-size: 22px; margin: 0; }
+  .sub { color: var(--text2); font-size: 14px; margin: 6px 0 24px; line-height: 1.6; }
+  button {
+    font: inherit; font-size: 15px; border-radius: 12px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); padding: 10px 14px; cursor: pointer; min-height: 44px;
+  }
+  button.primary { background: var(--accent); color: var(--onAccent); border-color: var(--accent); font-weight: 600; }
+  .row { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; }
+  /* 手機畫面：寬 390pt，跟 App 裡一樣大 */
+  .phone {
+    width: 390px; max-width: 100%; background: var(--canvas); border: 1px solid var(--border);
+    border-radius: 36px; padding: 16px 20px 28px; flex: none;
+  }
+  .skip { text-align: right; color: var(--text2); font-size: 16px; padding: 10px 4px; }
+  .phone h2 { font-size: 22px; margin: 0 0 12px; }
+  .steps { margin: 0 0 20px; padding: 0; list-style: none; font-size: 17px; line-height: 2.1; }
+  .steps b { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 13px;
+             background: var(--accent); color: var(--onAccent); font-size: 14px; margin-right: 10px; }
+  .phone .primary { width: 100%; min-height: 50px; font-size: 17px; border-radius: 14px; }
+  .linkbtn { display: block; text-align: center; color: var(--accent); padding: 12px; font-size: 16px; }
+  .field { border: 1px solid var(--border); background: var(--surface); border-radius: 14px;
+           padding: 12px 16px; color: var(--text2); margin: 16px 0; font-size: 17px; }
+  .controls { flex: 1; min-width: 260px; }
+  .controls h3 { font-size: 16px; margin: 0 0 10px; }
+  .controls .btns { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+  .note { color: var(--text2); font-size: 14px; line-height: 1.7; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-top: 36px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 12px; text-align: center; }
+  .card canvas { width: 100%; height: 240px; display: block; }
+  .card span { font-size: 15px; }
+  .card small { display: block; color: var(--text2); font-size: 13px; margin-top: 2px; }
+  canvas.mascot { display: block; margin: 0 auto; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>豆鍵吉祥物</h1>
+    <div style="display:flex;gap:8px">
+      <button id="theme">切深色</button>
+      <button id="slow">慢動作 ×0.25</button>
+    </div>
+  </header>
+  <p class="sub">首次設定流程裡的紅鍵帽火柴人。左邊是 App 裡的實際大小與流程，下面是四個動作分開看。</p>
+
+  <div class="row">
+    <div class="phone" id="phone">
+      <div class="skip">略過</div>
+      <canvas class="mascot" id="stage"></canvas>
+      <div id="step1">
+        <h2>先把豆鍵加進鍵盤</h2>
+        <ul class="steps">
+          <li><b>1</b>按「前往設定」</li>
+          <li><b>2</b>點「鍵盤」</li>
+          <li><b>3</b>打開「豆鍵」</li>
+        </ul>
+        <button class="primary">前往設定</button>
+        <span class="linkbtn">已經加好了</span>
+      </div>
+      <div id="step2" hidden>
+        <h2 id="s2title">切到豆鍵，打一個字</h2>
+        <div class="note" id="s2detail">按鍵盤左下角的地球鍵，換到豆鍵。</div>
+        <div class="field" id="s2field">在這裡打字</div>
+        <button class="primary" id="s2start" hidden>開始用</button>
+        <span class="linkbtn" id="s2back">還沒看到豆鍵？</span>
+      </div>
+    </div>
+
+    <div class="controls">
+      <h3>重播設定流程</h3>
+      <div class="btns">
+        <button class="primary" id="play1">格 1：揮手 → 1.5 秒後指下面</button>
+        <button id="play2">格 2：指著輸入框</button>
+        <button id="typed">打出中文 → 慶祝</button>
+        <button id="erase">字刪光 → 回到指著</button>
+      </div>
+      <h3>單獨切動作（看過渡）</h3>
+      <div class="btns">
+        <button data-act="idle">待機</button>
+        <button data-act="wave">揮手</button>
+        <button data-act="pointDown">指下面</button>
+        <button data-act="cheer">慶祝</button>
+      </div>
+      <p class="note">格 1 吉祥物高 220pt，格 2 縮成 150pt，跟 SetupFlow.swift 一樣。<br>
+        換動作時有 0.28 秒從上一個姿勢滑過去。<br>
+        「待機」目前 App 裡沒用到，動作庫有就一起搬了。</p>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card"><canvas data-solo="idle"></canvas><span>待機 idle</span><small>呼吸、輕晃、眨眼</small></div>
+    <div class="card"><canvas data-solo="wave"></canvas><span>揮手 wave</span><small>格 1 開場 1.5 秒</small></div>
+    <div class="card"><canvas data-solo="pointDown"></canvas><span>指下面 pointDown</span><small>指按鈕／輸入框</small></div>
+    <div class="card"><canvas data-solo="cheer"></canvas><span>慶祝 cheer</span><small>打出中文字</small></div>
+  </div>
+</div>
+
+<script>
+// ===== 角色色（照 MascotArt）=====
+const ART = {
+  keycapTop: '#EE5058', keycapSide: '#A82231', bean: '#F8EAD2',
+  face: '#FFFFFF', feature: '#2B2329', limbLight: '#39323A', limbDark: '#E9E4EC',
+};
+// ===== 骨架（照 MascotRig）=====
+const RIG = {
+  box: { x: 0, y: -50, w: 320, h: 450 },
+  hipX: 160, hipY: 260, ground: 380, thigh: 62, shin: 62, torso: 78,
+  shoulderDrop: 12, shoulderHalf: 6, upper: 44, fore: 44,
+};
+const BLEND = 0.28;
+const KEYS = ['lean','head','hy','sh','ry','squash','lS','lE','rS','rE','lH','lK','rH','rK',
+              'eyeH','lookX','lookY','brow','browY','happy','mouthOpen'];
+const basePose = () => ({
+  lean: 0, head: 0, hy: 0, sh: 0, ry: 0, squash: 0,
+  lS: -38, lE: 143, rS: 38, rE: -143, lH: -14, lK: 0, rH: 14, rK: 0,
+  eyeH: 12, lookX: 0, lookY: 0, brow: 2, browY: 0, happy: 0, mouthOpen: 0,
+});
+const blend = (a, b, k) => { const r = { ...b }; for (const key of KEYS) r[key] = a[key] + (b[key] - a[key]) * k; return r; };
+
+// ===== 動作（照 MascotMoves）=====
+const MOVES = {
+  idle(t) {
+    const p = basePose(); const breath = Math.sin(t * 2.2);
+    p.sh = -1.2 * breath; p.hy = -1.2 * breath;
+    p.lean = 1.4 * Math.sin(t * 1.1); p.head = 1.5 * Math.sin(t * 0.9);
+    p.eyeH = (t % 3.6) > 3.46 ? 1.5 : 12;
+    return p;
+  },
+  wave(t) {
+    const p = basePose();
+    p.rS = 110; p.rE = 40 + 22 * Math.sin(t * 9); p.lS = -16; p.lE = -6;
+    p.head = 5 + 2 * Math.sin(t * 4.5); p.lean = 2; p.brow = 5; p.browY = -1;
+    p.hy = -Math.sin(t * 4.5);
+    return p;
+  },
+  pointDown(t) {
+    const p = basePose(); const bob = Math.sin(t * 5);
+    p.rS = 30; p.rE = 8; p.lS = -40; p.lE = 100; p.lean = 2;
+    p.head = 9 + 1.5 * bob; p.lookX = 2; p.lookY = 3.5; p.brow = 4;
+    return p;
+  },
+  cheer(t) {
+    const period = 0.72; const phase = (t % period) / period;
+    const hop = phase < 0.8 ? Math.sin(Math.PI * phase / 0.8) : 0;
+    const land = phase >= 0.8 ? Math.sin(Math.PI * (phase - 0.8) / 0.2) : 0;
+    const shake = Math.sin(t * 15);
+    const p = basePose();
+    p.ry = -34 * hop; p.squash = 0.07 * land;
+    p.lS = -105; p.lE = -62 - 8 * shake; p.rS = 105; p.rE = 62 + 8 * shake;
+    p.lH = -14 - 12 * hop; p.lK = 34 * hop; p.rH = 14 + 12 * hop; p.rK = -34 * hop;
+    p.brow = -4; p.browY = -3; p.happy = 1; p.mouthOpen = 1; p.head = 0.9 * shake;
+    return p;
+  },
+};
+
+// ===== 畫（照 MascotDrawing／MascotHead）=====
+const rad = d => d * Math.PI / 180;
+const dir = d => ({ dx: Math.sin(rad(d)), dy: Math.cos(rad(d)) });
+const move = (p, v, len) => ({ x: p.x + v.dx * len, y: p.y + v.dy * len });
+const BEAN = [
+  [0, -120, -240, -150, -90, -170],
+  [240, -10, 90, -170, 240, -150],
+  [60, 110, 240, 120, 120, 160],
+  [-60, 110, 30, 85, -30, 85],
+  [-240, -20, -120, 160, -240, 110],
+];
+
+function seg(ctx, a, b, w, color) {
+  ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+  ctx.lineWidth = w; ctx.lineCap = 'round'; ctx.strokeStyle = color; ctx.stroke();
+}
+function rrect(ctx, x, y, w, h, r, color) {
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fillStyle = color; ctx.fill();
+}
+
+function drawMascot(ctx, W, H, pose, ink) {
+  const b = RIG.box; const s = Math.min(W / b.w, H / b.h);
+  ctx.save();
+  ctx.translate((W - b.w * s) / 2, (H - b.h * s) / 2); ctx.scale(s, s); ctx.translate(-b.x, -b.y);
+
+  // 影子：跳起來變小變淡
+  const lift = Math.max(0, -pose.ry / 40);
+  const rx = 62 * (1 - lift * 0.35), ry = 8 * (1 - lift * 0.35);
+  ctx.globalAlpha = 0.16 * (1 - lift * 0.5);
+  ctx.beginPath(); ctx.ellipse(RIG.hipX, RIG.ground + 7, rx, ry, 0, 0, Math.PI * 2);
+  ctx.fillStyle = ink; ctx.fill(); ctx.globalAlpha = 1;
+
+  // 落地時以腳底為中心壓扁
+  ctx.translate(RIG.hipX, RIG.ground);
+  ctx.scale(1 + pose.squash * 0.6, 1 - pose.squash);
+  ctx.translate(-RIG.hipX, -RIG.ground);
+
+  const hip = { x: RIG.hipX, y: RIG.hipY + pose.ry };
+  const up = dir(180 - pose.lean);
+  const neck = move(hip, up, RIG.torso);
+  const shoulder = move(hip, up, RIG.torso - RIG.shoulderDrop); shoulder.y += pose.sh;
+
+  const leg = (hA, knee, side) => {
+    const k = move(hip, dir(hA), RIG.thigh); const a = move(k, dir(hA + knee), RIG.shin);
+    seg(ctx, hip, k, 9, ink); seg(ctx, k, a, 9, ink); seg(ctx, a, { x: a.x + side * 12, y: a.y + 1 }, 9, ink);
+  };
+  leg(pose.lH, pose.lK, -1); leg(pose.rH, pose.rK, 1);
+  seg(ctx, hip, { x: neck.x, y: neck.y + pose.sh * 0.5 }, 9, ink);
+
+  ctx.save();
+  ctx.translate(neck.x, neck.y + pose.hy + pose.sh * 0.5);
+  ctx.rotate(rad(pose.head + pose.lean));
+  drawHead(ctx, pose);
+  ctx.restore();
+
+  const arm = (angle, elbow, side) => {
+    const st = { x: shoulder.x + side * RIG.shoulderHalf, y: shoulder.y };
+    const e = move(st, dir(angle), RIG.upper); const h = move(e, dir(angle + elbow), RIG.fore);
+    seg(ctx, st, e, 8.5, ink); seg(ctx, e, h, 8.5, ink);
+  };
+  arm(pose.lS, pose.lE, -1); arm(pose.rS, pose.rE, 1);
+  ctx.restore();
+}
+
+function drawHead(ctx, pose) {
+  rrect(ctx, -50, -88, 100, 96, 26, ART.keycapSide);
+  rrect(ctx, -50, -98, 100, 96, 26, ART.keycapTop);
+  // 豆子
+  ctx.save();
+  ctx.translate(10, -100); ctx.rotate(rad(-14)); ctx.scale(0.13, 0.13);
+  ctx.beginPath(); ctx.moveTo(-240, -20);
+  for (const c of BEAN) ctx.bezierCurveTo(c[2], c[3], c[4], c[5], c[0], c[1]);
+  ctx.closePath(); ctx.fillStyle = ART.bean; ctx.fill();
+  rrect(ctx, -95, -70, 190, 56, 28, ART.keycapSide);
+  ctx.restore();
+  // 臉
+  ctx.beginPath(); ctx.ellipse(0, -46, 30, 30, 0, 0, Math.PI * 2); ctx.fillStyle = ART.face; ctx.fill();
+  for (const side of [-1, 1]) {
+    const cx = side * 11 + pose.lookX, cy = -48 + pose.lookY;
+    if (pose.happy > 0.5) {
+      ctx.beginPath(); ctx.moveTo(cx - 5, cy + 3); ctx.quadraticCurveTo(cx, cy - 6, cx + 5, cy + 3);
+      ctx.lineWidth = 3.6; ctx.lineCap = 'round'; ctx.strokeStyle = ART.feature; ctx.stroke();
+    } else {
+      const h = Math.max(1.5, pose.eyeH);
+      rrect(ctx, cx - 2.3, cy - h / 2, 4.6, h, 2.3, ART.feature);
+    }
+    const bx = side * 12 + pose.lookX * 0.5, by = -61 + pose.browY + pose.lookY * 0.5;
+    const dx = 8 * Math.cos(rad(pose.brow)), dy = 8 * Math.sin(rad(pose.brow));
+    seg(ctx, { x: bx - side * dx, y: by + dy }, { x: bx + side * dx, y: by - dy }, 3.4, ART.feature);
+  }
+  const mx = pose.lookX * 0.5, my = -30 + pose.lookY * 0.5;
+  ctx.beginPath();
+  if (pose.mouthOpen > 0.5) {
+    ctx.moveTo(mx - 7, my - 2); ctx.quadraticCurveTo(mx, my + 10, mx + 7, my - 2); ctx.closePath();
+    ctx.fillStyle = ART.feature; ctx.fill();
+  } else {
+    ctx.moveTo(mx - 6, my - 1); ctx.quadraticCurveTo(mx, my + 5, mx + 6, my - 1);
+    ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.strokeStyle = ART.feature; ctx.stroke();
+  }
+}
+
+// ===== 播放器：跟 MascotView 一樣，換動作時從上一個姿勢過渡 =====
+let speed = 1, clock = 0, lastNow = performance.now();
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+class Player {
+  constructor(canvas, action, height) {
+    this.canvas = canvas; this.action = action; this.prev = null; this.switchedAt = clock; this.height = height;
+  }
+  set(action) {
+    if (action === this.action) return;
+    this.prev = this.action; this.action = action; this.switchedAt = clock;
+  }
+  pose() {
+    const t = reduceMotion ? 0 : clock - this.switchedAt;
+    const target = MOVES[this.action](t);
+    if (reduceMotion || !this.prev || t >= BLEND) return target;
+    const k = t / BLEND;
+    return blend(MOVES[this.prev](t), target, k * k * (3 - 2 * k));
+  }
+  draw(ink) {
+    const c = this.canvas, dpr = devicePixelRatio || 1;
+    const cssH = this.height ?? c.clientHeight;
+    const cssW = this.height ? cssH * RIG.box.w / RIG.box.h : c.clientWidth;
+    if (this.height) { c.style.width = cssW + 'px'; c.style.height = cssH + 'px'; }
+    if (c.width !== Math.round(cssW * dpr) || c.height !== Math.round(cssH * dpr)) {
+      c.width = Math.round(cssW * dpr); c.height = Math.round(cssH * dpr);
+    }
+    const ctx = c.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, cssW, cssH);
+    drawMascot(ctx, cssW, cssH, this.pose(), ink);
+  }
+}
+
+const stage = new Player(document.getElementById('stage'), 'wave', 220);
+const solos = [...document.querySelectorAll('canvas[data-solo]')].map(c => new Player(c, c.dataset.solo));
+
+function frame(now) {
+  clock += (now - lastNow) / 1000 * speed; lastNow = now;
+  const ink = getComputedStyle(document.documentElement).getPropertyValue('--limb').trim();
+  stage.draw(ink); solos.forEach(p => p.draw(ink));
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// ===== 設定流程重播（照 SetupFlow.swift）=====
+let timer = null;
+const $ = id => document.getElementById(id);
+function showStep(n) {
+  $('step1').hidden = n !== 1; $('step2').hidden = n !== 2;
+  stage.height = n === 1 ? 220 : 150;
+}
+function setTyped(on) {
+  $('s2title').textContent = on ? '打出來了' : '切到豆鍵，打一個字';
+  $('s2detail').textContent = on ? '之後在任何 App 打字，按地球鍵就能換到豆鍵。需要幫忙時，到設定 → 使用說明。' : '按鍵盤左下角的地球鍵，換到豆鍵。';
+  $('s2field').textContent = on ? '你' : '在這裡打字';
+  $('s2field').style.color = on ? 'var(--text)' : '';
+  $('s2start').hidden = !on; $('s2back').hidden = on;
+}
+function play1() {
+  clearTimeout(timer); showStep(1); setTyped(false);
+  stage.prev = null; stage.action = 'wave'; stage.switchedAt = clock;
+  timer = setTimeout(() => stage.set('pointDown'), 1500 / speed);
+}
+$('play1').onclick = play1;
+$('play2').onclick = () => { clearTimeout(timer); showStep(2); setTyped(false); stage.set('pointDown'); };
+$('typed').onclick = () => { clearTimeout(timer); showStep(2); setTyped(true); stage.set('cheer'); };
+$('erase').onclick = () => { clearTimeout(timer); showStep(2); setTyped(false); stage.set('pointDown'); };
+document.querySelectorAll('[data-act]').forEach(b => b.onclick = () => { clearTimeout(timer); stage.set(b.dataset.act); });
+$('theme').onclick = () => {
+  const dark = document.documentElement.dataset.theme !== 'dark';
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  $('theme').textContent = dark ? '切淺色' : '切深色';
+};
+$('slow').onclick = () => {
+  speed = speed === 1 ? 0.25 : 1;
+  $('slow').textContent = speed === 1 ? '慢動作 ×0.25' : '回正常速度';
+};
+play1();
+</script>
+</body>
+</html>
