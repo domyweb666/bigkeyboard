@@ -7,12 +7,12 @@ final class KeyboardViewController: UIInputViewController {
     let candidateGrid = CandidateGrid()
     let clipboardPanel = ClipboardPanel()
     private var heightConstraint: NSLayoutConstraint?
-    private var barShown: NSLayoutConstraint?
-    private var barHidden: NSLayoutConstraint?
+    var barShown: NSLayoutConstraint?
+    var barHidden: NSLayoutConstraint?
     var engine: BopomofoEngine?
 
-    private static let modeKey = "lastMode"
-    private static let languageKey = "lastLanguage"
+    static let modeKey = "lastMode"
+    static let languageKey = "lastLanguage"
 
     /// 打字前、還沒有上下文時，工具列先擺常用的起頭字，不留一條空白
     static let starters = ["我", "你", "好", "這", "那", "是", "在", "有", "不", "要", "如果", "但是", "因為", "所以"]
@@ -50,10 +50,10 @@ final class KeyboardViewController: UIInputViewController {
     /// 剛點了英文建議、自動補了空格（接著打標點時拿掉那個空格）
     var englishAutoSpace = false
     /// 目前輸入框的種類（email、網址、數字欄會換鍵面）
-    private var hostKeyboardType = UIKeyboardType.default
-    private var hostField = HostField.normal
+    var hostKeyboardType = UIKeyboardType.default
+    var hostField = HostField.normal
     /// 鍵面是輸入框種類決定的：這時切鍵面不記進「上次的鍵面」，離開這個輸入框就回到平常的
-    private var hostOverridesMode = false
+    var hostOverridesMode = false
     /// App 設定：按鍵震動（要開完全取用才讀得到、才震得了）。鍵盤每次叫出來時重讀
     var keyHaptics = false
     /// App 設定：按鍵聲要哪一種（系統預設、三種按鍵聲、機械鍵盤聲音包、關閉）。鍵盤每次叫出來時重讀
@@ -88,21 +88,7 @@ final class KeyboardViewController: UIInputViewController {
             )
         }
 
-        candidateBar.onSelect = { [weak self] i in self?.selectFromBar(i) }
-        candidateBar.onToggleExpand = { [weak self] in self?.toggleExpand() }
-        candidateGrid.onSelect = { [weak self] i in self?.selectFromBar(i) }
-        keyboardView.onKey = { [weak self] spec in self?.handleKey(spec) }
-        keyboardView.onLongKey = { [weak self] spec in self?.handleLongPress(spec) }
-        keyboardView.onAnyPress = { [weak self] spec in
-            self?.playKeySound(for: spec)
-            self?.tapHaptic()
-        }
-        keyboardView.peekRows = { [weak self] spec in self.flatMap { $0.peekRows(for: spec) } }
-        keyboardView.onRepeatTick = { [weak self] in self?.tapHaptic() }
-        keyboardView.onFastDelete = { [weak self] in self?.fastDelete() }
-        keyboardView.onCursorDragBegin = { [weak self] in self?.beginCursorDrag() }
-        keyboardView.onCursorDragMove = { [weak self] p in self?.moveCursorDrag(to: p) }
-        keyboardView.onCursorDragEnd = { [weak self] in self?.endCursorDrag() }
+        wireCallbacks()
         candidateGrid.isHidden = true
         clipboardPanel.isHidden = true
 
@@ -137,6 +123,25 @@ final class KeyboardViewController: UIInputViewController {
         showMode()
         setUpDismiss()
         setUpClipboard()
+    }
+
+    /// 候選列、鍵盤的各種動作接到控制器
+    private func wireCallbacks() {
+        candidateBar.onSelect = { [weak self] i in self?.selectFromBar(i) }
+        candidateBar.onToggleExpand = { [weak self] in self?.toggleExpand() }
+        candidateGrid.onSelect = { [weak self] i in self?.selectFromBar(i) }
+        keyboardView.onKey = { [weak self] spec in self?.handleKey(spec) }
+        keyboardView.onLongKey = { [weak self] spec in self?.handleLongPress(spec) }
+        keyboardView.onAnyPress = { [weak self] spec in
+            self?.playKeySound(for: spec)
+            self?.tapHaptic()
+        }
+        keyboardView.peekRows = { [weak self] spec in self.flatMap { $0.peekRows(for: spec) } }
+        keyboardView.onRepeatTick = { [weak self] in self?.tapHaptic() }
+        keyboardView.onFastDelete = { [weak self] in self?.fastDelete() }
+        keyboardView.onCursorDragBegin = { [weak self] in self?.beginCursorDrag() }
+        keyboardView.onCursorDragMove = { [weak self] p in self?.moveCursorDrag(to: p) }
+        keyboardView.onCursorDragEnd = { [weak self] in self?.endCursorDrag() }
     }
 
     /// 展開的全部候選、剪貼簿面板：蓋在鍵區上，一樣大
@@ -238,88 +243,9 @@ final class KeyboardViewController: UIInputViewController {
     }
 }
 
-// MARK: - 模式、按鍵 → 引擎 → 輸入框
+// MARK: - 按鍵 → 引擎 → 輸入框
 
 private extension KeyboardViewController {
-    func restoreMode() {
-        let d = UserDefaults.standard
-        language = .bopomofo
-        if let raw = d.string(forKey: Self.languageKey), let m = KeyboardMode(rawValue: raw), m.isLanguage {
-            language = m
-        }
-        if let raw = d.string(forKey: Self.modeKey), let m = KeyboardMode(rawValue: raw) {
-            mode = m
-        } else {
-            mode = language
-        }
-    }
-
-    func setMode(_ newMode: KeyboardMode) {
-        if newMode.isLanguage {
-            language = newMode
-        }
-        mode = newMode
-        if !hostOverridesMode {
-            let d = UserDefaults.standard
-            d.set(mode.rawValue, forKey: Self.modeKey)
-            d.set(language.rawValue, forKey: Self.languageKey)
-        }
-        showMode()
-    }
-
-    /// 輸入框種類換了：email、網址欄換英文鍵面（底排多 @ 或 / .com），數字欄換數字鍵盤；其他回到平常記住的鍵面
-    func applyHostKeyboardType() {
-        let type = textDocumentProxy.keyboardType ?? .default
-        guard type != hostKeyboardType else { return }
-        hostKeyboardType = type
-        commitAllComposing()
-        associations = []
-        let plan = Self.hostPlan(for: type)
-        hostField = plan.field
-        hostOverridesMode = plan.mode != nil
-        if let forced = plan.mode {
-            mode = forced
-            if forced.isLanguage {
-                language = forced
-            }
-        } else {
-            restoreMode()
-        }
-        showMode()
-    }
-
-    func showMode() {
-        let chinese = language == .bopomofo
-        switch mode {
-        case .bopomofo:
-            keyboardView.load(BopomofoLayout.rows)
-        case .english:
-            keyboardView.load(EnglishLayout.rows(for: hostField))
-        case .symbols1:
-            keyboardView.load(SymbolLayout.page1(chinese: chinese))
-        case .symbols2:
-            keyboardView.load(SymbolLayout.page2(chinese: chinese))
-        case .numpad:
-            keyboardView.load(NumpadLayout.rows(chinese: chinese))
-        }
-        // 工具列只在注音鍵面出現（候選字）；英文、符號頁、數字鍵盤總高度不變，空間讓給鍵（鍵變高、更好按）
-        let showBar = mode == .bopomofo
-        barShown?.isActive = false
-        barHidden?.isActive = false
-        (showBar ? barShown : barHidden)?.isActive = true
-        candidateBar.isHidden = !showBar
-        expanded = false
-        clipboardOpen = false
-        if mode == .english {
-            preloadEnglishWords()
-        }
-        keyboardView.shift = .off
-        keyboardView.setReturnLabel(Self.returnLabel(for: textDocumentProxy.returnKeyType))
-        refreshBar()
-    }
-
-    // MARK: - 鍵 → 引擎 → 輸入框
-
     /// 按了一顆鍵：英文鍵面先處理自動補的空格、記下打完的字，再照鍵的動作做
     func handleKey(_ spec: KeySpec) {
         if language == .english {

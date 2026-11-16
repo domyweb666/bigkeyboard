@@ -212,11 +212,10 @@ enum EnglishLayout {
     /// 底排照輸入框種類：一般「, 空白 .」；email「@ 空白 .」；網址「/ 空白 . .com」（.com 的寬度從空白鍵讓出來）
     private static func bottom(for field: HostField) -> KeyRow {
         let comWidth: CGFloat = 1.3
-        let left: String
-        switch field {
-        case .normal: left = ","
-        case .email: left = "@"
-        case .url: left = "/"
+        let left = switch field {
+        case .normal: ","
+        case .email: "@"
+        case .url: "/"
         }
         let isURL = field == .url
         var row: KeyRow = [

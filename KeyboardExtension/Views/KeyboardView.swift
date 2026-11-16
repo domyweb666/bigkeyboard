@@ -157,55 +157,6 @@ final class KeyboardView: UIView {
         applyShiftAppearance()
     }
 
-    /// 把一張鍵位表排進一個直向的 stack（原本的鍵面和先跑出來的符號頁共用）
-    func fill(_ stack: UIStackView, with rows: [KeyRow], make: (KeySpec) -> KeyButton) {
-        stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        for row in rows {
-            let rowStack = UIStackView()
-            rowStack.axis = .horizontal
-            rowStack.spacing = SamsungTheme.keyGap
-            rowStack.alignment = .fill
-            let total = row.reduce(0) { $0 + $1.width }
-            let gaps = SamsungTheme.keyGap * CGFloat(row.count - 1)
-            for spec in row {
-                // 空位不是鍵：按在上面由 hitTest 算給最近的鍵
-                let b: UIView = if case .spacer = spec.action {
-                    UIView()
-                } else {
-                    make(spec)
-                }
-                rowStack.addArrangedSubview(b)
-                b.widthAnchor.constraint(
-                    equalTo: rowStack.widthAnchor,
-                    multiplier: spec.width / total,
-                    constant: -gaps * spec.width / total
-                ).isActive = true
-            }
-            stack.addArrangedSubview(rowStack)
-        }
-    }
-
-    /// 一顆鍵的長相（字、圖示、小字、底色），還沒接上按下去要做的事
-    func styledButton(_ spec: KeySpec) -> KeyButton {
-        let b = KeyButton()
-        b.label.text = spec.label
-        if spec.isTone {
-            b.label.font = SamsungTheme.keyFont(ofSize: SamsungTheme.toneFontSize, bold: true)
-        } else {
-            let fontSize = spec.isFunction ? SamsungTheme.functionFontSize : SamsungTheme.keyFontSize
-            b.label.font = SamsungTheme.keyFont(ofSize: fontSize)
-        }
-        b.hintLabel.text = spec.longHint
-        if spec.isFunction {
-            // 灰色功能鍵上灰字對比不夠，改用主字色
-            b.hintLabel.textColor = SamsungTheme.keyText
-        }
-        b.footLabel.text = spec.foot
-        b.setIcon(spec.icon)
-        b.normalColor = spec.tint ?? (spec.isFunction ? SamsungTheme.keyGray : SamsungTheme.keyWhite)
-        return b
-    }
-
     private func makeButton(_ spec: KeySpec) -> KeyButton {
         let b = styledButton(spec)
         if case .backspace = spec.action {
@@ -280,6 +231,92 @@ final class KeyboardView: UIView {
         }
     }
 
+    /// 換行鍵依輸入框顯示「搜尋」「傳送」等字；nil 表示一般換行（顯示圖示）
+    func setReturnLabel(_ text: String?) {
+        returnLabel = text
+        applyReturnLabel(to: buttons, specs: specs)
+    }
+
+    /// 空白鍵底下的小字（組字時顯示「一聲」「選字」）；nil 回到鍵位表寫的
+    func setSpaceFoot(_ text: String?) {
+        for b in buttons {
+            guard let spec = specs[b], case .space = spec.action else { continue }
+            b.footLabel.text = text ?? spec.foot
+        }
+    }
+
+    private func applyShiftAppearance() {
+        for b in buttons {
+            guard let spec = specs[b] else { continue }
+            switch spec.action {
+            case let .letter(c):
+                b.label.text = shift == .off ? c : c.uppercased()
+            case .shift:
+                switch shift {
+                case .off: b.setIcon("shift")
+                case .once: b.setIcon("shift.fill")
+                case .locked: b.setIcon("capslock.fill")
+                }
+                b.normalColor = shift == .off ? SamsungTheme.keyGray : SamsungTheme.keyWhite
+            default:
+                break
+            }
+        }
+    }
+}
+
+// MARK: - 排鍵、鍵的長相、刪除連發、觸控板
+
+extension KeyboardView {
+    /// 把一張鍵位表排進一個直向的 stack（原本的鍵面和先跑出來的符號頁共用）
+    func fill(_ stack: UIStackView, with rows: [KeyRow], make: (KeySpec) -> KeyButton) {
+        stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        for row in rows {
+            let rowStack = UIStackView()
+            rowStack.axis = .horizontal
+            rowStack.spacing = SamsungTheme.keyGap
+            rowStack.alignment = .fill
+            let total = row.reduce(0) { $0 + $1.width }
+            let gaps = SamsungTheme.keyGap * CGFloat(row.count - 1)
+            for spec in row {
+                // 空位不是鍵：按在上面由 hitTest 算給最近的鍵
+                let b: UIView = if case .spacer = spec.action {
+                    UIView()
+                } else {
+                    make(spec)
+                }
+                rowStack.addArrangedSubview(b)
+                b.widthAnchor.constraint(
+                    equalTo: rowStack.widthAnchor,
+                    multiplier: spec.width / total,
+                    constant: -gaps * spec.width / total
+                ).isActive = true
+            }
+            stack.addArrangedSubview(rowStack)
+        }
+    }
+
+    /// 一顆鍵的長相（字、圖示、小字、底色），還沒接上按下去要做的事
+    func styledButton(_ spec: KeySpec) -> KeyButton {
+        let b = KeyButton()
+        b.label.text = spec.label
+        if spec.isTone {
+            b.label.font = SamsungTheme.keyFont(ofSize: SamsungTheme.toneFontSize, bold: true)
+        } else {
+            let fontSize = spec.isFunction ? SamsungTheme.functionFontSize : SamsungTheme.keyFontSize
+            b.label.font = SamsungTheme.keyFont(ofSize: fontSize)
+        }
+        b.hintLabel.text = spec.longHint
+        if spec.isFunction {
+            // 灰色功能鍵上灰字對比不夠，改用主字色
+            b.hintLabel.textColor = SamsungTheme.keyText
+        }
+        b.footLabel.text = spec.foot
+        b.setIcon(spec.icon)
+        b.normalColor = spec.tint ?? (spec.isFunction ? SamsungTheme.keyGray : SamsungTheme.keyWhite)
+        return b
+    }
+
     /// 刪除鍵：按下刪一個；按住連刪，連刪夠久之後每幾下刪一截
     private func backspaceFired(_ spec: KeySpec, repeats: Int) {
         let fast = repeats - SamsungTheme.fastDeleteAfterRepeats
@@ -311,12 +348,6 @@ final class KeyboardView: UIView {
         }
     }
 
-    /// 換行鍵依輸入框顯示「搜尋」「傳送」等字；nil 表示一般換行（顯示圖示）
-    func setReturnLabel(_ text: String?) {
-        returnLabel = text
-        applyReturnLabel(to: buttons, specs: specs)
-    }
-
     func applyReturnLabel(to pool: [KeyButton], specs table: [KeyButton: KeySpec]) {
         for b in pool {
             guard let spec = table[b], case .newline = spec.action else { continue }
@@ -326,33 +357,6 @@ final class KeyboardView: UIView {
             } else {
                 b.setIcon(spec.icon)
                 b.label.text = spec.label
-            }
-        }
-    }
-
-    /// 空白鍵底下的小字（組字時顯示「一聲」「選字」）；nil 回到鍵位表寫的
-    func setSpaceFoot(_ text: String?) {
-        for b in buttons {
-            guard let spec = specs[b], case .space = spec.action else { continue }
-            b.footLabel.text = text ?? spec.foot
-        }
-    }
-
-    private func applyShiftAppearance() {
-        for b in buttons {
-            guard let spec = specs[b] else { continue }
-            switch spec.action {
-            case let .letter(c):
-                b.label.text = shift == .off ? c : c.uppercased()
-            case .shift:
-                switch shift {
-                case .off: b.setIcon("shift")
-                case .once: b.setIcon("shift.fill")
-                case .locked: b.setIcon("capslock.fill")
-                }
-                b.normalColor = shift == .off ? SamsungTheme.keyGray : SamsungTheme.keyWhite
-            default:
-                break
             }
         }
     }

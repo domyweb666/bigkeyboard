@@ -57,6 +57,7 @@ enum SamsungTheme {
     static let keyHapticIntensity: CGFloat = 0.7
 
     // 按住空白鍵拖游標（手感參數，真機調）
+
     /// 左右拖這麼多 pt 移一個字（慢慢拖時）
     static let cursorPointsPerCharacter: CGFloat = 9
     /// 拖得比這快（pt／秒）開始加速：越快一次跳越多字

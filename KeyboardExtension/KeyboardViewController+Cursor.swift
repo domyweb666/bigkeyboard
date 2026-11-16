@@ -108,7 +108,8 @@ extension KeyboardViewController {
         let lined = target < 0
             ? after.starts(with: text.prefix(probe))
             : before.reversed().starts(with: text.suffix(probe).reversed())
-        guard lined, (target < 0 ? !before.isEmpty : !after.isEmpty) else {
+        let hasMore = target < 0 ? !before.isEmpty : !after.isEmpty
+        guard lined, hasMore else {
             return edge
         }
         drag.text = before + after

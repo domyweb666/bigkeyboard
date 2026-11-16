@@ -77,8 +77,8 @@ extension KeyboardView {
         var target: KeyButton?
         // 手指滑出鍵盤太遠，就不算在任何一顆鍵上
         let reach = bounds.insetBy(dx: -SamsungTheme.slideOutMargin, dy: -SamsungTheme.slideOutMargin)
-        if reach.contains(point), let near = nearestKey(at: point, among: pool, specs: table),
-           let spec = table[near], Self.isCharacterKey(spec) {
+        let near = reach.contains(point) ? nearestKey(at: point, among: pool, specs: table) : nil
+        if let near, let spec = table[near], Self.isCharacterKey(spec) {
             target = near
         }
         guard target !== current.target else { return }

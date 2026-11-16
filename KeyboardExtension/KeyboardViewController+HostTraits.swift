@@ -13,10 +13,10 @@ extension KeyboardViewController {
     /// 電話欄、密碼欄系統會強制換回原生鍵盤，輪不到這裡
     static func hostPlan(for type: UIKeyboardType) -> (mode: KeyboardMode?, field: HostField) {
         switch type {
-        case .emailAddress: return (KeyboardMode.english, HostField.email)
-        case .URL: return (KeyboardMode.english, HostField.url)
-        case .numberPad, .decimalPad, .asciiCapableNumberPad: return (KeyboardMode.numpad, HostField.normal)
-        default: return (nil, HostField.normal)
+        case .emailAddress: (KeyboardMode.english, HostField.email)
+        case .URL: (KeyboardMode.english, HostField.url)
+        case .numberPad, .decimalPad, .asciiCapableNumberPad: (KeyboardMode.numpad, HostField.normal)
+        default: (nil, HostField.normal)
         }
     }
 
