@@ -24,6 +24,23 @@ enum WhatsNew {
 
     /// 各版的新功能，新的在前。每版最多 3 點（這份是豆鍵自己的內容；搬成 VeggieKit 時改由設定檔帶入）
     static let releases = [
+        Release(version: "1.2", points: [
+            Point(
+                icon: "arrow.left.and.right",
+                text: "按住空白鍵可以移游標：按住半秒，鍵上的字淡掉之後左右拖。"
+                    + "按住刪除鍵久一點，會一次刪好幾個字。"
+            ),
+            Point(
+                icon: "hand.draw",
+                text: "按錯了先別放開，滑到對的鍵再放開就好。"
+                    + "按住「符」往上滑，可以直接滑到符號，打完還在注音。"
+            ),
+            Point(
+                icon: "speaker.wave.2",
+                text: "設定頁多了按鍵震動和按鍵聲。"
+                    + "按鍵聲有三套機械鍵盤的聲音可以選，也可以關掉。"
+            ),
+        ]),
         Release(version: "1.1", points: [
             Point(
                 icon: "space",

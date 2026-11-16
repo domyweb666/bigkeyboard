@@ -1,8 +1,10 @@
-# 小改版（例如 1.1.1）的文案寫進 App Store Connect：只寫「此版本的新功能」和審查備註。
+# 改版（例如 1.2）的文案寫進 App Store Connect：只寫「此版本的新功能」和審查備註。
 # 在 GitHub Actions 跑（.github/workflows/asc-release.yml，推 asc-release 分支觸發），金鑰用 repo secrets。
 # 文字從 .aso/<版本>-送審稿.md 讀：第 1 個程式碼區塊＝繁中新功能說明、第 2 個＝英文（英國）、第 3 個＝審查備註要加在最前面的段落。
 # 後台沒有這個版本就建草稿（Apple 會沿用上一版的描述、關鍵字、截圖）；缺語系時照上一版補。
-# 不動名稱、副標、描述、關鍵字、截圖，不選 build，不送審。寫完重讀比對，有一欄不對就失敗。
+# 不動名稱、副標、描述、關鍵字、截圖。寫完重讀比對，有一欄不對就失敗。
+# 預設不選 build、不送審。要送審：python -I .aso/asc_release.py --submit <build 號>
+# （文案比對全對、那個 build 處理完成，才會選上去並提交審查；送出去就收不回來，只能在後台撤回）
 # 本機只想看會寫什麼：python -I .aso/asc_release.py --dry-run（不連 Apple）
 import os
 import re
@@ -14,7 +16,9 @@ sys.stdout.reconfigure(encoding="utf-8")
 HERE = Path(__file__).parent
 API = "https://api.appstoreconnect.apple.com/v1"
 BUNDLE_ID = "org.domyweb.bigkeyboard"
-VERSION = "1.1.1"
+VERSION = "1.2"
+# 後台如果還留著這些版本號的草稿，直接改名成 VERSION（多米 2026-11-16：1.1.1 取消，併進 1.2）
+RENAME_FROM = {"1.1.1"}
 LOCALES = ("zh-Hant", "en-GB")
 EDITABLE = {"PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "REJECTED", "METADATA_REJECTED", "INVALID_BINARY"}
 # 新語系要從上一版帶過來的欄位
@@ -76,7 +80,14 @@ def find_or_create(asc, app_id, vs):
         return mine[0]["id"]
     editing = [v for v in vs if vstate(v) in EDITABLE]
     if editing:
-        sys.exit(f"後台已經有準備中的版本 {editing[0]['attributes']['versionString']}，不是 {VERSION}。停，請多米確認。")
+        old = editing[0]
+        name = old["attributes"]["versionString"]
+        if name not in RENAME_FROM:
+            sys.exit(f"後台已經有準備中的版本 {name}，不是 {VERSION}。停，請多米確認。")
+        print(f"  後台準備中的版本是 {name}，改名成 {VERSION}")
+        asc.call("PATCH", f"/appStoreVersions/{old['id']}", {"data": {
+            "type": "appStoreVersions", "id": old["id"], "attributes": {"versionString": VERSION}}})
+        return old["id"]
     print(f"  後台沒有 {VERSION}，建一個草稿")
     body = {"data": {"type": "appStoreVersions",
                      "attributes": {"platform": "IOS", "versionString": VERSION},
@@ -142,10 +153,11 @@ def main():
         else:
             print(f"  {lc} 新功能說明：已經一樣")
 
-    # 審查備註：沿用上一版的，最前面加這次的段落（已經加過就不再加）
+    # 審查備註：上一個上架版本的備註，最前面加這次的段落。
+    # 一律從上架的那一版組，不從草稿現有的備註接：草稿可能還留著別的版本加的段落（例如取消掉的 1.1.1）
     detail = review_detail(asc, version_id)
     old = review_detail(asc, prev["id"])
-    old_notes = ((detail or old or {}).get("attributes") or {}).get("notes") or ""
+    old_notes = ((old or {}).get("attributes") or {}).get("notes") or ""
     target = old_notes if old_notes.startswith(note) else (note + "\n\n" + old_notes).strip()
     if detail:
         if detail["attributes"].get("notes") != target:
@@ -180,7 +192,47 @@ def main():
     print(f"  審查聯絡資料：{'有' if d.get('contactEmail') else '沒有，要到後台補'}")
     if bad:
         sys.exit(f"{bad} 項對不上")
-    print(f"\n{VERSION} 草稿文案寫好了。build 還沒選、還沒送審。")
+    if "--submit" not in sys.argv:
+        print(f"\n{VERSION} 草稿文案寫好了。build 還沒選、還沒送審。")
+        return
+    submit(asc, app["id"], version_id, sys.argv[sys.argv.index("--submit") + 1])
+
+
+def submit(asc, app_id, version_id, build_number):
+    """選 build、提交審查。文案比對全對才會走到這裡"""
+    builds = asc.call("GET", f"/builds?filter[app]={app_id}&filter[version]={build_number}"
+                             f"&filter[preReleaseVersion.version]={VERSION}&limit=5")["data"]
+    if not builds:
+        sys.exit(f"找不到 {VERSION} 的 build {build_number}（還沒上傳，或版本號不是 {VERSION}）。停。")
+    build = builds[0]
+    state = build["attributes"].get("processingState")
+    if state != "VALID":
+        sys.exit(f"build {build_number} 現在是 {state}，還不能送。等 Apple 處理完再跑一次。")
+    asc.call("PATCH", f"/appStoreVersions/{version_id}/relationships/build",
+             {"data": {"type": "builds", "id": build["id"]}})
+    print(f"  已選 build {build_number}")
+
+    # 有還沒送出的提交單就沿用，沒有才建
+    opened = asc.call("GET", f"/reviewSubmissions?filter[app]={app_id}&filter[platform]=IOS"
+                             "&filter[state]=READY_FOR_REVIEW")["data"]
+    if opened:
+        sid = opened[0]["id"]
+        print("  沿用後台還沒送出的提交單")
+    else:
+        sid = asc.call("POST", "/reviewSubmissions", {"data": {
+            "type": "reviewSubmissions", "attributes": {"platform": "IOS"},
+            "relationships": {"app": {"data": {"type": "apps", "id": app_id}}}}})["data"]["id"]
+    items = asc.call("GET", f"/reviewSubmissions/{sid}/items")["data"]
+    if not items:
+        asc.call("POST", "/reviewSubmissionItems", {"data": {
+            "type": "reviewSubmissionItems",
+            "relationships": {
+                "reviewSubmission": {"data": {"type": "reviewSubmissions", "id": sid}},
+                "appStoreVersion": {"data": {"type": "appStoreVersions", "id": version_id}}}}})
+    asc.call("PATCH", f"/reviewSubmissions/{sid}", {"data": {
+        "type": "reviewSubmissions", "id": sid, "attributes": {"submitted": True}}})
+    after = asc.call("GET", f"/reviewSubmissions/{sid}")["data"]["attributes"].get("state")
+    print(f"\n{VERSION}（build {build_number}）已提交審查，提交單狀態：{after}")
 
 
 if __name__ == "__main__":

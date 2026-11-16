@@ -1,11 +1,17 @@
 name: 小改版文案寫進 App Store Connect
 
-# 推到 asc-release 分支就跑：建小改版草稿（例如 1.1.1），只寫新功能說明和審查備註。
+# 推到 asc-release 分支就跑：建改版草稿（例如 1.2），只寫新功能說明和審查備註。
 # 不動名稱、描述、截圖，不選 build、不送審。版本號在 .aso/asc_release.py 的 VERSION。
+# 要送審：手動執行這個工作流程，填 build 號。文案比對全對、build 處理完成才會選上去並提交審查。
 on:
   push:
     branches: [asc-release]
   workflow_dispatch:
+    inputs:
+      submit_build:
+        description: "要送審的 build 號（留空＝只寫文案，不送審）"
+        type: string
+        default: ""
 
 jobs:
   release:
@@ -19,4 +25,8 @@ jobs:
       - name: 寫入新功能說明與審查備註並比對
         run: |
           pip install -q pyjwt cryptography requests
-          python3 -I .aso/asc_release.py
+          if [ -n "${{ inputs.submit_build }}" ]; then
+            python3 -I .aso/asc_release.py --submit "${{ inputs.submit_build }}"
+          else
+            python3 -I .aso/asc_release.py
+          fi
