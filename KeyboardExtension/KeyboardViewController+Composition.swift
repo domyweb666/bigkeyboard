@@ -215,37 +215,16 @@ extension KeyboardViewController {
         }
     }
 
-    // MARK: - Shift：點一下大寫一個字、連點兩下鎖定大寫、打完一句自動大寫
+    // MARK: - Shift：點一下大寫一個字、連點兩下鎖定大寫。不做自動大寫：要大寫自己按 ⇧
 
     func tapShift() {
         let now = Date()
         let isDoubleTap = now.timeIntervalSince(lastShiftTap) < 0.35
         lastShiftTap = now
         switch keyboardView.shift {
-        // 自動大寫亮著時點一下會先關掉，連點第二下照樣要鎖定
-        case .off: keyboardView.shift = isDoubleTap ? .locked : .once
+        case .off: keyboardView.shift = .once
         case .once: keyboardView.shift = isDoubleTap ? .locked : .off
         case .locked: keyboardView.shift = .off
-        }
-    }
-
-    /// 打完一顆送字的鍵之後才看要不要自動大寫。切到英文、鍵盤剛出來、輸入框是空的都是小寫：
-    /// 中英混打時第一個英文字多半不在句首。按 Shift、刪除、切鍵面不會叫這裡，自己關掉的 Shift 不會又被打開
-    func updateAutoCapitalization() {
-        guard mode == .english, keyboardView.shift != .locked, let type = textDocumentProxy.autocapitalizationType,
-              type != .none else { return }
-        let before = textDocumentProxy.documentContextBeforeInput ?? ""
-        let trimmed = before.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        let atSentenceStart = before.hasSuffix("\n")
-            || (before.hasSuffix(" ") && [".", "!", "?"].contains(trimmed.last.map(String.init) ?? ""))
-        let shouldCap: Bool = switch type {
-        case .allCharacters: true
-        case .words: before.hasSuffix(" ") || before.hasSuffix("\n")
-        default: atSentenceStart
-        }
-        if shouldCap, keyboardView.shift == .off {
-            keyboardView.shift = .once
         }
     }
 }

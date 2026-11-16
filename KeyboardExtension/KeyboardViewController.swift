@@ -277,14 +277,6 @@ private extension KeyboardViewController {
         handle(spec)
     }
 
-    /// 會送字進輸入框的鍵：只有這些鍵按完才看要不要自動大寫
-    private static func typesText(_ action: KeySpec.Action) -> Bool {
-        switch action {
-        case .letter, .text, .space, .newline: true
-        default: false
-        }
-    }
-
     func handle(_ spec: KeySpec) {
         switch spec.action {
         case let .bopomofo(symbol):
@@ -341,9 +333,6 @@ private extension KeyboardViewController {
 
         case .dismiss, .spacer: // 收鍵盤只從長按來（handleLongPress）
             break
-        }
-        if mode == .english, Self.typesText(spec.action) {
-            updateAutoCapitalization()
         }
         refreshBar()
     }

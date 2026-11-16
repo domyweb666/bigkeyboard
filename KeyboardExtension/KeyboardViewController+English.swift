@@ -68,7 +68,6 @@ extension KeyboardViewController {
         textDocumentProxy.insertText(word + " ")
         englishAutoSpace = true
         noteEnglishWord(word)
-        updateAutoCapitalization()
     }
 
     /// 點了建議會自動補空格；接著打標點時把那個空格拿掉（hello . → hello.）。按了別的鍵就不再管
@@ -100,7 +99,7 @@ extension KeyboardViewController {
         scheduleDictionaryFlush()
     }
 
-    /// 存哪種寫法：只有開頭大寫（多半是句首自動大寫）、詞表裡又有全小寫的，存小寫；其他照打的存（iPhone、人名）
+    /// 存哪種寫法：只有開頭大寫（多半是句首按了 ⇧）、詞表裡又有全小寫的，存小寫；其他照打的存（iPhone、人名）
     private static func englishKey(_ word: String) -> String {
         let lower = word.lowercased()
         let capitalizedOnly = word.first?.isUppercase == true && word.dropFirst().allSatisfy { !$0.isUppercase }
