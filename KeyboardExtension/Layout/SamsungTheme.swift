@@ -42,6 +42,18 @@ enum SamsungTheme {
     /// 刪除鍵按住後的連刪間隔
     static let repeatInterval: TimeInterval = 0.08
 
+    // 按住空白鍵拖游標（手感參數，真機調）
+    /// 左右拖這麼多 pt 移一個字（慢慢拖時）
+    static let cursorPointsPerCharacter: CGFloat = 9
+    /// 拖得比這快（pt／秒）開始加速：越快一次跳越多字
+    static let cursorFastSpeed: CGFloat = 400
+    /// 加速最多幾倍
+    static let cursorMaxAcceleration: CGFloat = 3
+    /// 上下拖這麼多 pt 跳一次（往上到這行開頭、往下到這行結尾）
+    static let cursorPointsPerLine: CGFloat = 40
+    /// 進入、離開觸控板時鍵上字淡出淡入的秒數
+    static let cursorFadeSeconds: TimeInterval = 0.15
+
     // 顏色：照目前主題（KeyboardTheme），深色跟系統（或輸入框要求深色鍵盤時）切換
 
     /// 目前主題。鍵盤每次叫出來時重讀（KeyboardViewController.viewWillAppear）

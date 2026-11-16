@@ -6,6 +6,12 @@ final class KeyboardView: UIView {
     var onLongKey: ((KeySpec) -> Void)?
     /// 任何一顆鍵被按下（給按鍵聲用）
     var onAnyPress: (() -> Void)?
+    /// 按住空白鍵拖游標：進入觸控板、手指移動（螢幕座標）、放開
+    var onCursorDragBegin: (() -> Void)?
+    var onCursorDragMove: ((CGPoint) -> Void)?
+    var onCursorDragEnd: (() -> Void)?
+    /// 按住空白鍵變成觸控板中：鍵上的字淡掉，其他鍵按不到
+    private(set) var cursorDragging = false
 
     /// shift 狀態（只影響英文字母的顯示與送出）
     enum ShiftState {
@@ -65,6 +71,10 @@ final class KeyboardView: UIView {
     /// 下一顆可能按的鍵：距離先扣掉一段，按在它旁邊那顆鍵的邊上也算按到它
     override func hitTest(_ location: CGPoint, with _: UIEvent?) -> UIView? {
         guard !isHidden, isUserInteractionEnabled, bounds.contains(location) else { return nil }
+        // 觸控板中：別的手指碰到鍵盤不算按鍵（拖游標那根手指一直綁在空白鍵上）
+        if cursorDragging {
+            return self
+        }
         let active = expectedEmphasis()
         var nearest: KeyButton?
         var nearestDistance = CGFloat.greatestFiniteMagnitude
@@ -104,6 +114,7 @@ final class KeyboardView: UIView {
     func load(_ rows: [KeyRow]) {
         bubble.applyTheme()
         rowsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        cursorDragging = false
         buttons.removeAll()
         specs.removeAll()
         for row in rows {
@@ -157,7 +168,12 @@ final class KeyboardView: UIView {
         } else {
             b.onTap = { [weak self] in self?.onKey?(spec) }
         }
-        if spec.longAction != nil {
+        if case .space = spec.action {
+            // 按住空白鍵：整塊鍵盤變觸控板，拖著移游標（照 iPhone 原生）
+            b.onLongPress = { [weak self] in self?.setCursorDragging(true) }
+            b.onDragAfterLongPress = { [weak self] p in self?.onCursorDragMove?(p) }
+            b.onLongPressEnd = { [weak self] in self?.setCursorDragging(false) }
+        } else if spec.longAction != nil {
             b.onLongPress = { [weak self] in self?.onLongKey?(spec) }
         }
         let showsBubble = !spec.isFunction && !spec.label.isEmpty
@@ -198,6 +214,22 @@ final class KeyboardView: UIView {
         switch spec.action {
         case .bopomofo, .letter, .text, .space, .shift: true
         default: false
+        }
+    }
+
+    private func setCursorDragging(_ on: Bool) {
+        guard on != cursorDragging else { return }
+        cursorDragging = on
+        bubble.hide()
+        UIView.animate(withDuration: SamsungTheme.cursorFadeSeconds) {
+            for b in self.buttons {
+                b.setContentHidden(on)
+            }
+        }
+        if on {
+            onCursorDragBegin?()
+        } else {
+            onCursorDragEnd?()
         }
     }
 

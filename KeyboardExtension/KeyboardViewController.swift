@@ -49,6 +49,8 @@ final class KeyboardViewController: UIInputViewController {
     var pendingEnglish: [String] = []
     /// 剛點了英文建議、自動補了空格（接著打標點時拿掉那個空格）
     var englishAutoSpace = false
+    /// 按住空白鍵拖游標中（沒在拖時是 nil）
+    var cursorDrag: CursorDrag?
     /// App 設定：空白鍵一律送第一個候選（不當一聲）。鍵盤每次叫出來時重讀
     var spaceSelectsFirstCandidate = false
 
@@ -81,6 +83,9 @@ final class KeyboardViewController: UIInputViewController {
         keyboardView.onKey = { [weak self] spec in self?.handleKey(spec) }
         keyboardView.onLongKey = { [weak self] spec in self?.handleLongPress(spec) }
         keyboardView.onAnyPress = { UIDevice.current.playInputClick() }
+        keyboardView.onCursorDragBegin = { [weak self] in self?.beginCursorDrag() }
+        keyboardView.onCursorDragMove = { [weak self] p in self?.moveCursorDrag(to: p) }
+        keyboardView.onCursorDragEnd = { [weak self] in self?.endCursorDrag() }
         candidateGrid.isHidden = true
         clipboardPanel.isHidden = true
 

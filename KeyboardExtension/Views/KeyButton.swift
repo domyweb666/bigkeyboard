@@ -15,6 +15,10 @@ final class KeyButton: UIControl {
     var onRepeat: (() -> Void)?
     /// 手指按下／放開（給預覽泡泡用）
     var onPressChanged: ((Bool) -> Void)?
+    /// 長按觸發後手指繼續拖：回報手指位置（螢幕座標）。空白鍵拖游標用
+    var onDragAfterLongPress: ((CGPoint) -> Void)?
+    /// 長按觸發後手指放開（或觸控被取消）
+    var onLongPressEnd: (() -> Void)?
     /// 按下就觸發 onTap、不等放開（展開鍵用：放開前觸控被系統取消也不會沒反應）
     var firesOnPress = false
     /// 觸控被取消時，手指沒怎麼動就照樣算按到。候選字關掉：它在可左右捲的列裡，取消代表使用者開始捲了
@@ -129,6 +133,9 @@ final class KeyButton: UIControl {
 
     override func continueTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
         trackLast = touch.location(in: nil)
+        if longPressFired {
+            onDragAfterLongPress?(trackLast)
+        }
         return super.continueTracking(touch, with: event)
     }
 
@@ -197,6 +204,7 @@ final class KeyButton: UIControl {
 
     @objc private func touchUpInside() {
         stopTimers()
+        endLongPressIfNeeded()
         guard !firesOnPress, !firedEarly, !longPressFired else { return }
         finishTap()
     }
@@ -214,12 +222,26 @@ final class KeyButton: UIControl {
     /// 手指幾乎沒移動就照樣算按到
     private func touchEnded(canTap: Bool) {
         stopTimers()
+        endLongPressIfNeeded()
         guard !firesOnPress, !firedEarly, !longPressFired else { return }
         let moved = hypot(trackLast.x - trackStart.x, trackLast.y - trackStart.y)
         if canTap, moved < SamsungTheme.tapSlop {
             finishTap()
         } else {
             onPressChanged?(false)
+        }
+    }
+
+    private func endLongPressIfNeeded() {
+        if longPressFired {
+            onLongPressEnd?()
+        }
+    }
+
+    /// 字、圖示、小字淡掉或回來（空白鍵拖游標時整塊鍵盤變觸控板）；鍵帽底色不變
+    func setContentHidden(_ hidden: Bool) {
+        for v in [label, hintLabel, iconView, footLabel] as [UIView] {
+            v.alpha = hidden ? 0 : 1
         }
     }
 
