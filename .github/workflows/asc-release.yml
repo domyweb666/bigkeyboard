@@ -1,0 +1,22 @@
+name: 小改版文案寫進 App Store Connect
+
+# 推到 asc-release 分支就跑：建小改版草稿（例如 1.1.1），只寫新功能說明和審查備註。
+# 不動名稱、描述、截圖，不選 build、不送審。版本號在 .aso/asc_release.py 的 VERSION。
+on:
+  push:
+    branches: [asc-release]
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: 寫入新功能說明與審查備註並比對
+        run: |
+          pip install -q pyjwt cryptography requests
+          python3 -I .aso/asc_release.py
