@@ -28,7 +28,7 @@ extension KeyboardViewController {
         showMode()
     }
 
-    /// 輸入框種類換了：email、網址欄換英文鍵面（底排多 @ 或 / .com），數字欄換數字鍵盤；其他回到平常記住的鍵面
+    /// 輸入框種類換了：email、網址欄換英文鍵面（底排多 @ 或 / .com），數字加標點的欄位換數字鍵盤；其他回到平常記住的鍵面
     func applyHostKeyboardType() {
         let type = textDocumentProxy.keyboardType ?? .default
         guard type != hostKeyboardType else { return }

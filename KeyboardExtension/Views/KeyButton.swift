@@ -52,7 +52,7 @@ final class KeyButton: UIControl {
     private var sliding = false
     /// 按下的位置、最後一次移動的位置（判斷「手指幾乎沒動」用）
     private var trackStart = CGPoint.zero
-    private var trackLast = CGPoint.zero
+    private(set) var trackLast = CGPoint.zero
 
     override init(frame: CGRect) {
         super.init(frame: frame)

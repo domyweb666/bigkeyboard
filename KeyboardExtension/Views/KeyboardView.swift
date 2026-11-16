@@ -167,7 +167,13 @@ final class KeyboardView: UIView {
         }
         if case .space = spec.action {
             // 按住空白鍵：整塊鍵盤變觸控板，拖著移游標（照 iPhone 原生）
-            b.onLongPress = { [weak self] in self?.setCursorDragging(true) }
+            b.onLongPress = { [weak self, weak b] in
+                self?.setCursorDragging(true)
+                // 從手指現在的位置起算：不然進觸控板後的第一小段移動會被當成起點吃掉
+                if let b {
+                    self?.onCursorDragMove?(b.trackLast)
+                }
+            }
             b.onDragAfterLongPress = { [weak self] p in self?.onCursorDragMove?(p) }
             b.onLongPressEnd = { [weak self] in self?.setCursorDragging(false) }
         } else if spec.longAction != nil {

@@ -10,12 +10,13 @@ extension KeyboardViewController {
     }
 
     /// 輸入框種類 → 該換哪張鍵面（nil = 照平常記住的）、英文底排用哪一種。
-    /// 電話欄、密碼欄系統會強制換回原生鍵盤，輪不到這裡
+    /// 純數字欄（numberPad、decimalPad）、電話欄、密碼欄系統會強制用它自己的鍵盤，輪不到這裡（模擬器實測）；
+    /// 輪得到的數字欄是「數字加標點」這一種，網頁上 type=number 的數量、金額欄就是它
     static func hostPlan(for type: UIKeyboardType) -> (mode: KeyboardMode?, field: HostField) {
         switch type {
         case .emailAddress: (KeyboardMode.english, HostField.email)
         case .URL: (KeyboardMode.english, HostField.url)
-        case .numberPad, .decimalPad, .asciiCapableNumberPad: (KeyboardMode.numpad, HostField.normal)
+        case .numbersAndPunctuation: (KeyboardMode.numpad, HostField.normal)
         default: (nil, HostField.normal)
         }
     }
