@@ -85,8 +85,10 @@ struct GuideView: View {
     private static let peekDetail = "按住「符」往上滑，符號頁會先跑出來。滑到要的符號再放開，"
         + "打完還在注音鍵盤，不用自己切回來。英文鍵盤的「!#1」也一樣。"
 
-    private static let soundDetail = "設定頁的「按鍵聲」有三種可以選。「系統預設」是 iPhone 原本的按鍵聲。"
+    private static let soundDetail = "按鍵聲在設定頁的「按鍵聲」選。「系統預設」是 iPhone 原本的按鍵聲。"
         + "「三種按鍵聲」是字母、刪除鍵、空白和功能鍵的聲音各不一樣，聽聲音就知道按到哪一類。"
+        + "還有三套機械鍵盤的聲音：清脆、厚實、復古，選的時候會先播給你聽。"
+        + "機械鍵盤的音量跟著手機的鈴聲音量，手機切靜音就不會響。"
         + "不想要聲音就選「關閉」。"
 
     private static let iCloudDetail = "在設定頁打開「iCloud 同步」，"

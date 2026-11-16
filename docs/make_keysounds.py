@@ -5,7 +5,7 @@
 
 來源與授權見 .vibe/機械鍵盤聲音-音檔來源.md。要先裝 ffmpeg。
 
-每個檔做的事：單聲道、44.1 kHz、16 bit wav；切掉頭尾的空白；峰值拉齊到 -3 dB；
+每個檔做的事：單聲道、44.1 kHz、16 bit wav；峰值拉齊到 -3 dB；切掉頭尾的空白；
 尾巴淡出幾毫秒免得有爆音。輸出到 KeyboardExtension/Resources/KeySounds/，檔名
 keysound-<套>-<兩位數>.wav。另外每套挑前三個降四個半音，當空白、刪除、換行這些
 大鍵的聲音（檔名多一個 -fn-）：真的鍵盤上大鍵的聲音本來就比較低。
@@ -22,6 +22,8 @@ OUT = Path("KeyboardExtension/Resources/KeySounds")
 AUDIO = {".wav", ".ogg", ".mp3", ".flac", ".aiff", ".aif"}
 RATE = 44100
 PEAK_DB = -3.0
+# 比這小聲的算空白（音量拉齊之後量的）
+SILENCE_DB = -50
 # 大鍵降多少：2 ** (-4 / 12)
 LOW_RATIO = 0.7937
 LOW_COUNT = 3
@@ -68,18 +70,15 @@ def peak_db(path, filters):
 
 def convert(src, dst, low=False):
     # 先轉單聲道再量音量：留到最後才轉的話，立體聲合成單聲道會變大聲，量到的峰值就不準
-    trim = (
-        "aformat=sample_fmts=s16:channel_layouts=mono,"
-        "silenceremove=start_periods=1:start_threshold=-45dB,"
-        "areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse"
-    )
-    filters = trim
+    mono = "aformat=sample_fmts=s16:channel_layouts=mono"
+    gain = PEAK_DB - peak_db(src, mono)
+    # 音量先拉齊再切空白：門檻是照拉齊後的音量算的，原檔錄得小聲的才不會連尾音一起被切掉
+    trim = f"silenceremove=start_periods=1:start_threshold={SILENCE_DB}dB"
+    filters = f"{mono},volume={gain:.2f}dB,{trim},areverse,{trim},areverse"
     if low:
-        filters += f",asetrate={RATE}*{LOW_RATIO},aresample={RATE}"
-    else:
-        filters += f",aresample={RATE}"
-    gain = PEAK_DB - peak_db(src, filters)
-    filters += f",volume={gain:.2f}dB,areverse,afade=t=in:d=0.008,areverse"
+        filters += f",asetrate={RATE}*{LOW_RATIO}"
+    # 尾巴淡出幾毫秒，免得切斷的地方有爆音
+    filters += f",aresample={RATE},areverse,afade=t=in:d=0.008,areverse"
     subprocess.run(
         ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", str(src),
          "-af", filters, "-ac", "1", "-ar", str(RATE), "-c:a", "pcm_s16le", str(dst)],

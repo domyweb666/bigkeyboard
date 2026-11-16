@@ -30,6 +30,8 @@ targets:
         buildPhase: resources
       - path: KeyboardExtension/Resources/Fonts/OFL-LXGWWenKaiTC.txt
         buildPhase: resources
+      - path: KeyboardExtension/Resources/KeySounds/CREDITS-KeySounds.txt
+        buildPhase: resources
     entitlements:
       path: Entitlements/BigKeyboard.entitlements
       properties:

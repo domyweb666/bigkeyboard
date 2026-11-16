@@ -19,3 +19,9 @@
 - 來源：https://github.com/lxgw/LxgwWenkaiTC（v1.530，LXGWWenKaiTC-Regular.ttf）
 - 使用範圍：`KeyboardExtension/Resources/Fonts/LXGWWenKaiTC-Regular.ttf`（紅豆主題的鍵帽字，原檔未修改）
 - 完整授權文字：`KeyboardExtension/Resources/Fonts/OFL-LXGWWenKaiTC.txt`
+
+## 機械鍵盤聲音包 — CC0 1.0（公眾領域貢獻宣告）
+- 來源：Freesound。StavSounds「Mechanical Keyboards」pack（https://freesound.org/people/StavSounds/packs/42151/，Keyboard_Clicky_1～19、Keyboard_Tactile_1～15）；jim-ph「vintage keyboard」pack（https://freesound.org/people/jim-ph/packs/12363/，keyboard5、Vintage Keyboard 1～4）。2026-11-16 下載，pack 裡的 _readme_and_license.txt 逐檔標示 Creative Commons 0
+- 使用範圍：`KeyboardExtension/Resources/KeySounds/keysound-*.wav`（按鍵聲選單的「機械鍵盤・清脆／厚實／復古」）。有修改：用 `docs/make_keysounds.py` 轉成單聲道 44.1 kHz 16 bit wav、音量拉齊、切掉頭尾空白、尾巴淡出；每套另取三個降四個半音給空白、刪除、換行鍵用
+- CC0 不要求標示；來源說明放在 `KeyboardExtension/Resources/KeySounds/CREDITS-KeySounds.txt`，App「開源授權」頁顯示這一份
+- 查過但沒有用的來源、以及為什麼不能用，記在 `.vibe/機械鍵盤聲音-音檔來源.md`

@@ -18,6 +18,7 @@ struct LicensesView: View {
         Item(name: "AOSP LatinIME 英文詞頻表", license: "Apache License 2.0", file: "LICENSE-AOSP-LatinIME.txt"),
         Item(name: "Noto Serif TC", license: "SIL Open Font License 1.1", file: "OFL-NotoSerifTC.txt"),
         Item(name: "霞鶩文楷 TC", license: "SIL Open Font License 1.1", file: "OFL-LXGWWenKaiTC.txt"),
+        Item(name: "機械鍵盤聲音", license: "CC0 1.0", file: "CREDITS-KeySounds.txt"),
     ]
 
     var body: some View {
