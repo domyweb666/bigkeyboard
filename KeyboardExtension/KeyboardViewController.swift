@@ -56,8 +56,9 @@ final class KeyboardViewController: UIInputViewController {
     private var hostOverridesMode = false
     /// App 設定：按鍵震動（要開完全取用才讀得到、才震得了）。鍵盤每次叫出來時重讀
     var keyHaptics = false
-    /// App 設定：按鍵聲要哪一種（系統預設、三種按鍵聲、關閉）。鍵盤每次叫出來時重讀
+    /// App 設定：按鍵聲要哪一種（系統預設、三種按鍵聲、機械鍵盤聲音包、關閉）。鍵盤每次叫出來時重讀
     var keySound = KeySoundStyle.system
+    let keySoundPlayer = KeySoundPlayer()
     let keyHaptic = UIImpactFeedbackGenerator(style: .light)
     /// 按住空白鍵拖游標中（沒在拖時是 nil）
     var cursorDrag: CursorDrag?
@@ -162,6 +163,7 @@ final class KeyboardViewController: UIInputViewController {
         spaceSelectsFirstCandidate = hasFullAccess && SpaceKeySetting.selectsFirstCandidate
         keyHaptics = hasFullAccess && KeyHapticSetting.isOn
         keySound = hasFullAccess ? KeySoundStyle.saved : .system
+        keySoundPlayer.load(pack: keySound.pack, from: .main)
         applyTheme()
         keyboardView.shift = .off
         applyHostTraits()

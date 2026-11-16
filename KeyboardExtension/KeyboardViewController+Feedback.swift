@@ -15,13 +15,19 @@ extension KeyboardViewController {
 
     /// 按鍵聲，照 App 設定頁選的：
     /// 系統預設走系統的那一種（跟著「設定 → 聲音與觸覺 → 鍵盤回饋 → 聲音」）；
-    /// 三種按鍵聲是字母、刪除、功能鍵各用系統鍵盤的那三種聲音，光聽就知道按了哪一類；關閉就不出聲
+    /// 三種按鍵聲是字母、刪除、功能鍵各用系統鍵盤的那三種聲音，光聽就知道按了哪一類；
+    /// 機械鍵盤聲音包每按一下隨機播一個錄音，空白、刪除、換行這些大鍵播比較低的那幾個；關閉就不出聲
     func playKeySound(for spec: KeySpec) {
         switch keySound {
         case .system:
             UIDevice.current.playInputClick()
         case .distinct:
             AudioServicesPlaySystemSound(Self.soundID(for: spec.action))
+        case .crisp, .thick, .vintage:
+            // 這一套的音檔沒包進來就退回系統的按鍵聲，不要變成沒聲音
+            if !keySoundPlayer.play(bigKey: !KeyboardView.isCharacterKey(spec)) {
+                UIDevice.current.playInputClick()
+            }
         case .off:
             break
         }

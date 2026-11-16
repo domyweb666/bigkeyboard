@@ -73,7 +73,7 @@ struct SettingsView: View {
             DomyDivider()
             Menu {
                 Picker("按鍵聲", selection: $keySound) {
-                    ForEach(KeySoundStyle.allCases) { option in
+                    ForEach(KeySoundPreview.available) { option in
                         Text(option.title).tag(option)
                     }
                 }
@@ -81,6 +81,10 @@ struct SettingsView: View {
                 VeggieRow(icon: "speaker.wave.2", title: "按鍵聲", value: keySound.title, accessory: .push)
             }
             .buttonStyle(.plain)
+            // 選了就先播給人聽，不用切去別的 App 打字才知道是什麼聲音
+            .onChange(of: keySound) { _, style in
+                KeySoundPreview.play(style)
+            }
         }
     }
 
