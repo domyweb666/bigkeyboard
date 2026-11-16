@@ -159,6 +159,9 @@ def main():
     old = review_detail(asc, prev["id"])
     old_notes = ((old or {}).get("attributes") or {}).get("notes") or ""
     target = old_notes if old_notes.startswith(note) else (note + "\n\n" + old_notes).strip()
+    print(f"  審查備註：這次的段落 {len(note)} 字＋上一版的備註 {len(old_notes)} 字＝{len(target)} 字（上限 4000）")
+    if len(target) > 4000:
+        sys.exit(f"審查備註超過 4000 字，多了 {len(target) - 4000} 字。把送審稿第二節寫短再跑。")
     if detail:
         if detail["attributes"].get("notes") != target:
             asc.call("PATCH", f"/appStoreReviewDetails/{detail['id']}", {"data": {
