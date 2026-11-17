@@ -1,74 +1,64 @@
-# Handoff: 豆鍵鍵盤排版改版、真機回饋修正、Typeless 式字典與拖曳收鍵盤（build 39–41）
+# Handoff: 豆鍵 1.2.1（真機回饋五項）做完、上 TestFlight、已提交審查
 
-> 產出時間：2026-11-02 04:36
+> 產出時間：2026-11-17 17:31
 > 前一會話的最後狀態，給下一個會話接續用
 
 ## ✅ 這次完成了什麼
 
-- 排版改版（build 39）：注音分區底色（介音 ㄧㄨㄩ 淡藍、韻母淡暖、聲調淡灰且字放大加粗）、長按小字加深、底排拿掉 123 改長按「符」／「!#1」、空白 4.3 換行 1.6、候選列右端淡出；英文鍵面同步（數字列淡灰、底排同款）
-- 真機回饋修正（build 40）：鍵盤底改透明＋冷灰鍵帽（iOS 26 系統在鍵盤上方與底部系統排畫自己的底色 #E2E3E7，擴充畫不到）；鍵盤區 hitTest 找最近的鍵（排與排之間的縫不再沒反應）；快打 rollover（下一顆按下時上一顆先送出）；候選列最多 30 個；關掉視窗手勢的觸控延後；PrimaryLanguage 改 mul（切換選單去掉「中文」）
-- 字典（build 41）：App Group `group.org.domyweb.bigkeyboard` 共用 `dictionary.json`；RequestsOpenAccess 改 true；引擎併入使用者詞（分數 0，同讀音排最前）、選字記下帶聲調的讀音；鍵盤自動學詞；App 改成兩個分頁「字典」「使用說明」，字典頁有篩選、搜尋、左滑刪除、＋加詞（注音從鍵盤擴充裡的詞庫自動帶出）
-- 鍵盤頂端中間拖曳條（build 41）：從候選列或最上緣往下滑收起鍵盤，不佔空間
-- 多米在 Apple 開發者網站登記了 App Group 並掛到兩個 App ID（build 41 簽章因此才過）
-- Design 畫布：https://claude.ai/artifact/Js9H8aEaZpADnto4CgwPMe（「鍵盤」頁：現況、A、B、B 深色、英文；「字典」頁：列表、第一次打開、加詞）
-- 文件：產品定稿（配色例外、開完全取用、字典、拖曳條）、總測試清單 I／J／K 段、審查紀錄、lessons、切片帳本 D1–D5
+- 修掉多米真機用 1.2 (86) 回報的五項，做成 1.2.1：
+  - 按住「符」／「!#1」不再跳數字鍵盤，鍵上的 123 小字拿掉（數字鍵盤從符號頁右下的 123 進）
+  - 機械鍵盤聲：每個錄音切成「按下」「彈回」兩個檔，手指碰到鍵播按下、手指離開播彈回；每一聲 1 毫秒內出聲。音檔從原始 zip 重產，共 90 個 802 KB
+  - 按鍵聲選項「系統預設」改名「跟隨 iPhone 設定」
+  - 拿掉首次設定流程和火柴人吉祥物（`App/SetupFlow.swift`、`App/Mascot.swift` 刪掉），新安裝直接進字典頁
+  - `project.yml` 的 `IsASCIICapable` 改 true，只收英文的欄位（asciiCapable）給英文鍵面
+- 英文鍵面在 email／網址欄的排法做了比較頁，多米選「都用 A」（程式本來就是 A）
+- limrun 上編譯、格式檢查（App、KeyboardExtension、Shared）通過，實測新安裝畫面、按住「符」、按鍵聲選單、選機械鍵盤後打字不當掉
+- 版本號升到 1.2.1，打包 build 87 上 TestFlight（run 44042341824），多米真機測過回「功能都 ok」
+- 寫 1.2.1 送審稿，App Store 描述【開始使用】第一句改掉（繁中、英文都改）
+- 1.2.1 (87) 提交審查（run 44054278074），後台回讀 WAITING_FOR_REVIEW
+- `asc_release.py` 加了三樣：描述有改也一起寫（差超過 4 行就停）、審查備註先拿掉上一版加的段落再加新的、`--withdraw` 撤回重送
 
 ## 🚧 還沒做完 / 待決定
 
-- build 39、40、41 全部還沒真機驗：總測試清單 I、J、K 段都等多米回報
-- 深色配色是估的（系統深色底的實際顏色不知道）— 要多米深色模式截圖再調 `SamsungTheme`
-- `PrimaryLanguage: mul` 會不會讓選單只剩「豆鍵」、系統麥克風聽寫還是不是中文 — Apple 文件沒寫，待真機
-- 邊緣觸控延後的修法（window 手勢 delaysTouchesBegan/Ended = false）是論壇做法 — 待真機確認最左最右的鍵有沒有變跟手
-- 單字選擇的自動學沒做 — 要看前一個字才判斷（類似小麥的 UserOverrideModel），等詞的部分穩了再加
-- 完全取用沒開時鍵盤讀不讀得到 App Group（論壇說可讀不可寫）— 未驗
-- App 加完詞，鍵盤要收起再叫出來才讀到（只在 viewWillAppear 讀字典）— 多米覺得不順再改
+- 1.2.1 審查結果還沒出來。下次接手先查，不要再送一次
+- iPhone 的「設定 → 聲音與觸覺 → 鍵盤回饋 → 聲音」是開是關，多米沒回。「跟隨 iPhone 設定」開著還是沒聲音的話，要換播法（現在是 `UIDevice.playInputClick()`）
+- 機械鍵盤聲多米只說「功能都 ok」，沒有單獨講彈回聲會不會太吵、有沒有比較跟手。之後有回饋再調（彈回聲現在比按下聲小 6 dB）
+- 「設定 → 使用說明」那一頁還留著。多米說導引教學拿掉，我只拿了首次設定流程，這頁有沒有要一起拿，他沒明講
+- 機械鍵盤聲要不要收費，還沒定
+- `asc-release` 分支停在 39d5219，比 `redesign-domy-sage` 舊。不用同步也能送審（見下面關鍵決策）
 
 ## 📌 關鍵決策（這次定下來的，下次別再爭論）
 
-- 鍵盤上方灰框拿不掉 → 鍵盤底透明、共用系統底色，鍵帽改冷灰系（多米同意換配色）
-- 字典走 A：開「允許完全取用」；鍵盤仍然一行連網程式都沒有
-- 自動學只學兩種：全部單字逐字選出、至少一次選了非第一個、中間沒再打注音的 2–6 字詞；選了非第一個的多字詞。單字不學；在 App 刪掉的自動詞記進 ignored，不再學回來
-- 123 數字鍵盤收進「符」／「!#1」長按；符號頁的 123 鍵保留
-- 注音分區底色保留（偏離三星原稿，產品定稿已記例外）
-- App 底部兩個分頁：字典、使用說明
-- 拖曳條疊在頂端不佔空間；只接從頂端開始、往下的滑動，不影響候選列左右滑和打字
-- 寫字典檔不用 NSFileCoordinator（避免鍵盤被鎖住），一律讀出→改→原子寫回；鍵盤寫入放背景 queue
+- 登入頁（有密碼自動填寫）的 email 欄，真機上只有 Apple 原生鍵盤能用，第三方鍵盤不會出現。系統規定，不處理。模擬器上輪得到豆鍵，不能當證據
+- `IsASCIICapable: true` 留著：豆鍵有英文鍵面，宣告本來就該是 true
+- email 欄、網址欄的英文鍵面都用 A：email 是逗號換成 @；網址是逗號換成 /、句點右邊多一顆 .com
+- 機械鍵盤聲繼續用系統音效播（`AudioServicesPlaySystemSound`），不換成能調音量音高的播法：那要開音訊工作階段，有打斷別的 App 音樂的風險，模擬器又驗不到
+- 「跟隨 iPhone 設定」不改成一律出聲：它是預設值，改了會讓關掉系統鍵盤聲的人更新後突然開始響
+- 小版號（1.2 → 1.2.1）App 內的「新功能」卡片不跳，`WhatsNew.swift` 沒加 1.2.1
+- 送審從 `redesign-domy-sage` 手動執行 asc-release 工作流程、填 build 號就好，不用推 `asc-release` 分支
+- 新功能說明裡每一條「修好了」都要有多米對那一項的真機回報才寫，「都 ok」不算（這次寫錯一條，送出後撤回重送）
 
 ## 📂 下個會話最重要的檔案
 
-- `.vibe/總測試清單.md`  ← I／J／K 段是等多米回報的測試項
-- `.vibe/產品定稿.md`、`.vibe/切片帳本.md`、`.vibe/規矩檔.md`
-- `.uiux/審查紀錄.md`、`.uiux/lessons.md`
-- `Shared/UserDictionary.swift`  ← App 與鍵盤共用的字典讀寫
-- `KeyboardExtension/Engine/Bridge/BopomofoEngine.mm`  ← FuzzyToneLM 併使用者詞、CachedCandidate、setUserPhrases
-- `KeyboardExtension/KeyboardViewController+Dictionary.swift`  ← 自動學詞
-- `KeyboardExtension/KeyboardViewController+Dismiss.swift`  ← 拖曳條
-- `KeyboardExtension/Views/KeyboardView.swift`（hitTest、rollover）、`KeyButton.swift`（fireNow）、`CandidateBar.swift`（遮罩淡出、上限 30）
-- `KeyboardExtension/Layout/SamsungTheme.swift`  ← 透明底、冷灰配色、深色值
-- `App/DictionaryView.swift`、`App/AddWordView.swift`、`App/ReadingLookup.swift`、`App/GuideView.swift`、`App/FullAccessCard.swift`
-- `project.yml`  ← App Group entitlements、Shared 資料夾、RequestsOpenAccess、PrimaryLanguage
+- `.aso/1.2.1-送審稿.md` ← 這版送了什麼、步驟勾到哪
+- `.aso/asc_release.py` ← 送審工具。下一版要改 `VERSION`，並把 "1.2.1" 加進 `DROP_NOTES_FROM`
+- `.aso/lessons.md`、`.aso/閘門紀錄.md` ← 這次的教訓與紀錄
+- `.vibe/產品定稿.md` ← 次要功能 16、19、20、21 有這次的更新
+- `.vibe/總測試清單.md` ← AS 段是 1.2.1 的真機測試項與模擬器驗證紀錄
+- `.vibe/機械鍵盤聲音-音檔來源.md`、`docs/make_keysounds.py` ← 音檔怎麼切的
+- `Shared/KeySoundPlayer.swift`、`KeyboardExtension/KeyboardViewController+Feedback.swift` ← 按下／彈回兩聲的播放
+- `.vibe/規矩檔.md` ← 動工前必讀
 
 ## ⏭️ 下一步從哪繼續
 
-1. 先讀 `.vibe/HANDOFF.md`（就是這份）和 `.vibe/規矩檔.md`
-2. 等多米回報 build 41 的真機結果（總測試清單 I、J、K 段）。回報前不要自己加功能
-3. 多米回報問題 → 看截圖，對照上面的檔案修；修完照下面「CI 地雷」推上去編 build
-4. 多米給深色截圖 → 調 `SamsungTheme.swift` 的深色值
-5. 測過的項目：總測試清單打勾、切片帳本 D1–D5 標成已驗
-
-### CI 地雷（這次踩過，推之前先避開）
-
-- CI 先跑 `swiftformat --lint` 和 `swiftlint lint --strict`，警告也算失敗
-- 單行 `if` 主體會被擋（要換行）；`//` 註解緊貼在 `///` 文件註解上面會被擋（中間空一行）
-- 一行最多 120 欄，中文字算 2 欄
-- 函式 cyclomatic complexity 超過 10 會被擋（拆成小函式）
-- 簡單取屬性用 key path：`map(\.text)`；多行 `forEach` 改 for 迴圈
-- 最後一個 commit 帶 `[skip ci]` 會讓整次 push 都不編：文件 commit 放前面、程式 commit 放最後，或用 `gh workflow run testflight.yml --repo domyweb666/bigkeyboard --ref main` 手動觸發
-- 改完 Apple 開發者網站的設定後，第一次 build 可能出現「The data couldn’t be read」，重跑就好
+1. 先讀這份，再 `git log --oneline -10` 確認分支 `redesign-domy-sage` 的最新 commit 是不是還是這次的
+2. 查 1.2.1 的審查結果：手動執行「ASC 狀態查詢」工作流程看 build，或直接問多米後台顯示什麼
+3. 通過了：在 `.aso/閘門紀錄.md` 記上線，沒有別的事
+4. 被退了：讀退件理由，照 `.vibe/審核回覆-*.md` 的寫法回覆；要改文案重送就用 `asc_release.py --withdraw --submit <build 號>`
+5. 多米如果回報按鍵聲或機械鍵盤聲的問題，從「還沒做完」那幾條接
 
 ## 🗑️ 這次會話的雜訊（下次別重新討論）
 
-- 灰框能不能畫過去 — Apple 論壇已確認擴充畫不到，別再試
-- `mul` 的顯示方式查不到文件 — 已改，等真機看結果就好
-- NSFileCoordinator 要不要用 — 已決定不用
-- 小麥 UserOverrideModel 整套搬進來 — 這次沒搬，單字記憶要做時再評估
+- 花了不少時間在模擬器上想重現「email 欄豆鍵不見」，新舊宣告、有沒有存密碼四種組合都重現不了。結論是真機才看得出來，不用再試
+- email 的 B、C 排法和網址的 B 排法（比較頁上有）多米沒選，不用再提
+- heredoc 裡寫含反斜線的 Python 取代字串會對不上，改用寫成檔案再跑
