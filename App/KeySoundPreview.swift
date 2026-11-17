@@ -1,13 +1,15 @@
 import AudioToolbox
 import Foundation
 
-/// 設定頁選按鍵聲時試聽：照鍵盤會播的聲音連按三下。
+/// 設定頁選按鍵聲時試聽：照鍵盤會播的聲音連按三下（機械鍵盤每一下是按下、彈回兩聲）。
 /// 聲音包的音檔只放在鍵盤擴充裡一份，從擴充借來播
 @MainActor
 enum KeySoundPreview {
     private static let player = KeySoundPlayer()
     /// 兩下之間隔多久
     private static let gap = Duration.milliseconds(140)
+    /// 機械鍵盤：按下到彈回隔多久（試聽用固定值；打字時是手指按多久就隔多久）
+    private static let hold = Duration.milliseconds(70)
 
     private static let keyboardBundle: Bundle? = Bundle.main.builtInPlugInsURL
         .flatMap { Bundle(url: $0.appendingPathComponent("KeyboardExtension.appex")) }
@@ -35,7 +37,9 @@ enum KeySoundPreview {
             player.load(pack: style.pack, from: keyboardBundle)
             Task {
                 for bigKey in [false, false, true] {
-                    player.play(bigKey: bigKey)
+                    player.play(.down, bigKey: bigKey)
+                    try? await Task.sleep(for: hold)
+                    player.play(.up, bigKey: bigKey)
                     try? await Task.sleep(for: gap)
                 }
             }

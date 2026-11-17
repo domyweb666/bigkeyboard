@@ -56,7 +56,7 @@ final class KeyboardViewController: UIInputViewController {
     var hostOverridesMode = false
     /// App 設定：按鍵震動（要開完全取用才讀得到、才震得了）。鍵盤每次叫出來時重讀
     var keyHaptics = false
-    /// App 設定：按鍵聲要哪一種（系統預設、三種按鍵聲、機械鍵盤聲音包、關閉）。鍵盤每次叫出來時重讀
+    /// App 設定：按鍵聲要哪一種（跟隨 iPhone 設定、三種按鍵聲、機械鍵盤聲音包、關閉）。鍵盤每次叫出來時重讀
     var keySound = KeySoundStyle.system
     let keySoundPlayer = KeySoundPlayer()
     let keyHaptic = UIImpactFeedbackGenerator(style: .light)
@@ -136,6 +136,7 @@ final class KeyboardViewController: UIInputViewController {
             self?.playKeySound(for: spec)
             self?.tapHaptic()
         }
+        keyboardView.onAnyRelease = { [weak self] spec in self?.playKeyReleaseSound(for: spec) }
         keyboardView.peekRows = { [weak self] spec in self.flatMap { $0.peekRows(for: spec) } }
         keyboardView.onRepeatTick = { [weak self] in self?.tapHaptic() }
         keyboardView.onFastDelete = { [weak self] in self?.fastDelete() }

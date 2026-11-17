@@ -6,6 +6,8 @@ final class KeyboardView: UIView {
     var onLongKey: ((KeySpec) -> Void)?
     /// 任何一顆鍵被按下（給按鍵聲、震動用）
     var onAnyPress: ((KeySpec) -> Void)?
+    /// 手指離開任何一顆鍵：放開或觸控被系統取消（給機械鍵盤聲的彈回聲用）
+    var onAnyRelease: ((KeySpec) -> Void)?
     /// 按住切鍵面的鍵（「符」「!#1」）滑出去：要先跑出來的那張鍵面；nil 表示這顆鍵不這樣用
     var peekRows: ((KeySpec) -> [KeyRow]?)?
     /// 刪除鍵按久了：改成一次刪一截
@@ -186,6 +188,10 @@ final class KeyboardView: UIView {
             }
             b.onSlideEnd = { [weak self] released in self?.endSlide(commit: released) }
         }
+        b.addAction(
+            UIAction { [weak self] _ in self?.onAnyRelease?(spec) },
+            for: [.touchUpInside, .touchUpOutside, .touchCancel]
+        )
         let showsBubble = Self.showsBubble(spec)
         b.onPressChanged = { [weak self, weak b] pressed in
             guard let self, let b else { return }

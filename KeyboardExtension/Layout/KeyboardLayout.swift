@@ -125,19 +125,13 @@ enum FunctionKeys {
         KeySpec("", .space, width: width, foot: foot)
     }
 
-    // 語言鍵面的底排：數字鍵盤收進符號鍵的長按，空白鍵與換行鍵讓出來的寬度
+    // 語言鍵面的底排：沒有數字鍵盤鍵（數字鍵盤從符號頁的 123 進），空白鍵與換行鍵讓出來的寬度
     static let languageSpace: CGFloat = 4.3
     static let languageNewline = newline(width: 1.6)
 
+    /// 去符號頁。按住不放不做別的事（2026-11-17 多米：長按跳數字鍵盤拿掉）；按住滑出去是先看符號頁
     static func symbols(_ label: String) -> KeySpec {
-        KeySpec(
-            label,
-            .switchMode(.symbols1),
-            width: 1.3,
-            function: true,
-            longAction: .switchMode(.numpad),
-            longHint: "123"
-        )
+        KeySpec(label, .switchMode(.symbols1), width: 1.3, function: true)
     }
 }
 

@@ -1,9 +1,10 @@
 import Foundation
 
 /// 按鍵聲要哪一種，在 App 設定頁選。
-/// 存在 App Group，鍵盤要開完全取用才讀得到；讀不到就是系統預設
+/// 存在 App Group，鍵盤要開完全取用才讀得到；讀不到就是跟隨 iPhone 設定
 enum KeySoundStyle: String, CaseIterable, Identifiable {
-    /// 系統的按鍵聲（跟著「設定 → 聲音與觸覺 → 鍵盤回饋 → 聲音」）
+    /// 系統的按鍵聲：iPhone 的「設定 → 聲音與觸覺 → 鍵盤回饋 → 聲音」開著才響，關著就不出聲。
+    /// 選單上原本叫「系統預設」，2026-11-17 多米選了它卻沒聲音，改成看名字就知道是跟著 iPhone 的開關
     case system
     /// 字母、刪除、功能鍵各一種（系統鍵盤的那三種聲音）
     case distinct
@@ -25,7 +26,7 @@ enum KeySoundStyle: String, CaseIterable, Identifiable {
     /// 選單上的名字。聲音包照聽起來的感覺取名：不知道錄的是哪家的軸，也不拿別人的商標當選項名
     var title: String {
         switch self {
-        case .system: "系統預設"
+        case .system: "跟隨 iPhone 設定"
         case .distinct: "三種按鍵聲"
         case .crisp: "機械鍵盤・清脆"
         case .thick: "機械鍵盤・厚實"
