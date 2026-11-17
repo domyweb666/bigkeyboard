@@ -12,6 +12,10 @@ on:
         description: "要送審的 build 號（留空＝只寫文案，不送審）"
         type: string
         default: ""
+      withdraw:
+        description: "先撤回審查中的提交單再寫文案（送出去之後才發現文案要改時用）"
+        type: boolean
+        default: false
 
 jobs:
   release:
@@ -25,8 +29,10 @@ jobs:
       - name: 寫入新功能說明與審查備註並比對
         run: |
           pip install -q pyjwt cryptography requests
+          flags=""
+          if [ "${{ inputs.withdraw }}" = "true" ]; then flags="--withdraw"; fi
           if [ -n "${{ inputs.submit_build }}" ]; then
-            python3 -I .aso/asc_release.py --submit "${{ inputs.submit_build }}"
+            python3 -I .aso/asc_release.py $flags --submit "${{ inputs.submit_build }}"
           else
-            python3 -I .aso/asc_release.py
+            python3 -I .aso/asc_release.py $flags
           fi

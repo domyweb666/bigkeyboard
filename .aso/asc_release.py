@@ -7,6 +7,7 @@
 # 不動名稱、副標、關鍵字、截圖。寫完重讀比對，有一欄不對就失敗。
 # 預設不選 build、不送審。要送審：python -I .aso/asc_release.py --submit <build 號>
 # （文案比對全對、那個 build 處理完成，才會選上去並提交審查；送出去就收不回來，只能在後台撤回）
+# 送出去之後才發現文案要改：加 --withdraw，會先撤回審查中的提交單，等版本變回可以改，再照常寫文案（有 --submit 就重送）
 # 本機只想看會寫什麼：python -I .aso/asc_release.py --dry-run（不連 Apple）
 import os
 import re
@@ -154,6 +155,29 @@ def review_detail(asc, version_id):
     return asc.call("GET", f"/appStoreVersions/{version_id}/appStoreReviewDetail").get("data")
 
 
+def withdraw(asc, app_id):
+    """已經送出、還沒審完的那一版先撤回（文案寫錯要改時用）。撤回後版本變回可以改的狀態，等到它變了才往下走"""
+    busy = {"WAITING_FOR_REVIEW", "IN_REVIEW", "CANCELING"}
+    subs = asc.call("GET", f"/reviewSubmissions?filter[app]={app_id}&filter[platform]=IOS"
+                           "&filter[state]=WAITING_FOR_REVIEW,IN_REVIEW")["data"]
+    if not subs:
+        print("  沒有審查中的提交單，不用撤回")
+    for sub in subs:
+        asc.call("PATCH", f"/reviewSubmissions/{sub['id']}", {"data": {
+            "type": "reviewSubmissions", "id": sub["id"], "attributes": {"canceled": True}}})
+        print(f"  已撤回提交單（原本是 {sub['attributes'].get('state')}）")
+    for _ in range(30):
+        vs = asc.call("GET", f"/apps/{app_id}/appStoreVersions?filter[platform]=IOS&limit=20")["data"]
+        mine = [v for v in vs if v["attributes"]["versionString"] == VERSION]
+        pending = asc.call("GET", f"/reviewSubmissions?filter[app]={app_id}&filter[platform]=IOS"
+                                  f"&filter[state]={','.join(sorted(busy))}")["data"]
+        if mine and vstate(mine[0]) in EDITABLE and not pending:
+            print(f"  {VERSION} 現在是 {vstate(mine[0])}，可以改了")
+            return
+        time.sleep(10)
+    sys.exit(f"撤回後等了 5 分鐘，{VERSION} 還不能改。停，到後台看狀態。")
+
+
 def main():
     copy, note = load_text()
     descriptions = load_descriptions()
@@ -168,6 +192,9 @@ def main():
     app = asc.call("GET", f"/apps?filter[bundleId]={BUNDLE_ID}")["data"][0]
     print(f"App：{app['attributes']['name']}（{app['id']}）")
     vs = versions(asc, app["id"])
+    if "--withdraw" in sys.argv:
+        withdraw(asc, app["id"])
+        vs = versions(asc, app["id"])
     prev = previous_version(vs)
     print(f"  上一版：{prev['attributes']['versionString']}")
     version_id = find_or_create(asc, app["id"], vs)
