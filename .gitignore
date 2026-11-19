@@ -6,3 +6,6 @@ DerivedData/
 *.p8
 *.p12
 *.mobileprovision
+
+# AI 鍵盤聲試聽：生成的原檔、切好的單聲、試聽頁（約 30 MB，來源記在 .vibe/機械鍵盤聲音-音檔來源.md）
+試聽-AI鍵盤聲/

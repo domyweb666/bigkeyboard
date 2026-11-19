@@ -23,7 +23,7 @@ extension KeyboardViewController {
             UIDevice.current.playInputClick()
         case .distinct:
             AudioServicesPlaySystemSound(Self.soundID(for: spec.action))
-        case .crisp, .thick, .vintage:
+        case .crisp, .thick, .vintage, .beans, .woodblock, .typewriter, .laptop:
             // 這一套的音檔沒包進來就退回系統的按鍵聲，不要變成沒聲音
             if !keySoundPlayer.play(.down, bigKey: !KeyboardView.isCharacterKey(spec)) {
                 UIDevice.current.playInputClick()
@@ -34,7 +34,8 @@ extension KeyboardViewController {
     }
 
     /// 手指離開鍵的那一下：機械鍵盤聲音包播鍵「彈回來」的聲音。
-    /// 真的鍵盤按下、放開各響一聲，兩聲隔多久看手指按多久；其他按鍵聲放開不出聲
+    /// 真的鍵盤按下、放開各響一聲，兩聲隔多久看手指按多久；其他按鍵聲放開不出聲。
+    /// 豆子、木魚、打字機、筆電這幾套沒有彈回聲的音檔，play 找不到就不播
     func playKeyReleaseSound(for spec: KeySpec) {
         guard keySound.pack != nil else { return }
         keySoundPlayer.play(.up, bigKey: !KeyboardView.isCharacterKey(spec))

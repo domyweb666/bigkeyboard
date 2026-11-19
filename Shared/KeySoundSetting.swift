@@ -14,6 +14,15 @@ enum KeySoundStyle: String, CaseIterable, Identifiable {
     case thick
     /// 機械鍵盤聲音包：1986 年的老鍵盤
     case vintage
+    /// 下面四套是 ElevenLabs 生成的（docs/make_ai_keysounds.py），只有按下聲、沒有彈回聲：
+    /// 豆子一顆一顆掉進瓷碗
+    case beans
+    /// 輕敲木魚
+    case woodblock
+    /// 老式手動打字機
+    case typewriter
+    /// 筆電的薄鍵盤，比較安靜
+    case laptop
     /// 不出聲
     case off
 
@@ -31,6 +40,10 @@ enum KeySoundStyle: String, CaseIterable, Identifiable {
         case .crisp: "機械鍵盤・清脆"
         case .thick: "機械鍵盤・厚實"
         case .vintage: "機械鍵盤・復古"
+        case .beans: "豆子落碗"
+        case .woodblock: "木魚"
+        case .typewriter: "打字機"
+        case .laptop: "筆電鍵盤"
         case .off: "關閉"
         }
     }
@@ -41,6 +54,10 @@ enum KeySoundStyle: String, CaseIterable, Identifiable {
         case .crisp: "clicky"
         case .thick: "tactile"
         case .vintage: "vintage"
+        case .beans: "beans"
+        case .woodblock: "woodblock"
+        case .typewriter: "typewriter"
+        case .laptop: "laptop"
         case .system, .distinct, .off: nil
         }
     }

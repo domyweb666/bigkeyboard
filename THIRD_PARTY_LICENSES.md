@@ -22,6 +22,11 @@
 
 ## 機械鍵盤聲音包 — CC0 1.0（公眾領域貢獻宣告）
 - 來源：Freesound。StavSounds「Mechanical Keyboards」pack（https://freesound.org/people/StavSounds/packs/42151/，Keyboard_Clicky_1～19、Keyboard_Tactile_1～15）；jim-ph「vintage keyboard」pack（https://freesound.org/people/jim-ph/packs/12363/，keyboard5、Vintage Keyboard 1～4）。2026-11-16 下載，pack 裡的 _readme_and_license.txt 逐檔標示 Creative Commons 0
-- 使用範圍：`KeyboardExtension/Resources/KeySounds/keysound-*.wav`（按鍵聲選單的「機械鍵盤・清脆／厚實／復古」）。有修改：用 `docs/make_keysounds.py` 轉成單聲道 44.1 kHz 16 bit wav、音量拉齊、切掉頭尾空白、尾巴淡出，每個錄音再切成「按下」「彈回」兩段分開播；每套另取三個降四個半音給空白、刪除、換行鍵用
+- 使用範圍：`KeyboardExtension/Resources/KeySounds/keysound-{clicky,tactile,vintage}-*.wav`（按鍵聲選單的「機械鍵盤・清脆／厚實／復古」）。有修改：用 `docs/make_keysounds.py` 轉成單聲道 44.1 kHz 16 bit wav、音量拉齊、切掉頭尾空白、尾巴淡出，每個錄音再切成「按下」「彈回」兩段分開播；每套另取三個降四個半音給空白、刪除、換行鍵用
 - CC0 不要求標示；來源說明放在 `KeyboardExtension/Resources/KeySounds/CREDITS-KeySounds.txt`，App「開源授權」頁顯示這一份
 - 查過但沒有用的來源、以及為什麼不能用，記在 `.vibe/機械鍵盤聲音-音檔來源.md`
+
+## AI 生成的按鍵聲 — ElevenLabs Sound Effects（付費方案商用）
+- 不是第三方作品：2026-11-19 用多米自己的 ElevenLabs 帳號（Starter 付費方案，含商用授權）在音效頁生成，v3 模型。生成時已關掉「分享到 Explore」
+- 使用範圍：`KeyboardExtension/Resources/KeySounds/keysound-{beans,woodblock,typewriter,laptop}-*.wav`（按鍵聲選單的「豆子落碗／木魚／打字機／筆電鍵盤」）。用 `docs/make_ai_keysounds.py` 切成單聲、篩掉重疊與沒收乾淨的、不足 12 聲的用變調補齊、大鍵降四個半音
+- 提示詞、設定、為什麼挑這四種，記在 `.vibe/機械鍵盤聲音-音檔來源.md` 的「AI 生成」那一段

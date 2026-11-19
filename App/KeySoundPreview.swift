@@ -32,7 +32,8 @@ enum KeySoundPreview {
                     try? await Task.sleep(for: gap)
                 }
             }
-        case .crisp, .thick, .vintage:
+        case .crisp, .thick, .vintage, .beans, .woodblock, .typewriter, .laptop:
+            // 沒有彈回聲的那幾套，play(.up) 找不到音檔就不出聲
             guard let keyboardBundle else { return }
             player.load(pack: style.pack, from: keyboardBundle)
             Task {
