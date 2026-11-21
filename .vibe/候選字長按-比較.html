@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>候選字長按刪詞</title>
+<style>
+  :root {
+    --page: #f4f5f2; --card: #ffffff; --ink: #1b1f1c; --ink-2: #5a625c; --line: #dfe3dd;
+    --accent: #4f6b57; --accent-soft: #e3ece5;
+    --kb-bg: #e2e3e7; --key: #ffffff; --key-tone: #eceef1; --key-fn: #c4c8cf; --key-text: #000;
+    --hint: #6b6f76; --pressed: #c9ccd3; --field: #fffaf0;
+    --danger: #c4372c; --danger-soft: #fbedeb; --scrim: rgba(0,0,0,.2);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #141714; --card: #1e221f; --ink: #eef1ec; --ink-2: #a6aea7; --line: #323832;
+      --accent: #9dc2a5; --accent-soft: #22322a;
+      --kb-bg: #2a2a2d; --key: #5b5b5f; --key-tone: #46464a; --key-fn: #3b3b3e; --key-text: #fff;
+      --hint: #c9c9ce; --pressed: #77777c; --field: #2a2e2b;
+      --danger: #ff6b5e; --danger-soft: #3a1e1b; --scrim: rgba(0,0,0,.4);
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink);
+    font: 16px/1.65 -apple-system, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif; }
+  main { max-width: 1240px; margin: 0 auto; padding: 28px 16px 64px; }
+  h1 { font-size: 26px; line-height: 1.3; margin: 0 0 10px; }
+  h2 { font-size: 20px; margin: 40px 0 8px; }
+  p { margin: 0 0 10px; }
+  .lead { color: var(--ink-2); max-width: 46em; }
+  .grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); margin-top: 16px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; }
+  .card.pick { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .name { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 17px; margin-bottom: 4px; }
+  .tag { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; }
+  .note { color: var(--ink-2); font-size: 14.5px; margin: 0 0 14px; flex: 1; }
+  .log { font-size: 14px; color: var(--accent); min-height: 2.6em; margin-top: 10px; }
+  .reset { align-self: flex-start; margin-top: 4px; font: inherit; font-size: 14px; padding: 4px 14px; border-radius: 99px;
+    border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+
+  /* 手機那一塊 */
+  .phone { width: 100%; max-width: 393px; margin: 0 auto; }
+  .field { background: var(--field); border-radius: 18px; padding: 10px 16px; margin-bottom: 8px; font-size: 18px;
+    display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--line); }
+  .field u { text-decoration-color: #3478f6; text-underline-offset: 4px; }
+  .kbwrap { position: relative; background: var(--kb-bg); border-radius: 14px; overflow: hidden;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  .bar { display: flex; height: 46px; align-items: stretch; }
+  .chips { flex: 1; display: flex; gap: 2px; overflow-x: auto; padding: 5px 4px; scrollbar-width: none; touch-action: pan-x; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip { flex: none; min-width: 40px; padding: 0 9px; border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    font-size: 21px; color: var(--key-text); cursor: pointer; transition: background .08s; -webkit-touch-callout: none; }
+  .chip.first { background: var(--key); }
+  .chip.down { background: var(--pressed); }
+  .chip.arm { background: var(--danger); color: #fff; font-size: 15px; font-weight: 600; }
+  .chip.shake { animation: shake .25s; }
+  @keyframes shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+  .barfn { width: 40px; display: flex; align-items: center; justify-content: center; color: var(--key-text); font-size: 15px; opacity: .8; }
+  .barfn.div { width: 1px; background: var(--hint); opacity: .35; margin: 10px 0; }
+  .keys { position: relative; padding: 4px 3px 8px; display: grid; gap: 7px; }
+  .row { display: flex; gap: 4px; }
+  .k { flex: 1; height: 42px; border-radius: 6px; background: var(--key); color: var(--key-text); display: flex; align-items: center; justify-content: center;
+    font-size: 18px; box-shadow: 0 1px 0 rgba(0,0,0,.12); }
+  .k.fn { background: var(--key-fn); font-size: 15px; }
+  .k.wide { flex: 3.2; font-size: 12px; color: var(--hint); align-items: flex-end; padding-bottom: 4px; }
+
+  /* A：蓋住鍵區的卡片（跟剪貼簿長按選單同一套） */
+  .scrim { position: absolute; left: 0; right: 0; bottom: 0; top: 46px; background: var(--scrim); display: none; align-items: center; padding: 8px 12px; }
+  .scrim.show { display: flex; }
+  .sheet { width: 100%; background: var(--key); border-radius: 16px; padding: 14px; display: grid; gap: 10px; }
+  .sheet .word { font-size: 22px; font-weight: 600; color: var(--key-text); line-height: 1.3; }
+  .sheet .word small { font-size: 14px; font-weight: 400; color: var(--hint); margin-left: 8px; }
+  .sheet .why { font-size: 14px; color: var(--hint); line-height: 1.45; }
+  .btns { display: flex; gap: 8px; }
+  .btn { flex: 1; height: 40px; border-radius: 20px; border: 0; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer;
+    background: var(--key-tone); color: var(--key-text); }
+  .btn.danger { background: var(--danger-soft); color: var(--danger); }
+  .tiny { font-size: 12px; color: var(--hint); line-height: 1.45; }
+
+  /* B：候選字下方的小泡泡 */
+  .bubble { position: absolute; top: 44px; display: none; z-index: 3; background: var(--key); border-radius: 12px; padding: 8px;
+    box-shadow: 0 4px 18px rgba(0,0,0,.22); width: 210px; }
+  .bubble.show { display: grid; gap: 6px; }
+  .bubble .why { font-size: 13px; color: var(--hint); line-height: 1.4; padding: 0 4px; }
+  .bubble .btn { height: 36px; font-size: 15px; }
+  .catcher { position: absolute; inset: 0; z-index: 2; display: none; }
+  .catcher.show { display: block; }
+
+  ol.q { padding-left: 1.3em; }
+  ol.q li { margin-bottom: 12px; }
+  ol.q b { display: block; }
+  .rec { color: var(--accent); font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+  <h1>候選字長按刪詞：三種選單長相</h1>
+  <p class="lead">每支手機都能玩：點一下候選字是選字，按住 0.4 秒跳出選單，左右滑是捲動。情境是打「ㄈㄟ ㄔㄤ」時，之前手滑選過的「肺腸」被學起來排第一。三支手機的資料一樣，只差選單長相。</p>
+  <p class="lead">可以長按試的：<b>肺腸</b>（自動學到）、<b>飛</b>（接續紀錄學到）、<b>非常</b>（詞庫原本就有、沒學過）。</p>
+
+  <div class="grid">
+    <section class="card pick" data-variant="A">
+      <div class="name">A　蓋住鍵區的卡片 <span class="tag">推薦</span></div>
+      <p class="note">跟剪貼簿長按的選單同一套長相，你已經用過。地方夠大，可以寫清楚它為什麼排前面、刪了會怎樣；按鈕大，不容易按錯。缺點是整塊鍵區會被蓋住一下。</p>
+    </section>
+    <section class="card" data-variant="B">
+      <div class="name">B　候選字下方的小泡泡</div>
+      <p class="note">泡泡從按住的那個字正下方冒出來，只蓋住第一排鍵，眼睛不用移。鍵盤畫不到輸入框那邊，所以只能往下長。字寬有限，說明只能寫一行。</p>
+    </section>
+    <section class="card" data-variant="C">
+      <div class="name">C　原地變成確認鈕</div>
+      <p class="note">長按後那個候選字本身變紅、寫「忘掉？」，再點一下就忘掉，點別的地方取消。最輕，但沒地方說明；「非常」這種沒學過的詞只能抖一下，看不出為什麼。</p>
+    </section>
+  </div>
+
+  <h2>A、B、C 共用的規格</h2>
+  <p class="lead">點一下還是放開才選字，跟現在一樣，長按只是多掛一個計時器，點選不會變慢。按住超過 0.4 秒才跳選單，跳了之後放開不會選字。手指一開始左右捲，計時就停，也不選字。選單開著時輸入框的注音留著，關掉可以接著打。按「忘掉」之後候選列馬上重排，不另外跳「已刪除」。</p>
+  <p class="lead">內建詞庫的詞刪不掉，只會回到詞庫原本的順序。沒開「允許完全取用」時鍵盤寫不進字典，選單會改成說明要先開，或去豆鍵 App 的字典頁刪。</p>
+
+  <h2>還要你定的三件事</h2>
+  <ol class="q">
+    <li><b>選單長相：A、B 還是 C？</b><span class="rec">我推薦 A。</span>跟剪貼簿一致，也是唯一放得下「為什麼排前面」的那種，按「非常」這種沒學過的詞時看得懂為什麼不能刪。</li>
+    <li><b>英文預測字、展開後的全部候選（⌄）要不要也能長按？</b><span class="rec">我推薦都要。</span>同一列的字有的能長按、有的不能，會以為壞掉；展開頁找到的錯字也要刪得掉。</li>
+    <li><b>你在 App 手動加的詞，鍵盤上要不要也能刪？</b><span class="rec">我推薦可以。</span>選單會寫「你在 App 手動加的詞」，看得出來才按。自動學到的詞刪了之後跟 App 刪一樣，不會再被自動學回來，要的話去 App 手動加。</li>
+  </ol>
+</main>
+
+<template id="phone">
+  <div class="phone">
+    <div class="field"><u class="typed">ㄈㄟ ㄔㄤ</u><span style="color:var(--accent)">✓</span></div>
+    <div class="kbwrap">
+      <div class="bar">
+        <div class="chips"></div>
+        <div class="barfn div"></div>
+        <div class="barfn">⌄</div><div class="barfn">▤</div><div class="barfn">⌨︎</div>
+      </div>
+      <div class="keys"></div>
+      <div class="catcher"></div>
+      <div class="bubble"></div>
+      <div class="scrim"><div class="sheet"></div></div>
+    </div>
+    <div class="log">　</div>
+    <button class="reset" type="button">重來</button>
+  </div>
+</template>
+
+<script>
+(() => {
+  const ROWS = [
+    "ㄅㄉˇˋㄓˊ˙ㄚㄞㄢㄦ", "ㄆㄊㄍㄐㄔㄗㄧㄛㄟㄣ", "ㄇㄋㄎㄑㄕㄘㄨㄜㄠㄤ", "ㄈㄌㄏㄒㄖㄙㄩㄝㄡㄥ⌫",
+  ];
+  // 詞庫原本的順序；learned 是學到的東西，有學到的排在詞庫順序前面
+  const BASE = [
+    { text: "非常" }, { text: "飛" }, { text: "非" }, { text: "肥" }, { text: "廢" }, { text: "菲" },
+    { text: "肺腸", reading: "ㄈㄟˋ ㄔㄤˊ" }, { text: "肺" }, { text: "費" }, { text: "啡" }, { text: "匪" },
+  ];
+  const LEARNED = {
+    "肺腸": { why: "自動學到的詞，選過 1 次，所以排第一。" },
+    "飛": { why: "在「我的」後面打過 1 次，所以排前面。" },
+  };
+  const HOLD = 400;
+  const SLOP = 10;
+
+  function build(card) {
+    const variant = card.dataset.variant;
+    const root = document.getElementById("phone").content.firstElementChild.cloneNode(true);
+    card.appendChild(root);
+    const $ = (s) => root.querySelector(s);
+    const chipsEl = $(".chips"), keysEl = $(".keys"), scrim = $(".scrim"), sheet = $(".sheet");
+    const bubble = $(".bubble"), catcher = $(".catcher"), log = $(".log"), typed = $(".typed");
+    let learned, armed = null;
+
+    for (const r of ROWS) {
+      const row = document.createElement("div"); row.className = "row";
+      for (const ch of r) { const k = document.createElement("div"); k.className = "k"; k.textContent = ch; row.appendChild(k); }
+      keysEl.appendChild(row);
+    }
+    const last = document.createElement("div"); last.className = "row";
+    last.innerHTML = '<div class="k fn">符</div><div class="k fn">ABC</div><div class="k">，</div><div class="k wide">選字</div><div class="k">。</div><div class="k fn">⏎</div>';
+    keysEl.appendChild(last);
+
+    function order() {
+      const hot = Object.keys(learned).map((t) => BASE.find((w) => w.text === t));
+      return hot.concat(BASE.filter((w) => !learned[w.text]));
+    }
+
+    function say(t) { log.textContent = t; }
+
+    function render() {
+      chipsEl.innerHTML = "";
+      order().forEach((w, i) => {
+        const c = document.createElement("div");
+        c.className = "chip" + (i === 0 ? " first" : "");
+        c.textContent = w.text;
+        attach(c, w);
+        chipsEl.appendChild(c);
+      });
+    }
+
+    function attach(chip, w) {
+      let timer = null, fired = false, moved = false, sx = 0, sy = 0;
+      chip.addEventListener("contextmenu", (e) => e.preventDefault());
+      chip.addEventListener("pointerdown", (e) => {
+        if (armed && armed !== chip) { disarm(); }
+        fired = false; moved = false; sx = e.clientX; sy = e.clientY;
+        chip.classList.add("down");
+        timer = setTimeout(() => { fired = true; chip.classList.remove("down"); open(w, chip); }, HOLD);
+      });
+      chip.addEventListener("pointermove", (e) => {
+        if (Math.hypot(e.clientX - sx, e.clientY - sy) > SLOP) { moved = true; clearTimeout(timer); chip.classList.remove("down"); }
+      });
+      const stop = () => { clearTimeout(timer); chip.classList.remove("down"); };
+      chip.addEventListener("pointercancel", () => { stop(); moved = true; });
+      chip.addEventListener("pointerleave", stop);
+      chip.addEventListener("pointerup", () => {
+        stop();
+        if (fired || moved) return;
+        if (armed === chip) { forget(w); return; }
+        typed.textContent = w.text;
+        typed.style.textDecoration = "none";
+        say("點一下：照舊選字，送出「" + w.text + "」。按「重來」再試長按。");
+      });
+    }
+
+    function why(w) {
+      return learned[w.text] ? learned[w.text].why : "這是詞庫原本的順序，沒有學過，不用刪。";
+    }
+
+    function open(w, chip) {
+      const has = !!learned[w.text];
+      say("長按：跳出選單（" + (has ? "有學過" : "沒學過") + "）");
+      if (variant === "A") {
+        sheet.innerHTML = "";
+        const title = document.createElement("div"); title.className = "word"; title.textContent = w.text;
+        if (w.reading && has) { const s = document.createElement("small"); s.textContent = w.reading; title.appendChild(s); }
+        const p = document.createElement("div"); p.className = "why"; p.textContent = why(w);
+        const btns = document.createElement("div"); btns.className = "btns";
+        if (has) {
+          btns.appendChild(button("忘掉這個詞", "danger", () => forget(w)));
+          btns.appendChild(button("取消", "", close));
+        } else {
+          btns.appendChild(button("好", "", close));
+        }
+        sheet.append(title, p, btns);
+        if (has) {
+          const t = document.createElement("div"); t.className = "tiny";
+          t.textContent = "詞庫原本就有的詞不會消失，只會回到原本的順序。";
+          sheet.appendChild(t);
+        }
+        scrim.classList.add("show");
+      } else if (variant === "B") {
+        bubble.innerHTML = "";
+        const p = document.createElement("div"); p.className = "why"; p.textContent = why(w);
+        bubble.appendChild(p);
+        if (has) bubble.appendChild(button("忘掉「" + w.text + "」", "danger", () => forget(w)));
+        const wrap = root.querySelector(".kbwrap").getBoundingClientRect();
+        const r = chip.getBoundingClientRect();
+        const left = Math.min(Math.max(4, r.left - wrap.left + r.width / 2 - 105), wrap.width - 214);
+        bubble.style.left = left + "px";
+        bubble.classList.add("show");
+        catcher.classList.add("show");
+      } else {
+        if (!has) {
+          chip.classList.remove("shake"); void chip.offsetWidth; chip.classList.add("shake");
+          say("長按：「" + w.text + "」沒學過，只抖一下。");
+          return;
+        }
+        armed = chip;
+        chip.dataset.text = chip.textContent;
+        chip.textContent = "忘掉？";
+        chip.classList.add("arm");
+        catcher.classList.add("show");
+      }
+    }
+
+    function button(label, cls, fn) {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "btn " + cls; b.textContent = label;
+      b.addEventListener("click", fn);
+      return b;
+    }
+
+    function disarm() {
+      if (!armed) return;
+      armed.textContent = armed.dataset.text;
+      armed.classList.remove("arm");
+      armed = null;
+    }
+
+    function close() {
+      scrim.classList.remove("show"); bubble.classList.remove("show"); catcher.classList.remove("show");
+      disarm();
+    }
+
+    function forget(w) {
+      delete learned[w.text];
+      close();
+      render();
+      const first = order()[0].text;
+      say("忘掉「" + w.text + "」：候選馬上重排，第一個變回「" + first + "」。");
+    }
+
+    catcher.addEventListener("pointerdown", () => { close(); say("點選單外面：關掉，什麼都沒改。"); });
+    scrim.addEventListener("pointerdown", (e) => { if (e.target === scrim) { close(); say("點選單外面：關掉，什麼都沒改。"); } });
+
+    function reset() {
+      learned = JSON.parse(JSON.stringify(LEARNED));
+      close();
+      typed.textContent = "ㄈㄟ ㄔㄤ"; typed.style.textDecoration = "";
+      say("　");
+      render();
+    }
+    $(".reset").addEventListener("click", reset);
+    reset();
+  }
+
+  document.querySelectorAll(".card[data-variant]").forEach(build);
+})();
+</script>
+</body>
+</html>
