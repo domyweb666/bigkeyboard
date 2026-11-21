@@ -5,6 +5,8 @@ import UIKit
 /// 正在組的注音不顯示在這裡——它直接顯示在輸入框游標處（跟原生鍵盤一樣）。
 final class CandidateBar: UIView {
     var onSelect: ((Int) -> Void)?
+    /// 長按第 i 個候選（跳出「忘掉這個詞」的選單）
+    var onLongPress: ((Int) -> Void)?
     var onToggleExpand: (() -> Void)?
     /// 收鍵盤
     var onDismiss: (() -> Void)?
@@ -196,7 +198,8 @@ final class CandidateBar: UIView {
         expandButton.setIcon(expanded ? "chevron.up" : "chevron.down", pointSize: SamsungTheme.expandIconPointSize)
     }
 
-    /// 第 i 個位置的候選按鈕（點了就選第 i 個）
+    /// 第 i 個位置的候選按鈕（點了就選第 i 個）。長按跟鍵帽一樣 0.4 秒：
+    /// 選字照舊放開才送，長按只是多一個計時器，點選不會變慢；長按跳出選單後放開不選字
     private func makeChip(_ i: Int) -> KeyButton {
         let b = KeyButton()
         styleChip(b)
@@ -204,6 +207,13 @@ final class CandidateBar: UIView {
         b.layer.shadowOpacity = 0
         b.tag = i
         b.onTap = { [weak self] in self?.onSelect?(i) }
+        b.onLongPress = { [weak self] in self?.onLongPress?(i) }
+        // 手指拖開超過點一下的容許範圍就不算長按（點選照舊，只停掉長按計時）
+        b.onTrackMove = { [weak b] _, moved in
+            if moved > SamsungTheme.tapSlop {
+                b?.cancelLongPress()
+            }
+        }
         b.tapsWhenCancelled = false
         b.widthAnchor.constraint(greaterThanOrEqualTo: b.label.widthAnchor, constant: 18).isActive = true
         b.widthAnchor.constraint(greaterThanOrEqualToConstant: 40).isActive = true

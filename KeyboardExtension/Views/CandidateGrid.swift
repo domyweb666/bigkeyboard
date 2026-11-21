@@ -4,6 +4,8 @@ import UIKit
 /// 為了「候選字選不到想要的字」這個最怕的事：橫向一列滑不完的時候，展開一次看完。
 final class CandidateGrid: UIView, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     var onSelect: ((Int) -> Void)?
+    /// 長按第 i 格（跳出「忘掉這個詞」的選單）
+    var onLongPress: ((Int) -> Void)?
 
     private var items: [String] = []
     /// 每格的大小：展開時一次算好。以前讓每格自己量（automaticSize），候選上百個時第一次排版要量上百次，
@@ -32,6 +34,10 @@ final class CandidateGrid: UIView, UICollectionViewDataSource, UICollectionViewD
         collection.dataSource = self
         collection.delegate = self
         collection.translatesAutoresizingMaskIntoConstraints = false
+        // 長按跟候選列一樣 0.4 秒；長按成立時系統會取消這次點選，不會順便選字
+        let hold = UILongPressGestureRecognizer(target: self, action: #selector(held(_:)))
+        hold.minimumPressDuration = SamsungTheme.longPressSeconds
+        collection.addGestureRecognizer(hold)
         addSubview(collection)
         NSLayoutConstraint.activate([
             collection.topAnchor.constraint(equalTo: topAnchor),
@@ -80,6 +86,11 @@ final class CandidateGrid: UIView, UICollectionViewDataSource, UICollectionViewD
 
     func collectionView(_: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         onSelect?(indexPath.item)
+    }
+
+    @objc private func held(_ g: UILongPressGestureRecognizer) {
+        guard g.state == .began, let path = collection.indexPathForItem(at: g.location(in: collection)) else { return }
+        onLongPress?(path.item)
     }
 
     private final class Cell: UICollectionViewCell {

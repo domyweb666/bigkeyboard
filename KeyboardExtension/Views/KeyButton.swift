@@ -219,6 +219,11 @@ final class KeyButton: UIControl {
         repeatTimer?.invalidate()
     }
 
+    /// 不等長按了：候選字被手指拖開時用（左右捲、或候選放得下捲不動時），拖了一段再停住不該跳選單
+    func cancelLongPress() {
+        longPressTimer?.invalidate()
+    }
+
     /// 快打時下一顆鍵已經按下：這顆現在就算按完（不等手指放開）
     func fireNow() {
         guard isTracking, onRepeat == nil, !longPressFired, !firedEarly else { return }

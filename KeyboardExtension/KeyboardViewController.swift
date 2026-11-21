@@ -6,6 +6,8 @@ final class KeyboardViewController: UIInputViewController {
     let keyboardView = KeyboardView()
     let candidateGrid = CandidateGrid()
     let clipboardPanel = ClipboardPanel()
+    /// 長按候選字跳出的選單
+    let candidateMenu = CandidateMenu()
     private var heightConstraint: NSLayoutConstraint?
     var barShown: NSLayoutConstraint?
     var barHidden: NSLayoutConstraint?
@@ -38,6 +40,8 @@ final class KeyboardViewController: UIInputViewController {
     var composeContext = ""
     /// 接續紀錄：前面 1～2 個字 → 用豆鍵在它後面打過的字詞 → 次數。鍵盤出現時從字典檔讀進來
     var follows: [String: [String: Int]] = [:]
+    /// 使用者字典的詞（自動學到的、手動加的）。長按候選字時查它有沒有學過
+    var userWords: [UserDictionary.Word] = []
     /// 還沒寫進字典檔的接續紀錄（停手 3 秒或收鍵盤時一起寫）
     var pendingFollows: [(context: String, text: String)] = []
     var followFlushTimer: Timer?
@@ -92,7 +96,7 @@ final class KeyboardViewController: UIInputViewController {
         candidateGrid.isHidden = true
         clipboardPanel.isHidden = true
 
-        for v in [candidateBar, keyboardView, candidateGrid, clipboardPanel] {
+        for v in [candidateBar, keyboardView, candidateGrid, clipboardPanel, candidateMenu] {
             v.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview(v)
         }
@@ -118,11 +122,13 @@ final class KeyboardViewController: UIInputViewController {
         ])
         coverKeys(with: candidateGrid)
         coverKeys(with: clipboardPanel)
+        coverKeys(with: candidateMenu)
 
         restoreMode()
         showMode()
         setUpDismiss()
         setUpClipboard()
+        setUpCandidateMenu()
     }
 
     /// 候選列、鍵盤的各種動作接到控制器
@@ -145,7 +151,7 @@ final class KeyboardViewController: UIInputViewController {
         keyboardView.onCursorDragEnd = { [weak self] in self?.endCursorDrag() }
     }
 
-    /// 展開的全部候選、剪貼簿面板：蓋在鍵區上，一樣大
+    /// 展開的全部候選、剪貼簿面板、長按候選字的選單：蓋在鍵區上，一樣大
     private func coverKeys(with v: UIView) {
         NSLayoutConstraint.activate([
             v.topAnchor.constraint(equalTo: keyboardView.topAnchor),

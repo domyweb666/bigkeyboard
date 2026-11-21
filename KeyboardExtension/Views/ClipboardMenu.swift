@@ -86,16 +86,16 @@ final class ClipboardMenu: UIView {
         card.layer.cornerRadius = 16
         card.clipsToBounds = true
         stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        stack.addArrangedSubview(makeNote(ClipboardCard.preview(entry.text), size: 14, lines: 1))
+        stack.addArrangedSubview(Self.makeNote(ClipboardCard.preview(entry.text), size: 14, lines: 1))
         stack.addArrangedSubview(makeActions(pinned: entry.pinned))
         if allTags.isEmpty {
-            stack.addArrangedSubview(makeNote("要加標籤，先在豆鍵 App 的「剪貼簿」分頁建立標籤", size: 13))
+            stack.addArrangedSubview(Self.makeNote("要加標籤，先在豆鍵 App 的「剪貼簿」分頁建立標籤", size: 13))
         } else {
             fillTags(allTags, on: entry.tags)
             stack.addArrangedSubview(tagScroll)
         }
-        stack.addArrangedSubview(makeNote("要改文字：打開豆鍵 App →「剪貼簿」", size: 12))
-        let cancel = makeButton(
+        stack.addArrangedSubview(Self.makeNote("要改文字：打開豆鍵 App →「剪貼簿」", size: 12))
+        let cancel = Self.makeButton(
             "取消",
             icon: nil,
             background: SamsungTheme.keyTone,
@@ -112,7 +112,7 @@ final class ClipboardMenu: UIView {
 
     /// 兩顆並排的大按鈕：固定（或取消固定）、刪除
     private func makeActions(pinned: Bool) -> UIView {
-        let pin = makeButton(
+        let pin = Self.makeButton(
             pinned ? "取消固定" : "固定",
             icon: pinned ? "pin.slash" : "pin",
             background: SamsungTheme.keyTone,
@@ -120,7 +120,7 @@ final class ClipboardMenu: UIView {
         ) { [weak self] in
             self?.onTogglePin?()
         }
-        let delete = makeButton(
+        let delete = Self.makeButton(
             "刪除",
             icon: "trash",
             background: SamsungTheme.destructiveSoft,
@@ -135,8 +135,8 @@ final class ClipboardMenu: UIView {
         return row
     }
 
-    /// 膠囊按鈕：字置中，圖示貼在字的左邊
-    private func makeButton(
+    /// 膠囊按鈕：字置中，圖示貼在字的左邊（長按候選字的選單也用這個）
+    static func makeButton(
         _ title: String,
         icon: String?,
         background: UIColor,
@@ -198,8 +198,8 @@ final class ClipboardMenu: UIView {
         return b
     }
 
-    /// 一行灰色小字（不能按）。lines 給 0 是不限行數
-    private func makeNote(_ text: String, size: CGFloat, lines: Int = 0) -> UILabel {
+    /// 一行灰色小字（不能按）。lines 給 0 是不限行數（長按候選字的選單也用這個）
+    static func makeNote(_ text: String, size: CGFloat, lines: Int = 0) -> UILabel {
         let label = UILabel()
         label.text = text
         label.font = .systemFont(ofSize: size)

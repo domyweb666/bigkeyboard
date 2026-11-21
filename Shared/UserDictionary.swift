@@ -156,6 +156,20 @@ extension UserDictionary.File {
         }
     }
 
+    /// 鍵盤長按候選字「忘掉這個詞」：字典裡這個字的詞（自動學的、手動加的）照 App 的刪法刪，
+    /// 接續紀錄裡接在任何字後面的它、英文打過的它（不分大小寫）也拿掉。內建詞庫的詞不在這裡，刪不到
+    mutating func forget(_ text: String) {
+        for word in words where word.text == text {
+            remove(word)
+        }
+        follows = follows.compactMapValues { next in
+            let rest = next.filter { $0.key != text }
+            return rest.isEmpty ? nil : rest
+        }
+        let lower = text.lowercased()
+        english = english.filter { $0.key.lowercased() != lower }
+    }
+
     /// 刪掉一個詞；自動學到的記進 ignored，鍵盤不再學回來；都記下刪的時間（同步用）
     mutating func remove(_ word: UserDictionary.Word) {
         words.removeAll { $0.id == word.id }

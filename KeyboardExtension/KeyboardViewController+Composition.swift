@@ -194,6 +194,8 @@ extension KeyboardViewController {
     }
 
     func refreshBar() {
+        // 候選換了（選了字、展開、開剪貼簿、輸入框的字變了）：長按選單說的那個詞可能已經不在，關掉
+        closeCandidateMenu()
         keyboardView.emphasis = currentEmphasis()
         keyboardView.setSpaceFoot(currentSpaceFoot())
         let items = barItems

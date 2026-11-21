@@ -143,7 +143,25 @@ extension KeyboardViewController {
         }
     }
 
+    /// 長按候選字「忘掉這個詞」：鍵盤記著的（字典的詞、接續紀錄、英文打過的字，連還沒寫進檔案的）先拿掉、
+    /// 引擎換上新的使用者詞，再在背景寫進字典檔（要開完全取用）。呼叫的人負責重排候選
+    func forgetLearned(_ text: String) {
+        applyUserWords(userWords.filter { $0.text != text })
+        follows = follows.compactMapValues { next in
+            let rest = next.filter { $0.key != text }
+            return rest.isEmpty ? nil : rest
+        }
+        pendingFollows.removeAll { $0.text == text }
+        let lower = text.lowercased()
+        englishCounts = englishCounts.filter { $0.key.lowercased() != lower }
+        pendingEnglish.removeAll { $0.lowercased() == lower }
+        Self.dictionaryQueue.async {
+            UserDictionary.update { $0.forget(text) }
+        }
+    }
+
     private func applyUserWords(_ words: [UserDictionary.Word]) {
+        userWords = words
         // 同一個讀音有好幾個詞時：手動加的排前面，其次用過次數多的
         let sorted = words.sorted { a, b in
             if a.source != b.source {
