@@ -1,64 +1,58 @@
-# Handoff: 豆鍵 1.2.1（真機回饋五項）做完、上 TestFlight、已提交審查
+# Handoff: 按鍵聲加四套 AI 生成的聲音（豆子落碗、木魚、打字機、筆電鍵盤），編譯過了，等升版本號打包 TestFlight
 
-> 產出時間：2026-11-17 17:31
+> 產出時間：2026-11-21 21:01
 > 前一會話的最後狀態，給下一個會話接續用
 
 ## ✅ 這次完成了什麼
 
-- 修掉多米真機用 1.2 (86) 回報的五項，做成 1.2.1：
-  - 按住「符」／「!#1」不再跳數字鍵盤，鍵上的 123 小字拿掉（數字鍵盤從符號頁右下的 123 進）
-  - 機械鍵盤聲：每個錄音切成「按下」「彈回」兩個檔，手指碰到鍵播按下、手指離開播彈回；每一聲 1 毫秒內出聲。音檔從原始 zip 重產，共 90 個 802 KB
-  - 按鍵聲選項「系統預設」改名「跟隨 iPhone 設定」
-  - 拿掉首次設定流程和火柴人吉祥物（`App/SetupFlow.swift`、`App/Mascot.swift` 刪掉），新安裝直接進字典頁
-  - `project.yml` 的 `IsASCIICapable` 改 true，只收英文的欄位（asciiCapable）給英文鍵面
-- 英文鍵面在 email／網址欄的排法做了比較頁，多米選「都用 A」（程式本來就是 A）
-- limrun 上編譯、格式檢查（App、KeyboardExtension、Shared）通過，實測新安裝畫面、按住「符」、按鍵聲選單、選機械鍵盤後打字不當掉
-- 版本號升到 1.2.1，打包 build 87 上 TestFlight（run 44042341824），多米真機測過回「功能都 ok」
-- 寫 1.2.1 送審稿，App Store 描述【開始使用】第一句改掉（繁中、英文都改）
-- 1.2.1 (87) 提交審查（run 44054278074），後台回讀 WAITING_FOR_REVIEW
-- `asc_release.py` 加了三樣：描述有改也一起寫（差超過 4 行就停）、審查備註先拿掉上一版加的段落再加新的、`--withdraw` 撤回重送
+- 試了 Higgsfield（Mirelo 模型）和 ElevenLabs 生成鍵盤聲，兩邊比較後放進 App 的只用 ElevenLabs 的
+- 在 ElevenLabs 音效頁生成 11 種、每種 4 個版本，全部下載成 WAV（花 440 點）；帳號的「分享到 Explore」已停用
+- 挑四種加進按鍵聲選單：豆子落碗 beans、木魚 woodblock、打字機 typewriter、筆電鍵盤 laptop，68 個檔 1.4 MB（commit 2c7f0dc）
+- 寫 `docs/make_ai_keysounds.py`：切單聲、篩掉重疊／沒收乾淨／太小聲／開頭有雜音／起音慢的、開頭切到撞擊前 1 毫秒、不足 12 聲用變調補、大鍵降四個半音
+- 這四套只有按下聲，手指離開不出聲（`KeySoundPlayer` 找不到彈回聲就不播，程式只改了兩個 switch 加新選項）
+- 使用說明（`App/GuideView.swift`）加一句介紹四種新聲音
+- 授權與來源寫進 `THIRD_PARTY_LICENSES.md`、`.vibe/機械鍵盤聲音-音檔來源.md` 的「AI 生成」段
+- limrun 上編譯成功、swiftformat／swiftlint（App、KeyboardExtension、Shared）全過；模擬器選單看得到四個新選項，選「木魚」不會當掉。機器已刪、清單是空的
+- 查到 1.2.1 已上線（App Store 公開資料，2026-11-17 發布），記進 `.aso/閘門紀錄.md`
+- `試聽-AI鍵盤聲/` 加進 `.gitignore`（全部原檔、Mirelo 那批、試聽頁都在這，約 30 MB，只在這台電腦）
 
 ## 🚧 還沒做完 / 待決定
 
-- 1.2.1 審查結果還沒出來。下次接手先查，不要再送一次
-- iPhone 的「設定 → 聲音與觸覺 → 鍵盤回饋 → 聲音」是開是關，多米沒回。「跟隨 iPhone 設定」開著還是沒聲音的話，要換播法（現在是 `UIDevice.playInputClick()`）
-- 機械鍵盤聲多米只說「功能都 ok」，沒有單獨講彈回聲會不會太吵、有沒有比較跟手。之後有回饋再調（彈回聲現在比按下聲小 6 dB）
-- 「設定 → 使用說明」那一頁還留著。多米說導引教學拿掉，我只拿了首次設定流程，這頁有沒有要一起拿，他沒明講
-- 機械鍵盤聲要不要收費，還沒定
-- `asc-release` 分支停在 39d5219，比 `redesign-domy-sage` 舊。不用同步也能送審（見下面關鍵決策）
+- 還沒打包 TestFlight：1.2.1 已上線，`project.yml` 的 `MARKETING_VERSION` 還是 "1.2.1"，用這個號打包 Apple 會拒收。要先升版本號，下一版號多米還沒定（1.2.2 或 1.3；1.3 要不要在 `WhatsNew.swift` 加新功能卡片也還沒定）
+- 四套聲音沒有人聽過真機：Claude 聽不到聲音，是照量測和定位挑的。好不好聽、跟不跟手、要不要換掉哪一套，等多米真機回報
+- 四套要不要收費，跟機械鍵盤聲一樣還沒定
+- ElevenLabs 帳號是 Starter 方案，訂閱頁寫「將於 12 月 11 日取消」。已生成的聲音照理可繼續商用，但條款原文沒查，取消前最好確認
+- 上一份 handoff 留下的幾條還沒有回音：「跟隨 iPhone 設定」沒聲音的問題、機械鍵盤彈回聲的回饋、使用說明頁要不要拿掉
 
 ## 📌 關鍵決策（這次定下來的，下次別再爭論）
 
-- 登入頁（有密碼自動填寫）的 email 欄，真機上只有 Apple 原生鍵盤能用，第三方鍵盤不會出現。系統規定，不處理。模擬器上輪得到豆鍵，不能當證據
-- `IsASCIICapable: true` 留著：豆鍵有英文鍵面，宣告本來就該是 true
-- email 欄、網址欄的英文鍵面都用 A：email 是逗號換成 @；網址是逗號換成 /、句點右邊多一顆 .com
-- 機械鍵盤聲繼續用系統音效播（`AudioServicesPlaySystemSound`），不換成能調音量音高的播法：那要開音訊工作階段，有打斷別的 App 音樂的風險，模擬器又驗不到
-- 「跟隨 iPhone 設定」不改成一律出聲：它是預設值，改了會讓關掉系統鍵盤聲的人更新後突然開始響
-- 小版號（1.2 → 1.2.1）App 內的「新功能」卡片不跳，`WhatsNew.swift` 沒加 1.2.1
-- 送審從 `redesign-domy-sage` 手動執行 asc-release 工作流程、填 build 號就好，不用推 `asc-release` 分支
-- 新功能說明裡每一條「修好了」都要有多米對那一項的真機回報才寫，「都 ok」不算（這次寫錯一條，送出後撤回重送）
+- 進 App 的只用 ElevenLabs 生成的。Mirelo 照描述做的程度差，模型目錄又標「Game pipeline only」、授權查不到
+- 不挑清脆機械、厚實 thock、老式彈簧（跟現有三套真錄音重疊），也不挑玻璃杯、撲克籌碼、泡泡紙（只切出 4 聲，變調補太多會聽出重複）
+- AI 生成的聲音只做按下聲，不硬切彈回聲
+- 每一聲 1 毫秒內出聲、到一半音量 25 毫秒以內，起音慢的直接丟掉（第一次產出有的檔要 26 毫秒才出聲，已修）
+- TestFlight 是 GitHub Actions 的 testflight 工作流程，從 `redesign-domy-sage` 手動執行（workflow_dispatch），不是 limrun；推這個分支不會觸發任何工作流程。照規矩沒有多米開口不打包
 
 ## 📂 下個會話最重要的檔案
 
-- `.aso/1.2.1-送審稿.md` ← 這版送了什麼、步驟勾到哪
-- `.aso/asc_release.py` ← 送審工具。下一版要改 `VERSION`，並把 "1.2.1" 加進 `DROP_NOTES_FROM`
-- `.aso/lessons.md`、`.aso/閘門紀錄.md` ← 這次的教訓與紀錄
-- `.vibe/產品定稿.md` ← 次要功能 16、19、20、21 有這次的更新
-- `.vibe/總測試清單.md` ← AS 段是 1.2.1 的真機測試項與模擬器驗證紀錄
-- `.vibe/機械鍵盤聲音-音檔來源.md`、`docs/make_keysounds.py` ← 音檔怎麼切的
-- `Shared/KeySoundPlayer.swift`、`KeyboardExtension/KeyboardViewController+Feedback.swift` ← 按下／彈回兩聲的播放
 - `.vibe/規矩檔.md` ← 動工前必讀
+- `.vibe/機械鍵盤聲音-音檔來源.md` ← 最下面「AI 生成（2026-11-19）」段：兩邊比較、提示詞、挑選理由、每套幾聲
+- `docs/make_ai_keysounds.py` ← 要重新生成或換掉某套時跑這支（原檔在 `試聽-AI鍵盤聲/ElevenLabs原檔/`）
+- `Shared/KeySoundSetting.swift` ← 選單選項與音檔套名
+- `project.yml` ← 第 12 行 `MARKETING_VERSION`，打包前要改
+- `.aso/閘門紀錄.md` ← 最後一條是 1.2.1 上線
+- `試聽-AI鍵盤聲/試聽.html` ← 雙擊就能聽，ElevenLabs 和 Mirelo 每種並排（沒進 git）
 
 ## ⏭️ 下一步從哪繼續
 
-1. 先讀這份，再 `git log --oneline -10` 確認分支 `redesign-domy-sage` 的最新 commit 是不是還是這次的
-2. 查 1.2.1 的審查結果：手動執行「ASC 狀態查詢」工作流程看 build，或直接問多米後台顯示什麼
-3. 通過了：在 `.aso/閘門紀錄.md` 記上線，沒有別的事
-4. 被退了：讀退件理由，照 `.vibe/審核回覆-*.md` 的寫法回覆；要改文案重送就用 `asc_release.py --withdraw --submit <build 號>`
-5. 多米如果回報按鍵聲或機械鍵盤聲的問題，從「還沒做完」那幾條接
+1. 先讀這份，再 `git log --oneline -5` 確認 `redesign-domy-sage` 最新的 commit 是這次的 handoff
+2. 問多米下一版號（1.2.2 或 1.3），把 `project.yml` 的 `MARKETING_VERSION` 改掉並 commit；選 1.3 的話問要不要在 `WhatsNew.swift` 加卡片
+3. 多米說要打包時，在 GitHub 手動執行 testflight 工作流程，分支選 `redesign-domy-sage`
+4. 多米真機聽完四套後，照他的回報調（換掉某套就改 `make_ai_keysounds.py` 的 `PACKS` 重跑、改 `KeySoundSetting.swift`）
+5. 要送審時，新功能說明照規矩逐項問過多米的真機結果才寫
 
 ## 🗑️ 這次會話的雜訊（下次別重新討論）
 
-- 花了不少時間在模擬器上想重現「email 欄豆鍵不見」，新舊宣告、有沒有存密碼四種組合都重現不了。結論是真機才看得出來，不用再試
-- email 的 B、C 排法和網址的 B 排法（比較頁上有）多米沒選，不用再提
-- heredoc 裡寫含反斜線的 Python 取代字串會對不上，改用寫成檔案再跑
+- ElevenLabs 網頁下載：主頁的結果面板座標會跑，用歷史記錄頁（/app/sound-effects/history），點下載鈕後用 find 找「WAV」再點，下載完按 Escape 關選單。不要在選單沒開時按 Enter（焦點在提示詞框會直接生成）
+- ElevenLabs API 金鑰沒建，網頁版就夠用；`試聽-AI鍵盤聲/elevenlabs_sfx.py` 是寫好但沒用到的 API 腳本
+- 帳號裡同時段那 5 筆紙張、寫字、翻書的生成不是這個會話做的，不用管
+- Higgsfield 生成越長並不會出越多聲，不用再試
