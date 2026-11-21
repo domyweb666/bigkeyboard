@@ -99,7 +99,7 @@ struct GuideView: View {
     private static let forgetDetail = "手滑選錯一次，那個字詞也會被記住、排到前面。"
         + "在候選列按住它半秒，選「忘掉這個詞」，就會回到原本的順序。"
 
-    private static let iCloudDetail ="在設定頁打開「iCloud 同步」，"
+    private static let iCloudDetail = "在設定頁打開「iCloud 同步」，"
         + "字典裡的詞（自動學到的、自己加的）會存到你自己的 iCloud，"
         + "同一個 Apple ID 的其他 iPhone 打開豆鍵 App 就會合併過去。剪貼簿和打字紀錄不會上傳。"
 
