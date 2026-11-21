@@ -18,7 +18,7 @@
 
 ## 🚧 還沒做完 / 待決定
 
-- 還沒打包 TestFlight：1.2.1 已上線，`project.yml` 的 `MARKETING_VERSION` 還是 "1.2.1"，用這個號打包 Apple 會拒收。要先升版本號，下一版號多米還沒定（1.2.2 或 1.3；1.3 要不要在 `WhatsNew.swift` 加新功能卡片也還沒定）
+- 還沒打包 TestFlight：多米 2026-11-21 定下一版是 1.2.2，`project.yml` 已改好；小版號照慣例不加 `WhatsNew.swift` 卡片
 - 四套聲音沒有人聽過真機：Claude 聽不到聲音，是照量測和定位挑的。好不好聽、跟不跟手、要不要換掉哪一套，等多米真機回報
 - 四套要不要收費，跟機械鍵盤聲一樣還沒定
 - ElevenLabs 帳號是 Starter 方案，訂閱頁寫「將於 12 月 11 日取消」。已生成的聲音照理可繼續商用，但條款原文沒查，取消前最好確認
@@ -38,14 +38,14 @@
 - `.vibe/機械鍵盤聲音-音檔來源.md` ← 最下面「AI 生成（2026-11-19）」段：兩邊比較、提示詞、挑選理由、每套幾聲
 - `docs/make_ai_keysounds.py` ← 要重新生成或換掉某套時跑這支（原檔在 `試聽-AI鍵盤聲/ElevenLabs原檔/`）
 - `Shared/KeySoundSetting.swift` ← 選單選項與音檔套名
-- `project.yml` ← 第 12 行 `MARKETING_VERSION`，打包前要改
+- `project.yml` ← 第 12 行 `MARKETING_VERSION`，已是 1.2.2
 - `.aso/閘門紀錄.md` ← 最後一條是 1.2.1 上線
 - `試聽-AI鍵盤聲/試聽.html` ← 雙擊就能聽，ElevenLabs 和 Mirelo 每種並排（沒進 git）
 
 ## ⏭️ 下一步從哪繼續
 
 1. 先讀這份，再 `git log --oneline -5` 確認 `redesign-domy-sage` 最新的 commit 是這次的 handoff
-2. 問多米下一版號（1.2.2 或 1.3），把 `project.yml` 的 `MARKETING_VERSION` 改掉並 commit；選 1.3 的話問要不要在 `WhatsNew.swift` 加卡片
+2. 版本號已經是 1.2.2（`project.yml`），不用再改；送審時 `.aso/asc_release.py` 的 `VERSION` 改 1.2.2、`DROP_NOTES_FROM` 加 "1.2.1"
 3. 多米說要打包時，在 GitHub 手動執行 testflight 工作流程，分支選 `redesign-domy-sage`
 4. 多米真機聽完四套後，照他的回報調（換掉某套就改 `make_ai_keysounds.py` 的 `PACKS` 重跑、改 `KeySoundSetting.swift`）
 5. 要送審時，新功能說明照規矩逐項問過多米的真機結果才寫
