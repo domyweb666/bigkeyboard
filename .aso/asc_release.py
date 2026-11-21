@@ -22,7 +22,7 @@ BUNDLE_ID = "org.domyweb.bigkeyboard"
 VERSION = "1.2.1"
 # 後台如果還留著這些版本號的草稿，直接改名成 VERSION（1.2 那次用過：1.1.1 取消，併進 1.2）
 RENAME_FROM = set()
-# 上一版的審查備註最前面如果是這些版本加的段落，先拿掉再加這次的（上限 4000 字，每版都往前加會放不下）
+# 上一版的審查備註最前面如果是這些版本加的段落，先拿掉再加這次的（上限 4000 bytes，每版都往前加會放不下）
 DROP_NOTES_FROM = ("1.2",)
 # 描述一次最多改幾行（新舊各算一行）
 DESCRIPTION_MAX_CHANGED = 4
@@ -235,9 +235,11 @@ def main():
             old_notes = old_notes[len(paragraph):].lstrip()
             print(f"  審查備註：拿掉 {dropped} 加的那段（{len(paragraph)} 字）")
     target = old_notes if old_notes.startswith(note) else (note + "\n\n" + old_notes).strip()
-    print(f"  審查備註：這次的段落 {len(note)} 字＋上一版的備註 {len(old_notes)} 字＝{len(target)} 字（上限 4000）")
-    if len(target) > 4000:
-        sys.exit(f"審查備註超過 4000 字，多了 {len(target) - 4000} 字。把送審稿第二節寫短再跑。")
+    # Apple 的上限是 4000 bytes，不是 4000 字：中文一個字 3 bytes，用字數算會算鬆
+    size = len(target.encode("utf-8"))
+    print(f"  審查備註：這次的段落 {len(note)} 字＋上一版的備註 {len(old_notes)} 字＝{len(target)} 字、{size} bytes（上限 4000 bytes）")
+    if size > 4000:
+        sys.exit(f"審查備註超過 4000 bytes，多了 {size - 4000} bytes。把送審稿第二節寫短再跑。")
     if detail:
         if detail["attributes"].get("notes") != target:
             asc.call("PATCH", f"/appStoreReviewDetails/{detail['id']}", {"data": {
