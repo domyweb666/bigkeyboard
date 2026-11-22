@@ -18,14 +18,26 @@ extension KeyboardViewController {
     /// 三種按鍵聲是字母、刪除、功能鍵各用系統鍵盤的那三種聲音，光聽就知道按了哪一類；
     /// 機械鍵盤聲音包隨機播一個「按下去」的錄音，空白、刪除、換行這些大鍵播比較低的那幾個；關閉就不出聲
     func playKeySound(for spec: KeySpec) {
+        playPressSound(systemSound: Self.soundID(for: spec.action), bigKey: !KeyboardView.isCharacterKey(spec))
+    }
+
+    /// 選了一個候選字（候選列、展開的全部候選）：跟按一顆字鍵一樣響、一樣震（2026-11-22 多米要求）。
+    /// 選字是手指放開才算，聲音也在那時響：候選列能左右捲，按下就響的話，捲一下也會響。
+    /// 機械鍵盤只播按下那聲，不接彈回聲（選字是一下，兩聲擠在一起像連按兩次）
+    func candidateFeedback() {
+        playPressSound(systemSound: Self.characterSound, bigKey: false)
+        tapHaptic()
+    }
+
+    private func playPressSound(systemSound: SystemSoundID, bigKey: Bool) {
         switch keySound {
         case .system:
             UIDevice.current.playInputClick()
         case .distinct:
-            AudioServicesPlaySystemSound(Self.soundID(for: spec.action))
+            AudioServicesPlaySystemSound(systemSound)
         case .crisp, .thick, .vintage, .beans, .woodblock, .typewriter, .laptop:
-            // 這一套的音檔沒包進來就退回系統的按鍵聲，不要變成沒聲音
-            if !keySoundPlayer.play(.down, bigKey: !KeyboardView.isCharacterKey(spec)) {
+            // 這一套的音檔沒包進來、或播放器開不起來，就退回系統的按鍵聲，不要變成沒聲音
+            if !keySoundPlayer.play(.down, bigKey: bigKey) {
                 UIDevice.current.playInputClick()
             }
         case .off:
@@ -41,10 +53,13 @@ extension KeyboardViewController {
         keySoundPlayer.play(.up, bigKey: !KeyboardView.isCharacterKey(spec))
     }
 
+    /// 系統鍵盤的字母鍵聲
+    private static let characterSound: SystemSoundID = 1104
+
     /// 系統鍵盤的三種按鍵聲：字母 1104、刪除 1155、空白與功能鍵 1156
     private static func soundID(for action: KeySpec.Action) -> SystemSoundID {
         switch action {
-        case .bopomofo, .letter, .text: 1104
+        case .bopomofo, .letter, .text: characterSound
         case .backspace: 1155
         default: 1156
         }

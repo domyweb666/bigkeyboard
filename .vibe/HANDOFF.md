@@ -3,6 +3,13 @@
 > 產出時間：2026-11-21 21:01
 > 前一會話的最後狀態，給下一個會話接續用
 
+
+## 🆕 2026-11-22 追加（這份之後又做的）
+
+- 多米回報：按鍵聲怪、快打有些鍵沒聲音、選候選字沒回饋。三件都改了，細節在 `.vibe/產品定稿.md` 第 20 項最後一條，測試項 AR12–AR16
+- `KeySoundPlayer` 改用 AVAudioEngine（ambient、8 個播放器輪流、載入時同類對齊音量）；候選列、展開候選選字時 `candidateFeedback()` 響一聲＋震一下
+- 雲端沒有 Xcode：只跑過 SwiftFormat 0.64.7、SwiftLint 0.65.1（全過），沒編譯、沒真機。下一步：多米開口後跑 testflight 工作流程（分支 redesign-domy-sage），編譯錯誤在那裡才會看到
+
 ## ✅ 這次完成了什麼
 
 - 試了 Higgsfield（Mirelo 模型）和 ElevenLabs 生成鍵盤聲，兩邊比較後放進 App 的只用 ElevenLabs 的

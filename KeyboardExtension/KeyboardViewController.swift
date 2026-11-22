@@ -133,9 +133,15 @@ final class KeyboardViewController: UIInputViewController {
 
     /// 候選列、鍵盤的各種動作接到控制器
     private func wireCallbacks() {
-        candidateBar.onSelect = { [weak self] i in self?.selectFromBar(i) }
+        candidateBar.onSelect = { [weak self] i in
+            self?.candidateFeedback()
+            self?.selectFromBar(i)
+        }
         candidateBar.onToggleExpand = { [weak self] in self?.toggleExpand() }
-        candidateGrid.onSelect = { [weak self] i in self?.selectFromBar(i) }
+        candidateGrid.onSelect = { [weak self] i in
+            self?.candidateFeedback()
+            self?.selectFromBar(i)
+        }
         keyboardView.onKey = { [weak self] spec in self?.handleKey(spec) }
         keyboardView.onLongKey = { [weak self] spec in self?.handleLongPress(spec) }
         keyboardView.onAnyPress = { [weak self] spec in
@@ -219,6 +225,8 @@ final class KeyboardViewController: UIInputViewController {
         // 鍵盤收起時，組到一半的注音就照第一個候選送出，不讓打的字消失
         commitAllComposing()
         flushFollows()
+        // 按鍵聲的播放器不在背景空轉；下次叫出來 viewWillAppear 的 load 會再開
+        keySoundPlayer.stop()
         super.viewWillDisappear(animated)
     }
 
