@@ -10,6 +10,8 @@
 - `KeySoundPlayer` 改用 AVAudioEngine（ambient、8 個播放器輪流、載入時同類對齊音量）；候選列、展開候選選字時 `candidateFeedback()` 響一聲＋震一下
 - 雲端沒有 Xcode：只跑過 SwiftFormat 0.64.7、SwiftLint 0.65.1（全過），沒編譯、沒真機。下一步：多米開口後跑 testflight 工作流程（分支 redesign-domy-sage），編譯錯誤在那裡才會看到
 
+- 2026-11-23：1.2.2 (90) 已提交審查（`.aso/1.2.2-送審稿.md`），下次先查審查結果，別再送。下面「還沒打包」「真機沒聽過」是 11/21 的狀態，已過時。repo 當天改成公開
+
 ## ✅ 這次完成了什麼
 
 - 試了 Higgsfield（Mirelo 模型）和 ElevenLabs 生成鍵盤聲，兩邊比較後放進 App 的只用 ElevenLabs 的
