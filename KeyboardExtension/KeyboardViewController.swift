@@ -77,6 +77,7 @@ final class KeyboardViewController: UIInputViewController {
     // MARK: - 生命週期
 
     override func loadView() {
+        OpenTiming.setUpBegan()
         inputView = KeyboardInputView(frame: .zero, inputViewStyle: .default)
     }
 
@@ -129,6 +130,7 @@ final class KeyboardViewController: UIInputViewController {
         setUpDismiss()
         setUpClipboard()
         setUpCandidateMenu()
+        OpenTiming.setUpEnded()
     }
 
     /// 候選列、鍵盤的各種動作接到控制器
@@ -147,6 +149,7 @@ final class KeyboardViewController: UIInputViewController {
         keyboardView.onAnyPress = { [weak self] spec in
             self?.playKeySound(for: spec)
             self?.tapHaptic()
+            self?.warmUpCursorHaptic(for: spec)
         }
         keyboardView.onAnyRelease = { [weak self] spec in self?.playKeyReleaseSound(for: spec) }
         keyboardView.peekRows = { [weak self] spec in self.flatMap { $0.peekRows(for: spec) } }
@@ -169,6 +172,7 @@ final class KeyboardViewController: UIInputViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        OpenTiming.appearBegan(enabled: hasFullAccess)
         applyHeight()
         engine?.clear()
         learning = LearningSession()
@@ -187,10 +191,12 @@ final class KeyboardViewController: UIInputViewController {
         applyHostTraits()
         applyHostKeyboardType()
         refreshBar()
+        OpenTiming.prepared()
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        OpenTiming.appeared(words: userWords.count, follows: follows, pack: keySound.pack)
         // 系統在螢幕左右邊緣做手勢判斷，會把觸控延後送來：最左、最右那欄鍵慢半拍，快打時像沒按到。關掉延後
         for recognizer in view.window?.gestureRecognizers ?? [] {
             recognizer.delaysTouchesBegan = false

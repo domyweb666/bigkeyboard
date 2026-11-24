@@ -23,7 +23,7 @@ struct VeggieFooter: View {
             }
             .contentShape(Rectangle())
             .onLongPressGesture {
-                UIPasteboard.general.string = Feedback.diagnostics
+                UIPasteboard.general.string = Feedback.diagnostics + OpenTiming.report
                 show(VeggieText.diagnosticsCopied)
             }
             .accessibilityHint("長按複製版本資訊")

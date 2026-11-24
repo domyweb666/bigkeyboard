@@ -27,15 +27,14 @@ extension KeyboardViewController {
 
     /// 讀字典給引擎；有完全取用就順便留下「鍵盤有在用」的時間，App 看到才顯示「自動學習中」
     func loadUserDictionary() {
-        // 排在背景寫檔的後面讀，才讀得到剛收鍵盤時寫進去的接續紀錄
-        let file = Self.dictionaryQueue.sync { UserDictionary.load() }
-        applyUserWords(file.words)
+        // 排在背景寫檔的後面讀，才讀得到剛收鍵盤時寫進去的接續紀錄。先空等一次，等多久、讀多久才分得開
+        OpenTiming.measure(\.waitForWrite) { Self.dictionaryQueue.sync {} }
+        let file = OpenTiming.measure(\.readDictionary) { Self.dictionaryQueue.sync { UserDictionary.load() } }
+        OpenTiming.measure(\.applyWords) { applyUserWords(file.words) }
         follows = file.follows
         englishCounts = file.english
         guard hasFullAccess else { return }
-        Self.dictionaryQueue.async {
-            UserDictionary.update { $0.keyboardSeen = Date() }
-        }
+        KeyboardSeen.mark()
     }
 
     /// 選字時記下來：選了引擎猜的以外的多字詞，馬上記一次
@@ -124,18 +123,16 @@ extension KeyboardViewController {
                 for word in english {
                     file.addEnglish(word)
                 }
-                file.keyboardSeen = Date()
             }
+            KeyboardSeen.mark()
         }
     }
 
     private func learn(_ text: String, reading: String) {
         guard hasFullAccess, !reading.isEmpty else { return }
         Self.dictionaryQueue.async { [weak self] in
-            UserDictionary.update {
-                $0.learn(text, reading: reading)
-                $0.keyboardSeen = Date()
-            }
+            UserDictionary.update { $0.learn(text, reading: reading) }
+            KeyboardSeen.mark()
             let words = UserDictionary.load().words
             DispatchQueue.main.async {
                 self?.applyUserWords(words)

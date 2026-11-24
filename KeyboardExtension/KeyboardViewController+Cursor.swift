@@ -21,14 +21,15 @@ struct CursorDrag {
 /// 第三方鍵盤拿不到「上一行同一個位置」，所以上下拖是跳行頭行尾，不是原生那種換行。
 extension KeyboardViewController {
     func beginCursorDrag() {
+        // 一進來就震，跟鍵上的字淡掉同一刻；馬達在空白鍵按下時就叫醒了。
+        // 鍵盤擴充要開完全取用才震得了；沒開就只是不震
+        keyHaptic.impactOccurred()
         // 組到一半的注音先照第一個候選送出，再移游標（跟原生一樣）
         commitAllComposing()
         associations = []
         englishAutoSpace = false
         expanded = false
         cursorDrag = CursorDrag()
-        // 鍵盤擴充要開完全取用才震得了；沒開就只是不震
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
         refreshBar()
     }
 

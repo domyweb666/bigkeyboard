@@ -68,10 +68,10 @@ final class KeySoundPlayer {
             unload()
             loadedPack = pack
             if let pack {
-                read(pack, from: bundle)
+                OpenTiming.measure(\.readSounds) { read(pack, from: bundle) }
             }
         }
-        start()
+        OpenTiming.measure(\.startAudio) { start() }
     }
 
     /// 鍵盤收起時停掉，不在背景空轉。下次叫出來 load 會再開

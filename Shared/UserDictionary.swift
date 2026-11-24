@@ -1,7 +1,7 @@
 import Foundation
 
 /// 使用者字典：豆鍵 App 和鍵盤共用的一份檔案（App Group 資料夾裡的 dictionary.json）。
-/// 鍵盤要寫入（自動學到的詞、最後上線時間）必須開「允許完全取用」；沒開時只讀得到。
+/// 鍵盤要寫入（自動學到的詞、接續紀錄）必須開「允許完全取用」；沒開時只讀得到。
 /// 兩邊都是「讀出、改、整份寫回」，寫入用原子寫入，不會留下寫一半的檔案。
 enum UserDictionary {
     static let groupID = "group.org.domyweb.bigkeyboard"
@@ -37,7 +37,7 @@ enum UserDictionary {
         var ignored: [String] = []
         /// 刪掉的詞（id → 刪的時間）。iCloud 同步合併時用：比那個詞最後更新還晚的刪除才算數，另一支手機才不會把它傳回來
         var removed: [String: Date] = [:]
-        /// 鍵盤最後一次寫入的時間（App 用來顯示「自動學習中」）
+        /// 1.2.2 以前鍵盤最後一次寫入的時間；現在改記在 KeyboardSeen，這裡只留著讀舊檔
         var keyboardSeen: Date?
         /// 接續紀錄：前面的 1～2 個字 → 用豆鍵在它後面打出的字詞 → 次數。只存字，不存整段文字
         var follows: [String: [String: Int]] = [:]
@@ -81,7 +81,8 @@ enum UserDictionary {
     private static let encoder: JSONEncoder = {
         let e = JSONEncoder()
         e.dateEncodingStrategy = .iso8601
-        e.outputFormatting = [.prettyPrinted, .sortedKeys]
+        // 不排版：排版用的空白和換行佔檔案四成。省的是空間，讀寫只快一點點（18 萬筆讀 97 → 94 毫秒）
+        e.outputFormatting = .sortedKeys
         return e
     }()
 

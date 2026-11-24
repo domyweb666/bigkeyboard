@@ -28,6 +28,8 @@ struct DictionaryView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.requestReview) private var requestReview
     @State private var file = UserDictionary.File()
+    /// 鍵盤最後一次用到字典的時間
+    @State private var keyboardSeen: Date?
     @State private var filter = Filter.all
     @State private var search = ""
     @State private var adding = false
@@ -82,7 +84,7 @@ struct DictionaryView: View {
         try? await Task.sleep(for: delay)
         guard !Task.isCancelled, !adding else { return }
         let autoWords = file.words.filter { $0.source == .auto }.count
-        guard ReviewPrompt.shouldAsk(autoWords: autoWords, keyboardSeen: file.keyboardSeen) else { return }
+        guard ReviewPrompt.shouldAsk(autoWords: autoWords, keyboardSeen: keyboardSeen) else { return }
         ReviewPrompt.markAsked()
         requestReview()
     }
@@ -124,7 +126,7 @@ struct DictionaryView: View {
 
     /// 鍵盤寫過資料：顯示「自動學習中」；還沒：教你開完全取用
     @ViewBuilder private var statusRow: some View {
-        if let seen = file.keyboardSeen {
+        if let seen = keyboardSeen {
             HStack(spacing: Gap.s2) {
                 Circle()
                     .fill(Brand.theme.accent)
@@ -223,6 +225,7 @@ struct DictionaryView: View {
 
     private func reload() {
         file = UserDictionary.load()
+        keyboardSeen = KeyboardSeen.date(in: file)
     }
 }
 

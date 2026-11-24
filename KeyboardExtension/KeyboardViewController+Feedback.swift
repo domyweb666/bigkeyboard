@@ -13,6 +13,12 @@ extension KeyboardViewController {
         keyHaptic.prepare()
     }
 
+    /// 空白鍵一按下就叫醒震動馬達：按住 0.4 秒進觸控板要震，按鍵震動關著時馬達是冷的，到時候才叫會慢半拍
+    func warmUpCursorHaptic(for spec: KeySpec) {
+        guard case .space = spec.action else { return }
+        keyHaptic.prepare()
+    }
+
     /// 按鍵聲（手指碰到鍵的那一下），照 App 設定頁選的：
     /// 跟隨 iPhone 設定走系統的那一種（iPhone 的「設定 → 聲音與觸覺 → 鍵盤回饋 → 聲音」關著就不響）；
     /// 三種按鍵聲是字母、刪除、功能鍵各用系統鍵盤的那三種聲音，光聽就知道按了哪一類；
