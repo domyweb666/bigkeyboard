@@ -12,9 +12,17 @@ import Foundation
 /// 用 AVAudioEngine 播，不用系統音效（2026-11-22 多米：敲快時有些鍵沒聲音、聲音聽起來怪）。
 /// 系統音效每一聲都交給系統排隊，快打時會被吃掉，每一聲晚多少也不一定；按下、彈回兩聲一起排，掉得更多。
 /// 這裡先把音檔全讀進記憶體，幾個播放器輪流播：上一聲還沒收尾，下一聲照樣疊上去，每一聲走同一條路、晚一樣多。
+/// 讀音檔、開音訊都在背景做（2026-11-25 手感審查：在主執行緒做的話，叫出鍵盤要多等一百多毫秒）。
+/// 還沒好的時候 play 回傳 false，呼叫的人改播系統按鍵聲；音檔讀一次就留著，同一套不重讀。
 /// 音訊類別用 ambient：跟別的 App 正在放的音樂混著放、不打斷；手機切靜音就不響。
 /// 音量跟著手機的媒體音量（以前用系統音效時跟著鈴聲音量）
 final class KeySoundPlayer {
+    /// 已經開好、可以播的東西
+    private struct Playable {
+        let voices: [AVAudioPlayerNode]
+        let sounds: [Pool: [AVAudioPCMBuffer]]
+    }
+
     /// 一下按鍵的兩聲
     enum Stroke {
         /// 手指碰到鍵
@@ -41,14 +49,44 @@ final class KeySoundPlayer {
     /// 聲音從送出到喇叭的緩衝（秒）：越短越跟手。系統不一定照給，給多少用多少
     private static let ioBufferSeconds = 0.005
 
-    private let engine = AVAudioEngine()
-    private var voices: [AVAudioPlayerNode] = []
+    // 主執行緒用的。playable 有東西時背景一定沒在動播放器，主執行緒才可以碰它
+    private var playable: Playable?
+    private var preparing = false
+    /// load 之後、stop 之前：收起來的鍵盤不自己把播放器開回來
+    private var active = false
+    /// 第幾次準備：背景做完時已經換了一套、或鍵盤收起了，那次的結果就不要
+    private var turn = 0
+    private var wantedPack: String?
+    private var wantedBundle = Bundle.main
     private var nextVoice = 0
+    private var lastIndex: [Pool: Int] = [:]
+    private var observers: [NSObjectProtocol] = []
+
+    // 背景（queue）用的
+    private let queue = DispatchQueue(label: "org.domyweb.bigkeyboard.keysound", qos: .userInitiated)
+    private lazy var engine = AVAudioEngine()
+    private var voices: [AVAudioPlayerNode] = []
     /// 播放器接到混音器用的格式：第一個讀到的音檔的格式（產生音檔的程式都輸出 44.1 kHz 單聲道）
     private var format: AVAudioFormat?
     private var sounds: [Pool: [AVAudioPCMBuffer]] = [:]
-    private var lastIndex: [Pool: Int] = [:]
     private var loadedPack: String?
+
+    init() {
+        // 插拔耳機、講完電話：系統會把播放器停掉，先在背景開回來，不等下一顆鍵
+        let center = NotificationCenter.default
+        for name in [Notification.Name.AVAudioEngineConfigurationChange, AVAudioSession.interruptionNotification] {
+            observers.append(center.addObserver(forName: name, object: nil, queue: nil) { [weak self] note in
+                let kind = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt
+                guard kind != AVAudioSession.InterruptionType.began.rawValue else { return }
+                // 通知可能是播放器自己的執行緒發的、正鎖著播放器：不等主執行緒，排進去就好，免得互等
+                DispatchQueue.main.async { self?.restartIfStopped() }
+            })
+        }
+    }
+
+    deinit {
+        observers.forEach(NotificationCenter.default.removeObserver)
+    }
 
     /// bundle 裡這一套的音檔（照檔名排）
     static func files(for pack: String, in bundle: Bundle) -> [URL] {
@@ -62,36 +100,47 @@ final class KeySoundPlayer {
         !files(for: pack, in: bundle).isEmpty
     }
 
-    /// 換一套（nil = 不用聲音包），並把播放器開起來待命（第一下才不會晚）。已經是這一套就不重讀音檔
-    func load(pack: String?, from bundle: Bundle) {
-        if pack != loadedPack {
-            unload()
-            loadedPack = pack
-            if let pack {
-                OpenTiming.measure(\.readSounds) { read(pack, from: bundle) }
-            }
+    /// 換一套（nil = 不用聲音包），並在背景把播放器開起來待命。已經是這一套就不重讀音檔。
+    /// 好了（或開不起來）在主執行緒叫 done
+    func load(pack: String?, from bundle: Bundle, then done: (() -> Void)? = nil) {
+        let same = pack == wantedPack
+        wantedPack = pack
+        wantedBundle = bundle
+        active = true
+        // 本來就沒用聲音包、或同一套正開著：不用動
+        if same, pack == nil || (playable != nil && engine.isRunning) {
+            done?()
+            return
         }
-        OpenTiming.measure(\.startAudio) { start() }
+        prepare(then: done)
     }
 
     /// 鍵盤收起時停掉，不在背景空轉。下次叫出來 load 會再開
     func stop() {
-        engine.stop()
+        active = false
+        guard wantedPack != nil else { return }
+        turn += 1
+        playable = nil
+        preparing = false
+        queue.async { self.engine.stop() }
     }
 
-    /// 播一下。回傳 false 表示這一套沒有這一聲可播、或播放器開不起來（呼叫的人自己決定要不要改播別的）
+    /// 播一下。回傳 false 表示還沒準備好、這一套沒有這一聲可播、或播放器開不起來（呼叫的人自己決定要不要改播別的）
     @discardableResult
     func play(_ stroke: Stroke, bigKey: Bool) -> Bool {
+        guard let playable, engine.isRunning else {
+            // 被系統停掉、還沒開回來：在背景重開，這一下不等
+            if active, !preparing {
+                prepare()
+            }
+            return false
+        }
+        let (voices, sounds) = (playable.voices, playable.sounds)
         let regular: Pool = stroke == .down ? .key : .keyUp
         let big: Pool = stroke == .down ? .bigKey : .bigKeyUp
         // 這一套沒有大鍵的音檔就用一般鍵的
         let pool = bigKey && sounds[big]?.isEmpty == false ? big : regular
         guard let list = sounds[pool], !list.isEmpty else { return false }
-        // 被系統停掉（來電、插拔耳機）之後的第一下：重新開起來
-        if !engine.isRunning {
-            start()
-        }
-        guard engine.isRunning, !voices.isEmpty else { return false }
         var index = Int.random(in: 0 ..< list.count)
         if list.count > 1, index == lastIndex[pool] {
             index = (index + 1) % list.count
@@ -106,6 +155,42 @@ final class KeySoundPlayer {
             voice.play()
         }
         return true
+    }
+
+    private func restartIfStopped() {
+        guard playable != nil, !engine.isRunning else { return }
+        prepare()
+    }
+
+    /// 背景讀音檔、開播放器，好了才交給主執行緒用
+    private func prepare(then done: (() -> Void)? = nil) {
+        turn += 1
+        playable = nil
+        preparing = true
+        let (turn, pack, bundle) = (turn, wantedPack, wantedBundle)
+        queue.async {
+            let began = CACurrentMediaTime()
+            if pack != self.loadedPack {
+                self.unload()
+                self.loadedPack = pack
+                if let pack {
+                    self.read(pack, from: bundle)
+                }
+            }
+            let read = CACurrentMediaTime()
+            let ready = self.start() ? Playable(voices: self.voices, sounds: self.sounds) : nil
+            let started = CACurrentMediaTime()
+            DispatchQueue.main.async {
+                if turn == self.turn {
+                    self.playable = ready
+                    self.preparing = false
+                    if ready != nil {
+                        OpenTiming.soundReady(read: read - began, start: started - read)
+                    }
+                }
+                done?()
+            }
+        }
     }
 
     private func read(_ pack: String, from bundle: Bundle) {
@@ -174,9 +259,10 @@ final class KeySoundPlayer {
         return (window > 0 ? (sum / Float(window)).squareRoot() : 0, peak)
     }
 
-    /// 有音檔才開。播放器第一次開時建好、接上混音器，之後重開只要再按播放
-    private func start() {
-        guard let format, !sounds.isEmpty, !engine.isRunning else { return }
+    /// 有音檔才開，回傳開著沒有。播放器第一次開時建好、接上混音器，之後重開只要再按播放
+    private func start() -> Bool {
+        guard let format, !sounds.isEmpty else { return false }
+        guard !engine.isRunning else { return true }
         let session = AVAudioSession.sharedInstance()
         if voices.isEmpty {
             try? session.setCategory(.ambient)
@@ -192,11 +278,12 @@ final class KeySoundPlayer {
             try session.setActive(true)
             try engine.start()
         } catch {
-            return
+            return false
         }
         for voice in voices {
             voice.play()
         }
+        return true
     }
 
     private static func pool(for fileName: String) -> Pool {
@@ -214,7 +301,6 @@ final class KeySoundPlayer {
         }
         engine.stop()
         sounds = [:]
-        lastIndex = [:]
         loadedPack = nil
     }
 }

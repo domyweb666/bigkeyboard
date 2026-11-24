@@ -42,8 +42,8 @@ extension KeyboardViewController {
         case .distinct:
             AudioServicesPlaySystemSound(systemSound)
         case .crisp, .thick, .vintage, .beans, .woodblock, .typewriter, .laptop:
-            // 這一套的音檔沒包進來、或播放器開不起來，就退回系統的按鍵聲，不要變成沒聲音
-            if !keySoundPlayer.play(.down, bigKey: bigKey) {
+            // 這一套的音檔沒包進來、播放器還沒在背景開好、或開不起來，就退回系統的按鍵聲，不要變成沒聲音
+            if !Self.keySoundPlayer.play(.down, bigKey: bigKey) {
                 UIDevice.current.playInputClick()
             }
         case .off:
@@ -56,7 +56,7 @@ extension KeyboardViewController {
     /// 豆子、木魚、打字機、筆電這幾套沒有彈回聲的音檔，play 找不到就不播
     func playKeyReleaseSound(for spec: KeySpec) {
         guard keySound.pack != nil else { return }
-        keySoundPlayer.play(.up, bigKey: !KeyboardView.isCharacterKey(spec))
+        Self.keySoundPlayer.play(.up, bigKey: !KeyboardView.isCharacterKey(spec))
     }
 
     /// 系統鍵盤的字母鍵聲

@@ -35,8 +35,10 @@ enum KeySoundPreview {
         case .crisp, .thick, .vintage, .beans, .woodblock, .typewriter, .laptop:
             // 沒有彈回聲的那幾套，play(.up) 找不到音檔就不出聲
             guard let keyboardBundle else { return }
-            player.load(pack: style.pack, from: keyboardBundle)
             Task {
+                await withCheckedContinuation { ready in
+                    player.load(pack: style.pack, from: keyboardBundle) { ready.resume() }
+                }
                 for bigKey in [false, false, true] {
                     player.play(.down, bigKey: bigKey)
                     try? await Task.sleep(for: hold)

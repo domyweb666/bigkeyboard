@@ -14,8 +14,11 @@ struct OpenTiming: Codable {
     var readDictionary = 0.0
     /// 把詞交給引擎
     var applyWords = 0.0
+    /// 聲音包：背景讀音檔、開音訊各多久，不擋鍵盤出現
     var readSounds = 0.0
     var startAudio = 0.0
+    /// 聲音包：系統說要出現，到聲音可以播。這之前按的鍵是系統按鍵聲
+    var soundReady = 0.0
     /// 系統說要出現（viewWillAppear）到我們準備好，上面幾段（不含 setUp）都在裡面
     var prepare = 0.0
     /// 系統說要出現，到系統說已經出現（viewDidAppear）
@@ -35,6 +38,7 @@ struct OpenTiming: Codable {
 
     /// 正在計時的這一次；沒在計時是 nil
     private static var current: OpenTiming?
+    private static var turn = 0
     private static var started = 0.0
     private static var setUpStarted = 0.0
     private static var lastSetUp = 0.0
@@ -48,6 +52,11 @@ struct OpenTiming: Codable {
     }
 
     static func appearBegan(enabled: Bool) {
+        // 上一次還在等聲音：先存起來
+        if let current, current.shown > 0 {
+            save()
+        }
+        turn += 1
         started = CACurrentMediaTime()
         current = enabled ? OpenTiming(setUp: lastSetUp) : nil
         lastSetUp = 0
@@ -65,17 +74,35 @@ struct OpenTiming: Codable {
         current?.prepare = milliseconds(since: started)
     }
 
-    /// 鍵盤已經出現：在背景補上字典大小、記憶體，存起來
+    /// 聲音包在背景開好了（秒）
+    static func soundReady(read: Double, start: Double) {
+        guard let current, current.soundReady == 0 else { return }
+        self.current?.readSounds = read * 1000
+        self.current?.startAudio = start * 1000
+        self.current?.soundReady = milliseconds(since: started)
+    }
+
+    /// 鍵盤已經出現。聲音可能還在背景開，等一秒再存
     static func appeared(words: Int, follows: [String: [String: Int]], pack: String?) {
+        guard let timing = current, timing.shown == 0 else { return }
+        current?.shown = milliseconds(since: started)
+        current?.words = words
+        current?.pack = pack ?? ""
+        current?.follows = follows.values.reduce(0) { $0 + $1.count }
+        let turn = turn
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            if turn == Self.turn {
+                save()
+            }
+        }
+    }
+
+    /// 在背景補上字典大小、記憶體，存起來
+    private static func save() {
         guard let timed = current else { return }
         current = nil
-        let shown = milliseconds(since: started)
         queue.async {
             var record = timed
-            record.shown = shown
-            record.words = words
-            record.pack = pack ?? ""
-            record.follows = follows.values.reduce(0) { $0 + $1.count }
             let path = UserDictionary.fileURL?.path(percentEncoded: false) ?? ""
             let bytes = (try? FileManager.default.attributesOfItem(atPath: path))?[.size] as? Int
             record.fileKB = (bytes ?? 0) / 1024
@@ -101,10 +128,11 @@ struct OpenTiming: Codable {
         let time = at.formatted(.dateTime.month().day().hour().minute().second())
         let stages = [
             ("等寫檔", waitForWrite), ("讀字典", readDictionary), ("給引擎", applyWords),
-            ("讀音檔", readSounds), ("開音訊", startAudio),
         ].map { "\($0.0) \(Self.text($0.1))" }.joined(separator: "、")
+        let sound = pack.isEmpty ? "無" : "\(pack) \(Self.text(soundReady)) 後可播"
+            + "（背景讀音檔 \(Self.text(readSounds))、開音訊 \(Self.text(startAudio))）"
         return "\(time)｜出現 \(Self.text(shown))｜準備 \(Self.text(prepare))（\(stages)）｜新建 \(Self.text(setUp))"
-            + "｜詞 \(words)、接續 \(follows)、檔 \(fileKB) KB｜聲音 \(pack.isEmpty ? "無" : pack)"
+            + "｜詞 \(words)、接續 \(follows)、檔 \(fileKB) KB｜聲音 \(sound)"
             + "｜記憶體 \(memoryMB)、最高 \(peakMemoryMB) MB"
     }
 

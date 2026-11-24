@@ -62,7 +62,10 @@ final class KeyboardViewController: UIInputViewController {
     var keyHaptics = false
     /// App 設定：按鍵聲要哪一種（跟隨 iPhone 設定、三種按鍵聲、機械鍵盤聲音包、關閉）。鍵盤每次叫出來時重讀
     var keySound = KeySoundStyle.system
-    let keySoundPlayer = KeySoundPlayer()
+    /// 整個行程共用一個：系統每次叫出鍵盤都建新的控制器，跟著控制器走的話音檔每次都要重讀
+    static let keySoundPlayer = KeySoundPlayer()
+    /// 現在是哪個控制器在用：舊的比新的晚收起時，別把新的聲音停掉
+    private weak static var keySoundOwner: KeyboardViewController?
     let keyHaptic = UIImpactFeedbackGenerator(style: .light)
     /// 按住空白鍵拖游標中（沒在拖時是 nil）
     var cursorDrag: CursorDrag?
@@ -185,7 +188,8 @@ final class KeyboardViewController: UIInputViewController {
         spaceSelectsFirstCandidate = hasFullAccess && SpaceKeySetting.selectsFirstCandidate
         keyHaptics = hasFullAccess && KeyHapticSetting.isOn
         keySound = hasFullAccess ? KeySoundStyle.saved : .system
-        keySoundPlayer.load(pack: keySound.pack, from: .main)
+        Self.keySoundOwner = self
+        Self.keySoundPlayer.load(pack: keySound.pack, from: .main)
         applyTheme()
         keyboardView.shift = .off
         applyHostTraits()
@@ -232,7 +236,9 @@ final class KeyboardViewController: UIInputViewController {
         commitAllComposing()
         flushFollows()
         // 按鍵聲的播放器不在背景空轉；下次叫出來 viewWillAppear 的 load 會再開
-        keySoundPlayer.stop()
+        if Self.keySoundOwner === self {
+            Self.keySoundPlayer.stop()
+        }
         super.viewWillDisappear(animated)
     }
 
