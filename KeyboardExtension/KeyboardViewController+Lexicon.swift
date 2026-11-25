@@ -9,7 +9,8 @@ struct TextReplacements: Equatable {
     init() {}
 
     init(_ pairs: [(code: String, phrase: String)]) {
-        for (code, phrase) in pairs where code != phrase && !code.isEmpty && !phrase.isEmpty {
+        // 只差大小寫的丟掉：系統給的清單混著常用詞和聯絡人（iphone → iPhone），換了就變自動更正
+        for (code, phrase) in pairs where code.lowercased() != phrase.lowercased() && !code.isEmpty && !phrase.isEmpty {
             Self.add(phrase, for: code, to: &exact)
             Self.add(phrase, for: code.lowercased(), to: &folded)
         }

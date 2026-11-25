@@ -15,13 +15,27 @@ static const char *strOf(int argc, char **argv, const char *name, const char *de
     return def;
 }
 
-// 1. 回歸
-static void regress() {
+// 假裝學過 count 個詞
+static DouJian::UserPhrases learned(int count) {
+    DouJian::UserPhrases phrases;
+    auto pool = loadItems("words2.txt"); auto p3 = loadItems("words3.txt");
+    pool.insert(pool.end(), p3.begin(), p3.end());
+    std::mt19937 r(3);
+    for (int i = 0; i < count; i++) { auto &it = pool[r() % pool.size()]; phrases[it.reading] = {DouJian::Unigram(it.text, 0)}; }
+    return phrases;
+}
+
+// 1. 回歸。users：帶幾個學過的詞（簡拼曾經讓學過的詞蓋掉不同音的常用詞，空字典測不到）
+static void regress(int argc, char **argv) {
+    auto phrases = learned((int)argOf(argc, argv, "users", 0));
+    std::vector<std::pair<std::string, std::string>> pairs;
+    for (auto &p : phrases) pairs.emplace_back(p.first, p.second.front().value());
     for (const char *file : {"sents.txt", "sents2.txt", "top1.txt", "top2.txt", "top3.txt", "top4.txt", "names.txt"}) {
         auto items = loadItems(file);
         for (int mode = 0; mode < 3; mode++) {
             ComposingSession a; orig::Session b;
             a.open(kData); b.open(kData);
+            a.setUserPhrases(phrases); b.setUserPhrases(pairs);
             size_t same = 0, keys = 0, keySame = 0, comp = 0, defaults = 0, list = 0, shown = 0;
             for (auto &it : items) {
                 a.clear(); b.clear();
@@ -136,13 +150,7 @@ static void tolerance(int argc, char **argv) {
     ComposingSession a, plain;
     a.open(kData); plain.open(kData);
     if (users) {
-        std::map<std::string, std::vector<DouJian::Unigram>> phrases, copy;
-        auto pool = loadItems("words2.txt"); auto p3 = loadItems("words3.txt");
-        pool.insert(pool.end(), p3.begin(), p3.end());
-        std::mt19937 r(3);
-        for (int i = 0; i < users; i++) { auto &it = pool[r() % pool.size()]; phrases[it.reading] = {DouJian::Unigram(it.text, 0)}; }
-        copy = phrases;
-        a.setUserPhrases(phrases); plain.setUserPhrases(copy);
+        a.setUserPhrases(learned(users)); plain.setUserPhrases(learned(users));
     }
     for (int mode = 0; mode < 2; mode++) {
         if (onlyMode >= 0 && mode != onlyMode) continue;
@@ -267,7 +275,7 @@ int main(int argc, char **argv) {
     OmissionPenalty::syllabicInAbbreviation = argOf(argc, argv, "pa", OmissionPenalty::syllabicInAbbreviation);
     CorrectionTuning::nearMargin = argOf(argc, argv, "near", CorrectionTuning::nearMargin);
 #endif
-    if (cmd == "regress") regress();
+    if (cmd == "regress") regress(argc, argv);
     else if (cmd == "abbr") abbr(argc, argv);
     else if (cmd == "last") lastOnly();
     else if (cmd == "tol") tolerance(argc, argv);

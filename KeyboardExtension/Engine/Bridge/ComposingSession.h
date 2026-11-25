@@ -368,7 +368,8 @@ private:
             found.emplace_back(word->score - r.alternative.cost, Candidate{word->value, 1, word->reading, true});
         }
         std::stable_sort(found.begin(), found.end(), [](const auto &a, const auto &b) { return a.first > b.first; });
-        size_t at = std::min(CorrectionTuning::singleIndex, list_.items.size());
+        // 接續紀錄提到前面的字也算引擎猜的，插在那些後面，defaults 才對得上
+        size_t at = std::min(std::max(CorrectionTuning::singleIndex, list_.defaults), list_.items.size());
         const size_t end = at + CorrectionTuning::singleMaxCount;
         for (auto &item : found) {
             if (at == end) break;

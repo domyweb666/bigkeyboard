@@ -105,8 +105,8 @@ private:
     static constexpr size_t kMaxCompletions = 100;
     /// 其中看不出是不是在打簡拼的（「ㄕ ㄐㄧㄢ」的 ㄕ）最多留幾個：不要把後面的單字擠到太遠
     static constexpr size_t kMaxWeakCompletions = 8;
-    /// 換過鍵才對上的使用者詞當成這個分數的詞庫詞（一般的雙字、三字詞）
-    static constexpr double kTouchedUserScore = -5.0;
+    /// 換過鍵、或看不出是不是在打簡拼才對上的使用者詞，當成這個分數的詞庫詞（一般的雙字、三字詞）
+    static constexpr double kGuessedUserScore = -5.0;
 
     void clearUnigramCache() {
         cache_.clear();
@@ -122,7 +122,7 @@ private:
         if (user != expander_.user().end() && !user->second.empty()) {
             const auto &u = user->second.front(); // 陣列第一個分數最高
             take(entry.best, u.value(), u.score() - penalty);
-            take(entry.touched, u.value(), kTouchedUserScore - penalty);
+            take(entry.touched, u.value(), kGuessedUserScore - penalty);
         }
         expander_.table().forEach(m.rows, [&](std::string_view word, double score) {
             std::string value(word);
@@ -144,7 +144,11 @@ private:
             auto &list = m.omitted.weak() ? weak : m.omitted.any() ? completed : out;
             auto user = expander_.user().find(m.reading);
             if (user != expander_.user().end()) {
-                for (const auto &u : user->second) list.emplace_back(u.value(), u.score() - penalty, m.reading);
+                for (const auto &u : user->second) {
+                    // 「ㄔ ㄈㄢ」的 ㄔ 多半真的是 ㄔ：學過「炒飯」也不給滿分，不然會蓋掉「吃飯」
+                    const double score = m.omitted.weak() ? std::min(u.score(), kGuessedUserScore) : u.score();
+                    list.emplace_back(u.value(), score - penalty, m.reading);
+                }
             }
             expander_.table().forEach(m.rows, [&](std::string_view value, double score) {
                 list.emplace_back(std::string(value), score - penalty, m.reading);
