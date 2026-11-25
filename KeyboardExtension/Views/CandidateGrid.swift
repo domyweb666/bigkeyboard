@@ -8,6 +8,8 @@ final class CandidateGrid: UIView, UICollectionViewDataSource, UICollectionViewD
     var onLongPress: ((Int) -> Void)?
 
     private var items: [String] = []
+    /// 修正出來的候選（第幾格），字換一個色
+    private var corrected: Set<Int> = []
     /// 每格的大小：展開時一次算好。以前讓每格自己量（automaticSize），候選上百個時第一次排版要量上百次，
     /// 按了展開要等一下才出來（2026-11-02 多米回報）。量字寬很快，直接給大小
     private var sizes: [CGSize] = []
@@ -52,8 +54,9 @@ final class CandidateGrid: UIView, UICollectionViewDataSource, UICollectionViewD
         fatalError("not used")
     }
 
-    func update(_ candidates: [String]) {
+    func update(_ candidates: [String], corrected marked: Set<Int>) {
         items = candidates
+        corrected = marked
         let h = ceil(Self.font.lineHeight) + Self.padY * 2
         sizes = candidates.map { text in
             let w = ceil((text as NSString).size(withAttributes: [.font: Self.font]).width) + Self.padX * 2
@@ -72,6 +75,9 @@ final class CandidateGrid: UIView, UICollectionViewDataSource, UICollectionViewD
         if let cell = cell as? Cell {
             cell.applyTheme()
             cell.label.text = items[indexPath.item]
+            if corrected.contains(indexPath.item) {
+                cell.label.textColor = SamsungTheme.correctedCandidate
+            }
         }
         return cell
     }

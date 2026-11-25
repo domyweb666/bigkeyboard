@@ -14,6 +14,10 @@ extension KeyboardViewController {
     func openCandidateMenu(_ index: Int) {
         let items = barItems
         guard index < items.count else { return }
+        // 替代文字不是學來的，沒有東西可以忘
+        if barSource == .candidates, index < replacementCandidates.count {
+            return
+        }
         let text = items[index]
         let found = learnedReason(text)
         candidateMenu.onForget = { [weak self] in self?.forget(text) }

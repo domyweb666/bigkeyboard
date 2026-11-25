@@ -174,9 +174,16 @@ final class CandidateBar: UIView {
         clip.layer.mask = fade
     }
 
+    /// corrected：修正出來的候選（第幾個），字換一個色。
     /// highlightFirst：第一個是「按空白會送出的那個」時打亮（組字中）；聯想詞、英文預測字不打亮。
     /// clipboardOpen：剪貼簿開著時剪貼簿鍵打亮
-    func update(candidates: [String], highlightFirst: Bool, expanded: Bool, clipboardOpen: Bool) {
+    func update(
+        candidates: [String],
+        corrected: Set<Int>,
+        highlightFirst: Bool,
+        expanded: Bool,
+        clipboardOpen: Bool
+    ) {
         clipboardButton.normalColor = clipboardOpen ? SamsungTheme.keyWhite : .clear
         let shown = Array(candidates.prefix(Self.maxShown))
         while chips.count < shown.count {
@@ -188,6 +195,7 @@ final class CandidateBar: UIView {
                 continue
             }
             chip.label.text = shown[i]
+            chip.label.textColor = corrected.contains(i) ? SamsungTheme.correctedCandidate : SamsungTheme.keyText
             chip.normalColor = (i == 0 && highlightFirst) ? SamsungTheme.keyWhite : .clear
             chip.isHidden = false
         }

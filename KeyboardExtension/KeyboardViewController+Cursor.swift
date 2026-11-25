@@ -28,6 +28,7 @@ extension KeyboardViewController {
         commitAllComposing()
         associations = []
         englishAutoSpace = false
+        lastReplacement = nil
         expanded = false
         cursorDrag = CursorDrag()
         refreshBar()

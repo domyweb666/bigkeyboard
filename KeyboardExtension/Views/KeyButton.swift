@@ -50,8 +50,8 @@ final class KeyButton: UIControl {
     private var firedEarly = false
     /// 手指已經滑到別的鍵上：這顆不再算按著，放開時送哪顆由鍵盤決定
     private var sliding = false
-    /// 按下的位置、最後一次移動的位置（判斷「手指幾乎沒動」用）
-    private var trackStart = CGPoint.zero
+    /// 按下的位置、最後一次移動的位置（判斷「手指幾乎沒動」、算鄰鍵用）
+    private(set) var trackStart = CGPoint.zero
     private(set) var trackLast = CGPoint.zero
 
     override init(frame: CGRect) {

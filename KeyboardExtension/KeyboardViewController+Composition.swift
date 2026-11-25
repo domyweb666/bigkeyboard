@@ -49,6 +49,11 @@ extension KeyboardViewController {
         guard let engine else { return }
         // 打標點、換行、切鍵面時剩下的照預設送出：這段不算一個詞，不學
         learning = LearningSession()
+        if let phrase = replacementCandidates.first {
+            engine.clear()
+            commit(phrase)
+            return
+        }
         var out = pendingText
         pendingText = ""
         while !engine.candidates.isEmpty {
@@ -87,11 +92,18 @@ extension KeyboardViewController {
 
     var barItems: [String] {
         switch barSource {
-        case .candidates: engine?.candidates ?? []
+        case .candidates: replacementCandidates + (engine?.candidates ?? [])
         case .associations: associations
         case .starters: Self.starters
         case .english: englishSuggestions()
         }
+    }
+
+    /// 工具列裡「修正出來的」是第幾個（替代文字排在前面，往後移）
+    private var correctedItems: Set<Int> {
+        guard barSource == .candidates, let engine else { return [] }
+        let offset = replacementCandidates.count
+        return Set(engine.correctedIndexes.map { $0.intValue + offset })
     }
 
     func selectFromBar(_ index: Int) {
@@ -117,9 +129,16 @@ extension KeyboardViewController {
 
     func selectCandidate(_ index: Int) {
         guard let engine else { return }
+        // 替代文字排在最前面，引擎的候選接在後面
+        let phrases = replacementCandidates
+        if index < phrases.count {
+            selectReplacement(phrases[index])
+            return
+        }
+        let picked = index - phrases.count
         // 選之前先記下：前幾個是引擎自己猜的（整句、第一段），選它們不算改過候選
-        let isDefault = index < Int(engine.defaultCandidateCount)
-        let text = engine.selectCandidate(at: UInt(index))
+        let isDefault = picked < Int(engine.defaultCandidateCount)
+        let text = engine.selectCandidate(at: UInt(picked))
         guard !text.isEmpty else { return }
         let before = composeContext + pendingText
         notePick(text, reading: engine.lastSelectedReading, isDefault: isDefault)
@@ -190,7 +209,7 @@ extension KeyboardViewController {
         if spaceSealsFirstTone {
             return "一聲"
         }
-        return engine.candidates.isEmpty ? nil : "選字"
+        return replacementCandidates.isEmpty && engine.candidates.isEmpty ? nil : "選字"
     }
 
     func refreshBar() {
@@ -202,8 +221,10 @@ extension KeyboardViewController {
         if items.isEmpty {
             expanded = false
         }
+        let corrected = correctedItems
         candidateBar.update(
             candidates: items,
+            corrected: corrected,
             highlightFirst: barSource == .candidates,
             expanded: expanded,
             clipboardOpen: clipboardOpen
@@ -213,7 +234,7 @@ extension KeyboardViewController {
         // 鍵盤底是透明的：展開候選、開剪貼簿時把鍵藏起來，不然會從後面透出來
         keyboardView.isHidden = !candidateGrid.isHidden || clipboardOpen
         if expanded {
-            candidateGrid.update(items)
+            candidateGrid.update(items, corrected: corrected)
         }
     }
 

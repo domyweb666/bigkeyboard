@@ -5,6 +5,7 @@ import UIKit
 extension KeyboardViewController {
     func fastDelete() {
         englishAutoSpace = false
+        lastReplacement = nil
         // 還在組字：照平常的退一格
         if engine?.backspace() == true {
             learning.noteTyped()

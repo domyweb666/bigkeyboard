@@ -82,7 +82,12 @@ extension KeyboardViewController {
     func prepareEnglishKey(_ action: KeySpec.Action) {
         dropAutoSpace(before: action)
         switch action {
-        case .space, .text, .newline:
+        case .space:
+            // 這串等一下會被替代文字換掉：是輸入碼，不是英文字，不記
+            if typedReplacement(after: lastReplacement) == nil {
+                noteEnglishWord(currentEnglishWord)
+            }
+        case .text, .newline:
             noteEnglishWord(currentEnglishWord)
         default:
             break

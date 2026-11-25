@@ -69,12 +69,16 @@ final class KeyboardViewController: UIInputViewController {
     let keyHaptic = UIImpactFeedbackGenerator(style: .light)
     /// 按住空白鍵拖游標中（沒在拖時是 nil）
     var cursorDrag: CursorDrag?
+    /// iPhone 的「替代文字」。每次叫出鍵盤跟系統要一次，只放在記憶體
+    var replacements = TextReplacements()
+    /// 上一顆鍵把輸入碼換成了片語（或剛還原）；按了別的鍵就是 nil
+    var lastReplacement: TypedReplacement?
     /// App 設定：空白鍵一律送第一個候選（不當一聲）。鍵盤每次叫出來時重讀
     var spaceSelectsFirstCandidate = false
 
-    /// 這一下空白鍵要不要當一聲
+    /// 這一下空白鍵要不要當一聲（第一個候選是替代文字時，空白送它）
     var spaceSealsFirstTone: Bool {
-        !spaceSelectsFirstCandidate && (engine?.canSealFirstTone ?? false)
+        !spaceSelectsFirstCandidate && replacementCandidates.isEmpty && (engine?.canSealFirstTone ?? false)
     }
 
     // MARK: - 生命週期
@@ -147,7 +151,7 @@ final class KeyboardViewController: UIInputViewController {
             self?.candidateFeedback()
             self?.selectFromBar(i)
         }
-        keyboardView.onKey = { [weak self] spec in self?.handleKey(spec) }
+        keyboardView.onKey = { [weak self] spec, near in self?.handleKey(spec, alternatives: near) }
         keyboardView.onLongKey = { [weak self] spec in self?.handleLongPress(spec) }
         keyboardView.onAnyPress = { [weak self] spec in
             self?.playKeySound(for: spec)
@@ -183,6 +187,7 @@ final class KeyboardViewController: UIInputViewController {
         hasMarkedText = false
         pendingText = ""
         associations = []
+        lastReplacement = nil
         expanded = false
         clipboardOpen = false
         spaceSelectsFirstCandidate = hasFullAccess && SpaceKeySetting.selectsFirstCandidate
@@ -207,6 +212,7 @@ final class KeyboardViewController: UIInputViewController {
             recognizer.delaysTouchesEnded = false
         }
         refreshContextAssociations()
+        loadReplacements()
     }
 
     override func textDidChange(_ textInput: UITextInput?) {
@@ -274,19 +280,22 @@ final class KeyboardViewController: UIInputViewController {
 
 private extension KeyboardViewController {
     /// 按了一顆鍵：英文鍵面先處理自動補的空格、記下打完的字，再照鍵的動作做
-    func handleKey(_ spec: KeySpec) {
+    func handleKey(_ spec: KeySpec, alternatives: [KeyAlternative]) {
         if language == .english {
             prepareEnglishKey(spec.action)
         }
-        handle(spec)
+        handle(spec, alternatives: alternatives)
     }
 
-    func handle(_ spec: KeySpec) {
+    func handle(_ spec: KeySpec, alternatives: [KeyAlternative] = []) {
+        // 替代文字只有緊接著的那一顆鍵能還原
+        let replaced = lastReplacement
+        lastReplacement = nil
         switch spec.action {
         case let .bopomofo(symbol):
             associations = []
             startComposingIfNeeded()
-            _ = engine?.feedSymbol(symbol)
+            feed(symbol, alternatives: alternatives)
             learning.noteTyped()
             syncMarkedText()
 
@@ -303,7 +312,7 @@ private extension KeyboardViewController {
             associations = []
 
         case .space:
-            handleSpace()
+            handleSpace(after: replaced)
 
         case .newline:
             commitAllComposing()
@@ -314,7 +323,7 @@ private extension KeyboardViewController {
             if engine?.backspace() == true {
                 learning.noteTyped()
                 syncMarkedText()
-            } else {
+            } else if !undoReplacement(replaced) {
                 textDocumentProxy.deleteBackward()
                 associations = []
             }
@@ -341,18 +350,27 @@ private extension KeyboardViewController {
         refreshBar()
     }
 
-    func handleSpace() {
+    /// 注音送進引擎，帶著「也可能是想按的鄰鍵」
+    func feed(_ symbol: String, alternatives: [KeyAlternative]) {
+        _ = engine?.feedSymbol(
+            symbol,
+            alternatives: alternatives.map(\.symbol),
+            costs: alternatives.map { NSNumber(value: $0.cost) }
+        )
+    }
+
+    func handleSpace(after replaced: TypedReplacement?) {
         if let engine, spaceSealsFirstTone {
             engine.sealFirstTone() // 這個音沒打聲調：空白當一聲，再按一下空白才送字
             learning.noteTyped()
             syncMarkedText()
-        } else if let engine, !engine.candidates.isEmpty {
+        } else if let engine, !replacementCandidates.isEmpty || !engine.candidates.isEmpty {
             selectCandidate(0)
         } else if let engine, !engine.composing.isEmpty {
             engine.clear() // 殘留、接不上字的注音，丟掉
             learning = LearningSession()
             syncMarkedText()
-        } else {
+        } else if !replaceTypedCode(after: replaced) {
             textDocumentProxy.insertText(" ")
             associations = []
         }

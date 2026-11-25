@@ -39,6 +39,28 @@ enum SamsungTheme {
     /// 真機調：覺得常按到上一排就調小，0 = 不修正
     static let touchLiftPoints: CGFloat = 3
 
+    // 連刪保護（手感參數，真機調）：剛按過 ⌫ 時，⌫ 的感應範圍變大，免得連刪滑到 ㄥ、換行鍵
+
+    /// 離上次碰 ⌫ 多久內算「還在刪」。刪完馬上打 ㄥ 卻變成刪除就調小
+    static let deleteGuardSeconds: TimeInterval = 0.6
+    /// 連刪（兩下以上）時，離 ⌫ 這麼多 pt 內都算 ⌫。還會滑到 ㄥ 就調大，刪完打不到 ㄥ 就調小
+    static let deleteGuardReach: CGFloat = 14
+    /// 離上次碰 ⌫ 這麼短，算「正在快速連刪」，範圍放到最大
+    static let deleteGuardFastSeconds: TimeInterval = 0.25
+    /// 快速連刪時的範圍：蓋住整顆 ㄥ、換行鍵上半（按到換行會把訊息送出去）
+    static let deleteGuardFastReach: CGFloat = 36
+
+    // 鄰鍵容錯（手感參數，數值由引擎的模擬定、真機微調）：照落點算旁邊的鍵也有多可能
+
+    /// 鄰鍵至少要付的代價。打對的字常被改就調大，按錯常救不回來就調小
+    static let alternativeBaseCost = 2.5
+    /// 代價超過這個就不算可能（按在鍵正中間時，旁邊的鍵都會超過）
+    static let alternativeMaxCost = 4.0
+    /// 手指落點散布佔鍵距（左右）、排距（上下）的比例。調大＝旁邊的鍵更容易被當成可能
+    static let touchSigmaRatio: CGFloat = 0.28
+    /// 一下最多帶幾顆鄰鍵
+    static let alternativeMaxCount = 3
+
     static let longPressSeconds: TimeInterval = 0.4
     /// 按下後移動不到這距離就放開，一律算按到這顆鍵（不管放開時在不在鍵上、觸控有沒有被系統取消）
     static let tapSlop: CGFloat = 20
@@ -129,6 +151,8 @@ enum SamsungTheme {
     static let accentStrong = brand(light: 0x3F5746, dark: 0xBFD9C4)
     /// 產品色淡底（勾選的標籤）
     static let accentSoft = brand(light: 0xE3ECE5, dark: 0x22322A)
+    /// 候選裡「修正出來的」字（鄰鍵容錯），跟照打的分得出來
+    static let correctedCandidate = accent
     static let destructive = brand(light: 0xC4372C, dark: 0xFF6B5E)
     static let destructiveSoft = brand(light: 0xFBEDEB, dark: 0x3A1E1B)
 

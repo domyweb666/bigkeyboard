@@ -2,7 +2,8 @@ import UIKit
 
 /// 把一張鍵位表（資料）渲染成按鍵。所有鍵面共用這一份程式。
 final class KeyboardView: UIView {
-    var onKey: ((KeySpec) -> Void)?
+    /// 第二個值是照手指落點算的鄰鍵（只有直接按的注音鍵有，滑過去的沒有）
+    var onKey: ((KeySpec, [KeyAlternative]) -> Void)?
     var onLongKey: ((KeySpec) -> Void)?
     /// 任何一顆鍵被按下（給按鍵聲、震動用）
     var onAnyPress: ((KeySpec) -> Void)?
@@ -58,6 +59,8 @@ final class KeyboardView: UIView {
     private(set) var specs: [KeyButton: KeySpec] = [:]
     /// 目前按著還沒放開的那顆（快打時判斷「上一顆還沒放、下一顆已按下」）
     weak var heldKey: KeyButton?
+    /// 連續按 ⌫ 的次數（連刪保護用）
+    var deleteStreak = DeleteStreak()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -94,6 +97,9 @@ final class KeyboardView: UIView {
         if cursorDragging || slide?.peeking == true {
             return self
         }
+        if let key = guardedDeleteKey(at: location) {
+            return key
+        }
         return nearestKey(at: location, among: buttons, specs: specs) ?? self
     }
 
@@ -104,14 +110,13 @@ final class KeyboardView: UIView {
         specs table: [KeyButton: KeySpec]
     ) -> KeyButton? {
         let active = expectedEmphasis()
-        // 人習慣按在目標偏下方：落點先往上修一點再找最近的鍵
-        let lifted = CGPoint(x: location.x, y: location.y - SamsungTheme.touchLiftPoints)
+        let point = lifted(location)
         var nearest: KeyButton?
         var nearestDistance = CGFloat.greatestFiniteMagnitude
         for b in pool {
             let f = b.convert(b.bounds, to: self)
-            let dx = max(f.minX - lifted.x, 0, lifted.x - f.maxX)
-            let dy = max(f.minY - lifted.y, 0, lifted.y - f.maxY)
+            let dx = max(f.minX - point.x, 0, point.x - f.maxX)
+            let dy = max(f.minY - point.y, 0, point.y - f.maxY)
             var d = (dx * dx + dy * dy).squareRoot()
             if let spec = table[b], Self.isLikely(spec, after: active) {
                 d -= SamsungTheme.likelyKeyTouchMargin
@@ -122,6 +127,11 @@ final class KeyboardView: UIView {
             }
         }
         return nearest
+    }
+
+    /// 人習慣按在目標偏下方：落點先往上修一點再算離哪顆鍵近
+    func lifted(_ location: CGPoint) -> CGPoint {
+        CGPoint(x: location.x, y: location.y - SamsungTheme.touchLiftPoints)
     }
 
     /// 快打時上一顆注音還按著、還沒送進引擎：照它是哪一類先推算（聲母之後一定是只有聲母、介音之後一定到介音）
@@ -165,7 +175,10 @@ final class KeyboardView: UIView {
             // 刪除鍵：按下立刻刪、按住連刪
             b.onRepeat = { [weak self, weak b] in self?.backspaceFired(spec, repeats: b?.repeatCount ?? 0) }
         } else {
-            b.onTap = { [weak self] in self?.onKey?(spec) }
+            b.onTap = { [weak self, weak b] in
+                guard let self, let b else { return }
+                onKey?(spec, alternatives(for: b))
+            }
         }
         if case .space = spec.action {
             // 按住空白鍵：整塊鍵盤變觸控板，拖著移游標（照 iPhone 原生）
@@ -213,6 +226,7 @@ final class KeyboardView: UIView {
 
     /// 記住按著的那顆。快打時上一顆還沒放開、下一顆已經按下：上一顆先算按完，送字順序才不會顛倒
     private func trackHeld(_ b: KeyButton, pressed: Bool) {
+        noteDeleteStreak(b, pressed: pressed)
         guard pressed else {
             if heldKey === b {
                 heldKey = nil
@@ -331,9 +345,12 @@ extension KeyboardView {
 
     /// 刪除鍵：按下刪一個；按住連刪，連刪夠久之後每幾下刪一截
     private func backspaceFired(_ spec: KeySpec, repeats: Int) {
+        if repeats > 0 {
+            deleteStreak.tick(repeats)
+        }
         let fast = repeats - SamsungTheme.fastDeleteAfterRepeats
         if fast < 0 {
-            onKey?(spec)
+            onKey?(spec, [])
         } else if fast % SamsungTheme.fastDeleteEveryRepeats == 0 {
             onFastDelete?()
         } else {

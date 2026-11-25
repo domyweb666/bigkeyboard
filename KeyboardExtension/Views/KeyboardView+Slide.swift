@@ -109,10 +109,10 @@ extension KeyboardView {
             hidePeek()
         }
         if let typed {
-            onKey?(typed)
+            onKey?(typed, [])
         } else if ended.peeking, commit {
             // 沒選到符號就放開：留在符號頁（跟點一下「符」一樣）
-            onKey?(ended.originSpec)
+            onKey?(ended.originSpec, [])
         }
         // ⇧ 是滑出來時點亮的：打出字母後控制器會自己熄掉；沒打出字母（放在別處、打了標點、被取消）這裡熄回去。
         // 被下一顆鍵搶先時留著：那是「按住 ⇧ 再按字母」
