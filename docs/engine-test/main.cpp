@@ -271,12 +271,17 @@ static void speed(int argc, char **argv) {
 //    打「那個音＋ㄍㄜˋ」，選它之後格子要剩一個音（以前照字元數算，1️⃣ 會連 ㄍㄜˋ 一起吃掉）
 static void spanCheck() {
     std::ifstream f(kData);
-    std::string reading, value, score;
+    std::string line, reading, value;
     size_t tried = 0, found = 0, bad = 0;
     std::set<std::string> done;
     ComposingSession a; a.open(kData);
-    while (f >> reading >> value >> score) {
-        if (reading.empty() || reading[0] == '_' || reading.find('-') != std::string::npos) continue;
+    while (std::getline(f, line)) {
+        // 一行一筆「讀音 字 分數」；第一行是 # 開頭的格式說明
+        size_t s1 = line.find(' '), s2 = line.find(' ', s1 + 1);
+        if (line.empty() || line[0] == '#' || s1 == std::string::npos || s2 == std::string::npos) continue;
+        reading = line.substr(0, s1);
+        value = line.substr(s1 + 1, s2 - s1 - 1);
+        if (reading[0] == '_' || reading.find('-') != std::string::npos) continue;
         if (DouJian::splitUTF8(value).size() < 2 || !done.insert(value).second) continue;
         tried++;
         a.clear();
