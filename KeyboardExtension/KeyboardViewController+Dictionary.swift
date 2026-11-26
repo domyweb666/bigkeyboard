@@ -140,9 +140,11 @@ extension KeyboardViewController {
         Self.dictionaryQueue.async { [weak self] in
             let version = DictionaryCache.update { $0.learn(text, reading: reading) }
             KeyboardSeen.mark()
-            let words = UserDictionary.load().words
+            // 寫進去了就用寫進去的那份，不再讀一次檔；排序也在這裡排好，主執行緒只要交給引擎
+            let words = version == nil ? UserDictionary.load().words : DictionaryCache.words
+            let order = DictionaryCache.engineOrder(words)
             DispatchQueue.main.async {
-                self?.applyUserWords(words, version: version)
+                self?.applyUserWords(words, version: version, order: order)
             }
         }
     }
@@ -165,18 +167,17 @@ extension KeyboardViewController {
         }
     }
 
-    /// version：這批詞是字典快取的第幾版，下次叫出時比對；不確定就給 nil，下次叫出一定重套
-    private func applyUserWords(_ words: [UserDictionary.Word], version: Int?) {
+    /// version：這批詞是字典快取的第幾版，下次叫出時比對；不確定就給 nil，下次叫出一定重套。
+    /// order：在背景排好的給引擎順序；沒給就在這裡排
+    private func applyUserWords(
+        _ words: [UserDictionary.Word],
+        version: Int?,
+        order: (readings: [String], texts: [String])? = nil
+    ) {
         userWords = words
         appliedWordsVersion = version
-        // 同一個讀音有好幾個詞時：手動加的排前面，其次用過次數多的
-        let sorted = words.sorted { a, b in
-            if a.source != b.source {
-                return a.source == .manual
-            }
-            return a.count > b.count
-        }
-        engine?.setUserPhrases(readings: sorted.map(\.reading), words: sorted.map(\.text))
+        let order = order ?? DictionaryCache.engineOrder(words)
+        engine?.setUserPhrases(readings: order.readings, words: order.texts)
     }
 }
 
@@ -192,13 +193,21 @@ private enum DictionaryCache {
     private static var file = UserDictionary.File()
     /// 詞的版本：詞真的不一樣才加一（只改了接續紀錄、英文字不加），引擎已經套用同一版就不用重建
     private static var wordsVersion = 0
+    /// 記著的這份是真的讀懂或寫進去的，可以直接改了寫回。檔案壞了、讀不懂時記的是空的，寫回會把整本蓋掉
+    private static var trusted = false
+
+    /// 現在記著的詞（寫完之後交給引擎用，不用再讀一次檔）
+    static var words: [UserDictionary.Word] {
+        file.words
+    }
 
     /// 檔案沒變就給上次那份；變了（App 加詞、刪詞、iCloud 同步）或查不到修改時間就重讀
     static func current() -> (file: UserDictionary.File, wordsVersion: Int) {
         // 先查修改時間再讀：中間 App 剛好寫入的話，存到的是新內容配舊時間，下次只是多讀一次
         let now = currentStamp()
         if now == nil || now != stamp {
-            remember(UserDictionary.load(), stamp: now)
+            let readable = UserDictionary.loadIfReadable()
+            remember(readable ?? UserDictionary.File(), stamp: now, trusted: readable != nil)
         }
         return (file, wordsVersion)
     }
@@ -207,17 +216,38 @@ private enum DictionaryCache {
     /// 回傳寫入後詞的版本；寫不進去回傳 nil（檔案沒變，快取也不動）
     @discardableResult
     static func update(_ change: (inout UserDictionary.File) -> Void) -> Int? {
-        guard let written = UserDictionary.updatedFile(change) else { return nil }
-        remember(written, stamp: currentStamp())
+        let written: UserDictionary.File?
+        if trusted, let now = currentStamp(), now == stamp {
+            // 檔案從上次讀寫之後沒被 App 動過：直接改記著的那份寫回，不用再讀檔、解碼（性能審查第 4 項）
+            var next = file
+            change(&next)
+            written = UserDictionary.write(next) ? next : nil
+        } else {
+            written = UserDictionary.updatedFile(change)
+        }
+        guard let written else { return nil }
+        remember(written, stamp: currentStamp(), trusted: true)
         return wordsVersion
     }
 
-    private static func remember(_ new: UserDictionary.File, stamp now: Stamp?) {
+    /// 給引擎的順序：同一個讀音有好幾個詞時，手動加的排前面，其次用過次數多的
+    static func engineOrder(_ words: [UserDictionary.Word]) -> (readings: [String], texts: [String]) {
+        let sorted = words.sorted { a, b in
+            if a.source != b.source {
+                return a.source == .manual
+            }
+            return a.count > b.count
+        }
+        return (sorted.map(\.reading), sorted.map(\.text))
+    }
+
+    private static func remember(_ new: UserDictionary.File, stamp now: Stamp?, trusted readable: Bool) {
         if new.words != file.words {
             wordsVersion += 1
         }
         file = new
         stamp = now
+        trusted = readable
     }
 
     private static func currentStamp() -> Stamp? {

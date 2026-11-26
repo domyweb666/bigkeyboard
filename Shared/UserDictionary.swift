@@ -77,6 +77,17 @@ enum UserDictionary {
         return file
     }
 
+    /// 跟 load 一樣讀整份，但檔案在卻讀不到、讀不懂時回傳 nil（鍵盤要分得出「真的是空的」和「壞了」）
+    static func loadIfReadable() -> File? {
+        fileURL.flatMap(read)
+    }
+
+    /// 整份寫回，不先讀（鍵盤手上已經是最新的一份時用）；寫不進去回傳 false
+    static func write(_ file: File) -> Bool {
+        guard let url = fileURL, let data = try? encoder.encode(file) else { return false }
+        return (try? data.write(to: url, options: .atomic)) != nil
+    }
+
     /// 檔案不存在回傳空字典；存在但讀不到或讀不懂回傳 nil
     private static func read(_ url: URL) -> File? {
         guard FileManager.default.fileExists(atPath: url.path(percentEncoded: false)) else { return File() }
