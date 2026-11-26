@@ -82,9 +82,10 @@ final class ClipboardCard: UICollectionViewCell {
         accessibilityLabel = entry.text
     }
 
-    /// 換行換成空白，4 行裡看得到比較多字
+    /// 換行換成空白，4 行裡看得到比較多字。只取開頭 2000 個字來排：卡片最多 4 行，再寬的螢幕一行也放不到
+    /// 幾百個字，取開頭排出來的前 4 行跟整段一樣；超長的一筆（整頁文章）不用整段換字、量高度。存的資料不動
     static func preview(_ text: String) -> String {
-        text.replacingOccurrences(of: "\n", with: " ")
+        String(text.prefix(2000)).replacingOccurrences(of: "\n", with: " ")
     }
 
     static func tagLine(_ tags: [String]) -> String? {

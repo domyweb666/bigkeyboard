@@ -28,11 +28,7 @@ extension KeyboardViewController {
         guard !typed.isEmpty, words.isLoaded else { return [] }
         let prefix = typed.lowercased()
         // 自己打過的：詞表裡有的打過一次就排前面；詞表沒有的（名字、自創字）要打過兩次，免得打錯的字跑出來
-        let mine = englishCounts
-            .filter { $0.key.lowercased().hasPrefix(prefix) && ($0.value >= 2 || words.contains($0.key)) }
-            .sorted { a, b in a.value != b.value ? a.value > b.value : a.key < b.key }
-            .prefix(Self.mineLimit)
-            .map(\.key)
+        let mine = typedEnglish(prefix, words: words).prefix(Self.mineLimit).map(\.key)
         let common = words.completions(of: prefix, limit: Self.englishLimit * 2).map(\.word)
         var out: [String] = []
         for word in mine + common {
@@ -46,6 +42,26 @@ extension KeyboardViewController {
             }
         }
         return out
+    }
+
+    /// 自己打過、開頭是 prefix 的字，打過多的在前。englishCounts 沒變、這次的開頭是接著上次的往下打時，
+    /// 只在上次篩出來的裡面再篩：上次的已經整串排好，再篩一次跟整表重篩、重排的結果一樣
+    private func typedEnglish(_ prefix: String, words: EnglishWords) -> [(key: String, lower: String)] {
+        let continues = prefix.hasPrefix(TypedEnglishCache.prefix) && TypedEnglishCache.counts == englishCounts
+        if continues, let last = TypedEnglishCache.matches {
+            let matches = last.filter { $0.lower.hasPrefix(prefix) }
+            TypedEnglishCache.prefix = prefix
+            TypedEnglishCache.matches = matches
+            return matches
+        }
+        let matches = englishCounts
+            .filter { $0.key.lowercased().hasPrefix(prefix) && ($0.value >= 2 || words.contains($0.key)) }
+            .sorted { a, b in a.value != b.value ? a.value > b.value : a.key < b.key }
+            .map { (key: $0.key, lower: $0.key.lowercased()) }
+        TypedEnglishCache.counts = englishCounts
+        TypedEnglishCache.prefix = prefix
+        TypedEnglishCache.matches = matches
+        return matches
     }
 
     /// 照已經打的大小寫：全大寫（兩個字母以上）→ 建議也全大寫；開頭大寫 → 建議開頭大寫
@@ -98,6 +114,8 @@ extension KeyboardViewController {
     private func noteEnglishWord(_ word: String) {
         guard word.count >= 2 else { return }
         let stored = Self.englishKey(word)
+        // 先放掉快取記著的那份，englishCounts 才能原地加一、不用整份複製
+        TypedEnglishCache.clear()
         englishCounts[stored, default: 0] += 1
         guard hasFullAccess else { return }
         pendingEnglish.append(stored)
@@ -109,5 +127,20 @@ extension KeyboardViewController {
         let lower = word.lowercased()
         let capitalizedOnly = word.first?.isUppercase == true && word.dropFirst().allSatisfy { !$0.isUppercase }
         return capitalizedOnly && EnglishWords.shared.hasPlain(lower) ? lower : word
+    }
+}
+
+/// 自己打過的英文字照開頭篩好、排好的那份。控制器每次叫出可能是新的，所以放 static；只在主執行緒用。
+/// englishCounts 不管在哪裡被換掉（讀檔、忘掉字），下次比對 counts 不一樣就整表重篩
+private enum TypedEnglishCache {
+    /// 篩的時候 englishCounts 長什麼樣
+    static var counts: [String: Int] = [:]
+    static var prefix = ""
+    /// 開頭是 prefix 的字（存的寫法、小寫），打過多的在前
+    static var matches: [(key: String, lower: String)]?
+
+    static func clear() {
+        counts = [:]
+        matches = nil
     }
 }

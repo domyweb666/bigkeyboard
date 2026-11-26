@@ -35,6 +35,12 @@ final class KeyPreviewBubble: UIView {
         fatalError("not used")
     }
 
+    /// 陰影照泡泡的圓角外形給好，不用每次跳出來都離屏算一次（跟鍵帽一樣）
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        layer.shadowPath = UIBezierPath(roundedRect: bounds, cornerRadius: layer.cornerRadius).cgPath
+    }
+
     /// 顯示在某顆鍵的正上方（座標以 superview 為準）
     func show(text: String, above keyFrame: CGRect) {
         label.text = text

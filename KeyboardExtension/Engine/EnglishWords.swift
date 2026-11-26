@@ -13,6 +13,11 @@ final class EnglishWords {
     private var displays: [Int: String] = [:]
     private(set) var isLoaded = false
     private var isLoading = false
+    /// 查過的開頭 → 結果。詞表讀進來後就不會變，同一個開頭結果永遠一樣：
+    /// 每打一個字母工具列會刷新好幾次、每個字的第一個字母也一直重複，查過就不再掃上萬筆
+    private var found: [String: [(word: String, freq: Int)]] = [:]
+    /// found 是照哪個 limit 查的
+    private var foundLimit = 0
 
     /// 第一次切到英文時才讀（約 3 MB），在背景讀完再回主執行緒
     func loadIfNeeded(then done: @escaping () -> Void) {
@@ -59,6 +64,20 @@ final class EnglishWords {
     /// 開頭是 prefix（小寫）的字，常用的在前，最多 limit 個
     func completions(of prefix: String, limit: Int) -> [(word: String, freq: Int)] {
         guard isLoaded, !prefix.isEmpty, limit > 0 else { return [] }
+        if limit != foundLimit || found.count > 200 {
+            found = [:]
+            foundLimit = limit
+        }
+        if let hit = found[prefix] {
+            return hit
+        }
+        let result = scan(prefix, limit: limit)
+        found[prefix] = result
+        return result
+    }
+
+    /// 真的去掃詞表（沒查過的開頭才走這裡）
+    private func scan(_ prefix: String, limit: Int) -> [(word: String, freq: Int)] {
         // 跟打的字完全一樣的排最前面（im → I'm、ill → I'll）。詞表照字排序，它們就在這段的開頭
         var exact: [Int] = []
         var i = lowerBound(prefix)

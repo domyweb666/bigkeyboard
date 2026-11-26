@@ -31,6 +31,10 @@ final class CandidateBar: UIView {
     /// 用遮罩讓字本身漸漸透明，不是蓋一層底色上去：鍵盤底是透明的，蓋什麼顏色都會穿幫
     private let fade = CAGradientLayer()
     private let fadeWidth: CGFloat = 36
+    /// 上次畫上去的內容。選一個字時候選列會刷新 2～4 次，內容一樣就不再重設 30 個字、不重排
+    private var shownState: ShownState?
+    /// 展開鍵目前的圖示：沒換才不重產 SF Symbol（setUpButtons 先放的是 chevron.down）
+    private var expandIcon = "chevron.down"
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -151,6 +155,8 @@ final class CandidateBar: UIView {
         for chip in chips {
             styleChip(chip)
         }
+        // 換了主題：顏色要重新指定才會重畫，下次 update 就算內容一樣也整列重設
+        shownState = nil
     }
 
     private func styleChip(_ b: KeyButton) {
@@ -184,8 +190,21 @@ final class CandidateBar: UIView {
         expanded: Bool,
         clipboardOpen: Bool
     ) {
-        clipboardButton.normalColor = clipboardOpen ? SamsungTheme.keyWhite : .clear
         let shown = Array(candidates.prefix(Self.maxShown))
+        let state = ShownState(
+            shown: shown,
+            corrected: corrected,
+            highlightFirst: highlightFirst,
+            expanded: expanded,
+            clipboardOpen: clipboardOpen
+        )
+        // 跟上次一模一樣：字、顏色、展開鍵都不用動，只照舊捲回最前面
+        guard state != shownState else {
+            scroll.setContentOffset(.zero, animated: false)
+            return
+        }
+        shownState = state
+        clipboardButton.normalColor = clipboardOpen ? SamsungTheme.keyWhite : .clear
         while chips.count < shown.count {
             chips.append(makeChip(chips.count))
         }
@@ -203,7 +222,11 @@ final class CandidateBar: UIView {
         setNeedsLayout()
         // 沒有候選時展開鍵藏起來，分隔線照樣隔開收鍵盤鍵
         expandButton.isHidden = candidates.isEmpty
-        expandButton.setIcon(expanded ? "chevron.up" : "chevron.down", pointSize: SamsungTheme.expandIconPointSize)
+        let icon = expanded ? "chevron.up" : "chevron.down"
+        if icon != expandIcon {
+            expandIcon = icon
+            expandButton.setIcon(icon, pointSize: SamsungTheme.expandIconPointSize)
+        }
     }
 
     /// 第 i 個位置的候選按鈕（點了就選第 i 個）。長按跟鍵帽一樣 0.4 秒：
@@ -228,4 +251,13 @@ final class CandidateBar: UIView {
         stack.addArrangedSubview(b)
         return b
     }
+}
+
+/// 候選列上次畫的內容：update 的參數全部一樣才算一樣（候選只比列上放得下的前 30 個）
+private struct ShownState: Equatable {
+    let shown: [String]
+    let corrected: Set<Int>
+    let highlightFirst: Bool
+    let expanded: Bool
+    let clipboardOpen: Bool
 }
