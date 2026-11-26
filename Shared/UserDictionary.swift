@@ -72,8 +72,8 @@ enum UserDictionary {
         // 檔案在但讀不懂時不寫，免得把整本字典蓋成空的
         guard let url = fileURL, var file = read(url) else { return nil }
         change(&file)
-        guard let data = try? encoder.encode(file) else { return nil }
-        guard (try? data.write(to: url, options: .atomic)) != nil else { return nil }
+        guard let data = try? encoder.encode(file),
+              (try? data.write(to: url, options: .atomic)) != nil else { return nil }
         return file
     }
 
