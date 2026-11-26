@@ -4,7 +4,7 @@
 （全部做完才寫）
 
 ## 任務清單
-- [ ] 1. 小項性能修正（fb7e02c、fd69ca7）：Windows 引擎測試 regress（空字典、users 300）、abbr、last、tol、random 全過，結果跟改之前一樣
+- [x] 1. 小項性能修正（fb7e02c、fd69ca7）：Windows 引擎測試 regress（空字典、users 300）、abbr、last、tol、random 全過，結果跟改之前一樣
 - [ ] 2. 小項性能修正：limrun Debug＋Release 編譯過；swiftformat、swiftlint（App、KeyboardExtension、Shared）0 個問題；模擬器看過候選列、展開候選、預覽泡泡、英文預測、剪貼簿卡片
 - [ ] 3. App 端性能兩項：字典頁搜尋不再每個字重排、刪詞與回前景不在主執行緒寫檔；limrun 編譯＋格式過，模擬器字典頁搜尋、刪詞正常
 - [ ] 4. 數字表情（1️⃣）組字中選它多吃後面的音：找出原因、修好、引擎測試加一條重現並通過
@@ -24,3 +24,4 @@
 - 11:20 第 3 項先寫（e020c6b，還沒編譯）、第 4 項找到原因並修（79503d7）：候選佔幾個音是照字元數算，1️⃣ 是 3 個字元。改照格子裡的讀音數。新測試 span：修正前 48 個一個音的表情全部多吃音，修正後 0（80d2760）
 - 11:28 第 5 項查完：結論寫在待確認，要真機
 - 11:25 limrun 開不了機器：帳號同時上限 5 台滿了（別的 session 的 shuji、broccolicam、fanqie），不動別人的；背景每 2 分鐘重試一次，最多 80 分鐘
+- 11:45 第 1 項過：改前改後 regress（空字典、users 300）、abbr、last、tol、random 輸出一字不差；速度差不多（最慢一鍵 1.9 對 1.9 毫秒）。random 那 1 個 error 改前就有，不是這次的
