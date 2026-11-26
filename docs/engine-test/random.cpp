@@ -133,7 +133,8 @@ int randomTest(int rounds) {
                         while (bi < b._candidateCache.size() && b._candidateCache[bi].value != v) bi++;
                         if (pi == plain.candidates().size()) fail("missing in plain", log);
                         plain.select(pi);
-                        if (bi < b._candidateCache.size()) { b.select(bi); if (withOld && a.lastSelectedReading() != b._lastSelectedReading) fail("last reading", log); }
+                        if (bi < b._candidateCache.size()) { b.select(bi); if (withOld && a.lastSelectedReading() != b._lastSelectedReading && a.lastSelectedReading() != cand.reading) fail("last reading", log); }
+                        // ↑ 跟舊引擎不同、但等於詞庫實際查中的讀音不算錯：舊引擎照打的鍵拼讀音，簡拼補出來的聲調可能不在詞庫裡（不老：詞庫只有 ㄅㄨˋ，舊的記成 ㄅㄨˊ）
                         else withOld = false; // 簡拼才有的候選，舊引擎沒有
                         // 舊引擎的錯：照字元數算佔幾個音，1️⃣ 這種表情會多吃後面的音
                         if (DouJian::splitUTF8(v).size() != cand.span) withOld = false;
