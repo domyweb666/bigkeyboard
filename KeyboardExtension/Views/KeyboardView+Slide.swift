@@ -123,15 +123,13 @@ extension KeyboardView {
 
     // MARK: - 先跑出來的符號頁
 
+    /// 跟切到符號頁用同一張建好的鍵面（按下「符」時多半已經建好）。
+    /// 蓋上來時收不到觸控（peekStack 不收觸控、hitTest 在滑動中只回自己），所以鍵上接好的動作不會被按到
     private func showPeek(_ rows: [KeyRow]) {
-        peekButtons.removeAll()
-        peekSpecs.removeAll()
-        fill(peekStack, with: rows) { spec in
-            let b = self.styledButton(spec)
-            self.peekSpecs[b] = spec
-            self.peekButtons.append(b)
-            return b
-        }
+        let page = cachedPage(for: rows)
+        peekButtons = page.buttons
+        peekSpecs = page.specs
+        show(page, in: peekStack)
         applyReturnLabel(to: peekButtons, specs: peekSpecs)
         rowsStack.alpha = 0
         peekStack.isHidden = false
@@ -143,6 +141,7 @@ extension KeyboardView {
         guard !peekStack.isHidden else { return }
         peekStack.isHidden = true
         rowsStack.alpha = 1
+        // 只拿下來：鍵留在快取裡，切到符號頁或下次滑出去再用
         peekStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         peekButtons.removeAll()
         peekSpecs.removeAll()

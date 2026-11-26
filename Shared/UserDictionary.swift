@@ -64,11 +64,17 @@ enum UserDictionary {
     /// 讀出、改、寫回。寫不進去（沒有 App Group、鍵盤沒開完全取用）回傳 false
     @discardableResult
     static func update(_ change: (inout File) -> Void) -> Bool {
+        updatedFile(change) != nil
+    }
+
+    /// 跟 update 一樣讀出、改、寫回，寫成功時回傳寫進去的內容（鍵盤拿來換掉快取，不用再讀一次檔）；寫不進去回傳 nil
+    static func updatedFile(_ change: (inout File) -> Void) -> File? {
         // 檔案在但讀不懂時不寫，免得把整本字典蓋成空的
-        guard let url = fileURL, var file = read(url) else { return false }
+        guard let url = fileURL, var file = read(url) else { return nil }
         change(&file)
-        guard let data = try? encoder.encode(file) else { return false }
-        return (try? data.write(to: url, options: .atomic)) != nil
+        guard let data = try? encoder.encode(file) else { return nil }
+        guard (try? data.write(to: url, options: .atomic)) != nil else { return nil }
+        return file
     }
 
     /// 檔案不存在回傳空字典；存在但讀不到或讀不懂回傳 nil

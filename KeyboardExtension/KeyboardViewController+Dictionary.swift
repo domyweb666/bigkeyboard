@@ -29,10 +29,17 @@ extension KeyboardViewController {
     func loadUserDictionary() {
         // 排在背景寫檔的後面讀，才讀得到剛收鍵盤時寫進去的接續紀錄。先空等一次，等多久、讀多久才分得開
         OpenTiming.measure(\.waitForWrite) { Self.dictionaryQueue.sync {} }
-        let file = OpenTiming.measure(\.readDictionary) { Self.dictionaryQueue.sync { UserDictionary.load() } }
-        OpenTiming.measure(\.applyWords) { applyUserWords(file.words) }
-        follows = file.follows
-        englishCounts = file.english
+        // 檔案沒變就拿上次那份，不再解碼
+        let cached = OpenTiming.measure(\.readDictionary) {
+            Self.dictionaryQueue.sync { DictionaryCache.current() }
+        }
+        // 這個控制器的引擎已經有同一版的詞就不重建（新的控制器沒套過，一定會套）
+        OpenTiming.measure(\.applyWords) {
+            guard cached.wordsVersion != appliedWordsVersion else { return }
+            applyUserWords(cached.file.words, version: cached.wordsVersion)
+        }
+        follows = cached.file.follows
+        englishCounts = cached.file.english
         guard hasFullAccess else { return }
         KeyboardSeen.mark()
     }
@@ -116,7 +123,7 @@ extension KeyboardViewController {
         pendingEnglish = []
         guard !batch.isEmpty || !english.isEmpty else { return }
         Self.dictionaryQueue.async {
-            UserDictionary.update { file in
+            DictionaryCache.update { file in
                 for item in batch {
                     file.addFollow(item.text, after: item.context)
                 }
@@ -131,11 +138,11 @@ extension KeyboardViewController {
     private func learn(_ text: String, reading: String) {
         guard hasFullAccess, !reading.isEmpty else { return }
         Self.dictionaryQueue.async { [weak self] in
-            UserDictionary.update { $0.learn(text, reading: reading) }
+            let version = DictionaryCache.update { $0.learn(text, reading: reading) }
             KeyboardSeen.mark()
             let words = UserDictionary.load().words
             DispatchQueue.main.async {
-                self?.applyUserWords(words)
+                self?.applyUserWords(words, version: version)
             }
         }
     }
@@ -143,7 +150,8 @@ extension KeyboardViewController {
     /// 長按候選字「忘掉這個詞」：鍵盤記著的（字典的詞、接續紀錄、英文打過的字，連還沒寫進檔案的）先拿掉、
     /// 引擎換上新的使用者詞，再在背景寫進字典檔（要開完全取用）。呼叫的人負責重排候選
     func forgetLearned(_ text: String) {
-        applyUserWords(userWords.filter { $0.text != text })
+        // 寫進檔案前不知道是第幾版（沒開完全取用也寫不進去），給 nil 讓下次叫出重套
+        applyUserWords(userWords.filter { $0.text != text }, version: nil)
         follows = follows.compactMapValues { next in
             let rest = next.filter { $0.key != text }
             return rest.isEmpty ? nil : rest
@@ -153,12 +161,14 @@ extension KeyboardViewController {
         englishCounts = englishCounts.filter { $0.key.lowercased() != lower }
         pendingEnglish.removeAll { $0.lowercased() == lower }
         Self.dictionaryQueue.async {
-            UserDictionary.update { $0.forget(text) }
+            DictionaryCache.update { $0.forget(text) }
         }
     }
 
-    private func applyUserWords(_ words: [UserDictionary.Word]) {
+    /// version：這批詞是字典快取的第幾版，下次叫出時比對；不確定就給 nil，下次叫出一定重套
+    private func applyUserWords(_ words: [UserDictionary.Word], version: Int?) {
         userWords = words
+        appliedWordsVersion = version
         // 同一個讀音有好幾個詞時：手動加的排前面，其次用過次數多的
         let sorted = words.sorted { a, b in
             if a.source != b.source {
@@ -167,5 +177,54 @@ extension KeyboardViewController {
             return a.count > b.count
         }
         engine?.setUserPhrases(readings: sorted.map(\.reading), words: sorted.map(\.text))
+    }
+}
+
+/// 上次讀進來、或鍵盤自己寫進去的字典，跟當時檔案的修改時間＋大小。叫出鍵盤時檔案沒變就不用再解碼。
+/// 控制器每次叫出可能是新的，所以放 static。只在 dictionaryQueue 上讀寫（主執行緒在 dictionaryQueue.sync 裡拿）
+private enum DictionaryCache {
+    struct Stamp: Equatable {
+        let modified: Date
+        let size: Int
+    }
+
+    private static var stamp: Stamp?
+    private static var file = UserDictionary.File()
+    /// 詞的版本：詞真的不一樣才加一（只改了接續紀錄、英文字不加），引擎已經套用同一版就不用重建
+    private static var wordsVersion = 0
+
+    /// 檔案沒變就給上次那份；變了（App 加詞、刪詞、iCloud 同步）或查不到修改時間就重讀
+    static func current() -> (file: UserDictionary.File, wordsVersion: Int) {
+        // 先查修改時間再讀：中間 App 剛好寫入的話，存到的是新內容配舊時間，下次只是多讀一次
+        let now = currentStamp()
+        if now == nil || now != stamp {
+            remember(UserDictionary.load(), stamp: now)
+        }
+        return (file, wordsVersion)
+    }
+
+    /// 鍵盤自己寫字典：寫完把快取換成寫進去的內容和新的修改時間，下次叫出才不用重讀。
+    /// 回傳寫入後詞的版本；寫不進去回傳 nil（檔案沒變，快取也不動）
+    @discardableResult
+    static func update(_ change: (inout UserDictionary.File) -> Void) -> Int? {
+        guard let written = UserDictionary.updatedFile(change) else { return nil }
+        remember(written, stamp: currentStamp())
+        return wordsVersion
+    }
+
+    private static func remember(_ new: UserDictionary.File, stamp now: Stamp?) {
+        if new.words != file.words {
+            wordsVersion += 1
+        }
+        file = new
+        stamp = now
+    }
+
+    private static func currentStamp() -> Stamp? {
+        guard let path = UserDictionary.fileURL?.path(percentEncoded: false),
+              let attributes = try? FileManager.default.attributesOfItem(atPath: path),
+              let modified = attributes[.modificationDate] as? Date,
+              let size = attributes[.size] as? Int else { return nil }
+        return Stamp(modified: modified, size: size)
     }
 }

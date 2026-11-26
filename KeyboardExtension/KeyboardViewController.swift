@@ -42,6 +42,8 @@ final class KeyboardViewController: UIInputViewController {
     var follows: [String: [String: Int]] = [:]
     /// 使用者字典的詞（自動學到的、手動加的）。長按候選字時查它有沒有學過
     var userWords: [UserDictionary.Word] = []
+    /// 這個控制器的引擎套的是字典快取的第幾版詞；nil 是還沒套過或不確定，下次叫出一定重套
+    var appliedWordsVersion: Int?
     /// 還沒寫進字典檔的接續紀錄（停手 3 秒或收鍵盤時一起寫）
     var pendingFollows: [(context: String, text: String)] = []
     var followFlushTimer: Timer?

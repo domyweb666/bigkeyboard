@@ -57,6 +57,9 @@ final class KeyboardView: UIView {
     let bubble = KeyPreviewBubble()
     private(set) var buttons: [KeyButton] = []
     private(set) var specs: [KeyButton: KeySpec] = [:]
+    /// 建過的鍵面，最近用過的在後面；建的時候是哪個主題（KeyboardView+Pages.swift）
+    var pages: [Page] = []
+    var pagesTheme = SamsungTheme.theme
     /// 目前按著還沒放開的那顆（快打時判斷「上一顆還沒放、下一顆已按下」）
     weak var heldKey: KeyButton?
     /// 連續按 ⌫ 的次數（連刪保護用）
@@ -157,19 +160,16 @@ final class KeyboardView: UIView {
         slide = nil
         hidePeek()
         cursorDragging = false
-        buttons.removeAll()
-        specs.removeAll()
-        fill(rowsStack, with: rows) { spec in
-            let b = self.makeButton(spec)
-            self.specs[b] = spec
-            self.buttons.append(b)
-            return b
-        }
+        // 建過的鍵面直接換上去，沒建過才建
+        let page = cachedPage(for: rows)
+        show(page, in: rowsStack)
+        buttons = page.buttons
+        specs = page.specs
         bringSubviewToFront(bubble)
         applyShiftAppearance()
     }
 
-    private func makeButton(_ spec: KeySpec) -> KeyButton {
+    func makeButton(_ spec: KeySpec) -> KeyButton {
         let b = styledButton(spec)
         if case .backspace = spec.action {
             // 刪除鍵：按下立刻刪、按住連刪
@@ -245,6 +245,7 @@ final class KeyboardView: UIView {
         heldKey = b
         if let spec = specs[b] {
             onAnyPress?(spec)
+            warmPeekPage(for: spec)
         }
     }
 
@@ -294,10 +295,9 @@ final class KeyboardView: UIView {
 // MARK: - 排鍵、鍵的長相、刪除連發、觸控板
 
 extension KeyboardView {
-    /// 把一張鍵位表排進一個直向的 stack（原本的鍵面和先跑出來的符號頁共用）
-    func fill(_ stack: UIStackView, with rows: [KeyRow], make: (KeySpec) -> KeyButton) {
-        stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        for row in rows {
+    /// 把一張鍵位表排成一排排橫向的 stack（還沒放進鍵盤；原本的鍵面和先跑出來的符號頁共用）
+    func makeRows(_ rows: [KeyRow], make: (KeySpec) -> KeyButton) -> [UIStackView] {
+        rows.map { row in
             let rowStack = UIStackView()
             rowStack.axis = .horizontal
             rowStack.spacing = SamsungTheme.keyGap
@@ -318,7 +318,7 @@ extension KeyboardView {
                     constant: -gaps * spec.width / total
                 ).isActive = true
             }
-            stack.addArrangedSubview(rowStack)
+            return rowStack
         }
     }
 

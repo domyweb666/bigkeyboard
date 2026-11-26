@@ -54,16 +54,64 @@ final class CandidateGrid: UIView, UICollectionViewDataSource, UICollectionViewD
         fatalError("not used")
     }
 
+    /// 量過的字寬，同一個字型才算數。簡拼時候選常有上千個，每次都量，按展開要等一下（2026-11-26 性能審查）
+    private var widths: [String: CGFloat] = [:]
+    private var widthFont: UIFont?
+    /// 這個字型一個漢字的寬；抽樣量過漢字都一樣寬才有值，整串都是漢字的候選就不用量
+    private var hanWidth: CGFloat?
+    /// 收起來過：下次展開照舊重排、回到最上面
+    private var stale = true
+
+    override var isHidden: Bool {
+        didSet {
+            if isHidden {
+                stale = true
+            }
+        }
+    }
+
     func update(_ candidates: [String], corrected marked: Set<Int>) {
+        let font = Self.font
+        // 選一個字時候選列會刷新好幾次；內容沒變就不重排，也不會把捲到一半的跳回最上面
+        if !stale, candidates == items, marked == corrected, font == widthFont {
+            return
+        }
+        stale = false
         items = candidates
         corrected = marked
-        let h = ceil(Self.font.lineHeight) + Self.padY * 2
+        if font != widthFont || widths.count > 5000 {
+            widthFont = font
+            widths = [:]
+            hanWidth = Self.uniformHanWidth(font)
+        }
+        let h = ceil(font.lineHeight) + Self.padY * 2
         sizes = candidates.map { text in
-            let w = ceil((text as NSString).size(withAttributes: [.font: Self.font]).width) + Self.padX * 2
-            return CGSize(width: max(Self.minWidth, w), height: h)
+            CGSize(width: max(Self.minWidth, width(of: text, font: font) + Self.padX * 2), height: h)
         }
         collection.reloadData()
         collection.setContentOffset(.zero, animated: false)
+    }
+
+    private func width(of text: String, font: UIFont) -> CGFloat {
+        if let hanWidth, text.unicodeScalars.allSatisfy({ (0x4E00 ... 0x9FFF).contains($0.value) }) {
+            return ceil(hanWidth * CGFloat(text.unicodeScalars.count))
+        }
+        if let w = widths[text] {
+            return w
+        }
+        let w = ceil((text as NSString).size(withAttributes: [.font: font]).width)
+        widths[text] = w
+        return w
+    }
+
+    /// 字型的漢字一不一樣寬：抽幾個常用、罕用的字量，連著排也剛好是倍數，才回傳一個字的寬
+    private static func uniformHanWidth(_ font: UIFont) -> CGFloat? {
+        func measure(_ text: String) -> CGFloat {
+            (text as NSString).size(withAttributes: [.font: font]).width
+        }
+        let one = measure("一")
+        let same = ["鬱", "國", "的", "龘"].allSatisfy { abs(measure($0) - one) < 0.01 }
+        return same && abs(measure("一鬱國") - one * 3) < 0.01 ? one : nil
     }
 
     func collectionView(_: UICollectionView, numberOfItemsInSection _: Int) -> Int {
