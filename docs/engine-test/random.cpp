@@ -135,6 +135,8 @@ int randomTest(int rounds) {
                         plain.select(pi);
                         if (bi < b._candidateCache.size()) { b.select(bi); if (withOld && a.lastSelectedReading() != b._lastSelectedReading) fail("last reading", log); }
                         else withOld = false; // 簡拼才有的候選，舊引擎沒有
+                        // 舊引擎的錯：照字元數算佔幾個音，1️⃣ 這種表情會多吃後面的音
+                        if (DouJian::splitUTF8(v).size() != cand.span) withOld = false;
                     }
                 }
             } else if (dice < 98) {

@@ -48,10 +48,11 @@ static void regress(int argc, char **argv) {
                 }
                 comp += compOk;
                 defaults += a.defaultCount() == b._defaultCandidateCount;
+                // 佔幾個音：舊引擎照字元數算（1️⃣ 算 3 個），這種候選不比 span
                 bool ls = true;
                 for (size_t i = 0; i < 5 && i < b._candidateCache.size(); i++)
                     ls &= i < a.candidates().size() && a.candidates()[i].value == b._candidateCache[i].value
-                        && a.candidates()[i].span == b._candidateCache[i].span && a.candidates()[i].reading == b._candidateCache[i].reading;
+                        && (a.candidates()[i].span == b._candidateCache[i].span || DouJian::splitUTF8(a.candidates()[i].value).size() != a.candidates()[i].span) && a.candidates()[i].reading == b._candidateCache[i].reading;
                 list += ls;
                 if (top(a) == top(b)) same++;
                 else if (shown++ < 12) printf("   DIFF [%s m%d] want %s  before %s  after %s\n", file, mode, it.text.c_str(), top(b).c_str(), top(a).c_str());
