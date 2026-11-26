@@ -107,7 +107,8 @@ struct DataSettingsSection: View {
     private func finishImport(merge: Bool) {
         guard let backup = pendingImport else { return }
         pendingImport = nil
-        guard backup.apply(merge: merge) else {
+        // 排在背景還沒寫完的同步、改詞後面（等它們做完），不然會互相蓋掉
+        guard DictionarySync.fileQueue.sync(execute: { backup.apply(merge: merge) }) else {
             show("沒有匯入成功。打開豆鍵 App 的字典頁看看，再試一次。")
             return
         }
@@ -158,7 +159,8 @@ struct DataSettingsSection: View {
             resetting = true
             iCloudSync = false
         }
-        let cleared = UserDictionary.update { $0 = UserDictionary.File() }
+        // 排在背景還沒寫完的同步、改詞後面，清完不會又被它們寫回來
+        let cleared = DictionarySync.fileQueue.sync { UserDictionary.update { $0 = UserDictionary.File() } }
         ClipboardHistory.update { $0 = ClipboardHistory.File() }
         spaceSelectsFirstCandidate = false
         SpaceKeySetting.defaults?.removeObject(forKey: KeyHapticSetting.storageKey)

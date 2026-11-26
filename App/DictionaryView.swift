@@ -28,6 +28,10 @@ struct DictionaryView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.requestReview) private var requestReview
     @State private var file = UserDictionary.File()
+    /// file.words 照新的在上面排好的一份：讀進字典時排一次，搜尋每打一個字只篩選、不重排
+    @State private var newestFirst: [UserDictionary.Word] = []
+    /// 還在背景寫的改動數：還有沒寫完的，先寫完的那次結果不換上畫面（不然連刪兩個，第二個會閃回來）
+    @State private var pendingWrites = 0
     /// 鍵盤最後一次用到字典的時間
     @State private var keyboardSeen: Date?
     @State private var filter = Filter.all
@@ -59,11 +63,11 @@ struct DictionaryView: View {
             }
             .onAppear(perform: reload)
             .onReceive(NotificationCenter.default.publisher(for: DictionarySync.didChangeLocal)) { _ in
-                reload()
+                reloadInBackground()
             }
             .onChange(of: scenePhase) {
                 if scenePhase == .active {
-                    reload()
+                    reloadInBackground()
                 }
             }
             // 字典頁出現（或從背景回來）停一下才問；切走分頁、進背景時 task 會被取消
@@ -91,7 +95,8 @@ struct DictionaryView: View {
 
     /// 上半段（標題、搜尋、狀態、篩選）是透明底的列，下半段的詞是一張白卡；左滑刪除要 List 才有
     private var list: some View {
-        List {
+        let shown = shown
+        return List {
             Section {
                 DomyTitle("字典")
                 DomySearchField(prompt: "搜尋字詞或注音", text: $search)
@@ -198,34 +203,73 @@ struct DictionaryView: View {
     /// 篩選＋搜尋後要顯示的詞，新的在上面
     private var shown: [UserDictionary.Word] {
         let query = search.trimmingCharacters(in: .whitespaces)
-        return file.words
-            .filter { word in
-                switch filter {
-                case .all: true
-                case .auto: word.source == .auto
-                case .manual: word.source == .manual
-                }
+        return newestFirst.filter { word in
+            let kept = switch filter {
+            case .all: true
+            case .auto: word.source == .auto
+            case .manual: word.source == .manual
             }
-            .filter { query.isEmpty || $0.text.contains(query) || $0.displayReading.contains(query) }
-            .sorted { $0.updated > $1.updated }
+            return kept && (query.isEmpty || word.text.contains(query) || word.displayReading.contains(query))
+        }
     }
 
     private static let emptyHint = "你在鍵盤上一個字一個字選出來的詞，豆鍵會記下來，"
         + "下次直接排在候選第一個。也可以按右下角的＋自己加。"
 
-    private func change(_ edit: (inout UserDictionary.File) -> Void) {
-        if UserDictionary.update(edit) {
-            reload()
-            DictionarySync.sync()
-        } else {
-            saveFailed = true
-            ReviewPrompt.hold()
+    /// 畫面先照改好的樣子換掉（左滑刪詞馬上消失），讀檔、寫檔、同步排到背景
+    private func change(_ edit: @escaping (inout UserDictionary.File) -> Void) {
+        var shownNow = file
+        edit(&shownNow)
+        show(shownNow, sorted: Self.newestFirst(shownNow.words))
+        pendingWrites += 1
+        DictionarySync.fileQueue.async {
+            // 寫檔前重讀一次：鍵盤這段時間可能寫過，edit 套在最新的那份上
+            let written = UserDictionary.updatedFile(edit)
+            let sorted = written.map { Self.newestFirst($0.words) }
+            DispatchQueue.main.async {
+                pendingWrites -= 1
+                if let written, let sorted {
+                    if pendingWrites == 0 {
+                        show(written, sorted: sorted)
+                    }
+                    DictionarySync.sync()
+                } else {
+                    saveFailed = true
+                    ReviewPrompt.hold()
+                    reloadInBackground()
+                }
+            }
         }
     }
 
+    /// 頁面出現時直接讀（不然會先閃一下「還沒有字詞」）
     private func reload() {
-        file = UserDictionary.load()
-        keyboardSeen = KeyboardSeen.date(in: file)
+        let loaded = UserDictionary.load()
+        show(loaded, sorted: Self.newestFirst(loaded.words))
+    }
+
+    /// 回到前景、iCloud 合併後：排在還沒寫完的檔後面讀，讀好再換畫面
+    private func reloadInBackground() {
+        DictionarySync.fileQueue.async {
+            let loaded = UserDictionary.load()
+            let sorted = Self.newestFirst(loaded.words)
+            DispatchQueue.main.async {
+                // 讀完之後又改了詞：等那次寫完的結果
+                if pendingWrites == 0 {
+                    show(loaded, sorted: sorted)
+                }
+            }
+        }
+    }
+
+    private func show(_ loaded: UserDictionary.File, sorted: [UserDictionary.Word]) {
+        file = loaded
+        newestFirst = sorted
+        keyboardSeen = KeyboardSeen.date(in: loaded)
+    }
+
+    private static func newestFirst(_ words: [UserDictionary.Word]) -> [UserDictionary.Word] {
+        words.sorted { $0.updated > $1.updated }
     }
 }
 

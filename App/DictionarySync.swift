@@ -10,18 +10,21 @@ enum DictionarySync {
     /// 合併後手機裡的字典變了（字典頁要重讀）
     nonisolated static let didChangeLocal = Notification.Name("DictionarySync.didChangeLocal")
 
-    private static let cloudKey = "dictionary.v1"
+    nonisolated private static let cloudKey = "dictionary.v1"
     /// 鍵值儲存整個 App 上限 1MB，留一點餘裕
-    private static let maxBytes = 900_000
+    nonisolated private static let maxBytes = 900_000
     /// 刪除紀錄只留最近的這麼多筆（太舊的刪除，兩支手機早就對齊了）
     nonisolated static let maxRemoved = 3000
-    private static var store: NSUbiquitousKeyValueStore {
+    nonisolated private static var store: NSUbiquitousKeyValueStore {
         .default
     }
 
+    /// App 這邊讀寫字典檔都排在這一條（背景、一次一件）：同步、字典頁改詞不卡畫面，也不會兩件同時讀改寫、互相蓋掉
+    nonisolated static let fileQueue = DispatchQueue(label: "DictionarySync.file", qos: .userInitiated)
+
     private static var started = false
 
-    static var isEnabled: Bool {
+    nonisolated static var isEnabled: Bool {
         UserDefaults.standard.bool(forKey: enabledKey)
     }
 
@@ -39,8 +42,14 @@ enum DictionarySync {
         sync()
     }
 
-    /// 跟 iCloud 對一次。沒打開同步時什麼都不做
+    /// 跟 iCloud 對一次（排進 fileQueue，馬上回來）。沒打開同步時什麼都不做
     static func sync() {
+        guard isEnabled else { return }
+        fileQueue.async(execute: syncNow)
+    }
+
+    nonisolated private static func syncNow() {
+        // 排隊的時候使用者可能剛關掉同步
         guard isEnabled else { return }
         store.synchronize()
         let remote = store.data(forKey: cloudKey).flatMap(decode) ?? Payload()
@@ -58,7 +67,10 @@ enum DictionarySync {
         // 手機裡的字典讀不懂或寫不進去：不上傳，免得把 iCloud 那份蓋成不完整的
         guard written, let merged else { return }
         if localChanged {
-            NotificationCenter.default.post(name: didChangeLocal, object: nil)
+            // 字典頁收到就重讀、改畫面，要在主執行緒送
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: didChangeLocal, object: nil)
+            }
         }
         guard merged != remote, let data = encodeFitting(merged) else { return }
         store.set(data, forKey: cloudKey)
@@ -67,8 +79,11 @@ enum DictionarySync {
 
     /// 關掉同步時使用者選了「一起刪掉」：把 iCloud 上那份拿掉（手機裡的字典不動）
     static func deleteCloudCopy() {
-        store.removeObject(forKey: cloudKey)
-        store.synchronize()
+        // 排在還沒做完的同步後面，不然那次同步會把剛刪掉的再傳上去
+        fileQueue.async {
+            store.removeObject(forKey: cloudKey)
+            store.synchronize()
+        }
     }
 
     // MARK: - 存進 iCloud 的那份
@@ -143,26 +158,26 @@ enum DictionarySync {
         }
     }
 
-    private static let encoder: JSONEncoder = {
+    nonisolated private static let encoder: JSONEncoder = {
         let e = JSONEncoder()
         e.dateEncodingStrategy = .iso8601
         e.outputFormatting = .sortedKeys
         return e
     }()
 
-    private static let decoder: JSONDecoder = {
+    nonisolated private static let decoder: JSONDecoder = {
         let d = JSONDecoder()
         d.dateDecodingStrategy = .iso8601
         return d
     }()
 
-    private static func decode(_ data: Data) -> Payload? {
+    nonisolated private static func decode(_ data: Data) -> Payload? {
         guard let raw = try? (data as NSData).decompressed(using: .lzfse) as Data else { return nil }
         return try? decoder.decode(Payload.self, from: raw)
     }
 
     /// 壓縮後超過上限：先丟最舊的刪除紀錄，再丟最久沒用的自動學詞（手動加的不丟），直到放得下
-    private static func encodeFitting(_ payload: Payload) -> Data? {
+    nonisolated private static func encodeFitting(_ payload: Payload) -> Data? {
         var p = payload
         while true {
             guard let json = try? encoder.encode(p),
