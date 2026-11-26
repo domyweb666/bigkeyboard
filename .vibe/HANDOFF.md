@@ -17,7 +17,8 @@
 ## 🚧 還沒做完 / 待決定
 - 1.3.1 (93) 真機待測 AV1～AV8（另外 AU1～AU17、AT1～AT12 也都還沒回）。送審時 `asc_release.py` 的 VERSION 改 1.3.1、`DROP_NOTES_FROM` 加 "1.2.2"；1.2.3、1.3.0 都沒送審，改動一起算進 1.3.1，新功能說明逐項問真機結果
 - 11-26 多米說修第 4 項：分支 `perf-item4`（從 redesign-domy-sage 02803a0 開，1d22b93），沒拆檔（App 備份、還原、iCloud 同步都讀同一個 dictionary.json），改成鍵盤寫檔時檔案沒被動過就直接改快取那份寫回、學新詞不讀第二次、排序在背景。limrun 編譯、格式過；模擬器 a～e（正常寫、連續寫、App 剛改過、壞 JSON 不蓋掉、學詞後立刻排第一）都過。**沒推、沒打包**
-- 11-26 多米說修「有空再做」的小項，同一分支，兩個子代理做（沒 commit 前要主對話看過）：引擎（CandidateList 數字數、BopomofoEngine.mm 快取 NSArray、FuzzyToneLM 共用清單，只動 Engine/Bridge）；畫面（CandidateBar 內容一樣跳過、SF Symbol 快取、泡泡 shadowPath、英文預測字首快取、剪貼簿只量前一段，不截斷存的資料）。做完要一起上 limrun 編譯＋模擬器
+- 11-26 多米說修「有空再做」的小項，同一分支（fb7e02c 畫面、fd69ca7 引擎），limrun 編譯、格式、模擬器 7 項都過（英文建議列模擬器不出）。**沒推、沒打包**。內容：引擎（CandidateList 數字數、BopomofoEngine.mm 快取 NSArray、FuzzyToneLM 共用清單，只動 Engine/Bridge）；畫面（CandidateBar 內容一樣跳過、SF Symbol 快取、泡泡 shadowPath、英文預測字首快取、剪貼簿只量前一段，不截斷存的資料）。FuzzyToneLM 的快取跟格子各存一份是小麥介面規定（回傳複本），省不下來
+- 模擬器順便看到的舊問題（跟這次無關，沒修）：打 ㄇㄧㄥˊ ㄊㄧㄢ 候選出現「MACRO@DA…」（詞庫的 MACRO 詞橋接層沒濾，11/01 搬引擎起就有，**要先查線上版有沒有**）；ㄇㄚˇ ㄉㄡ 後面打 ㄇ 再按 ˇ，ㄇ 會消失；剛切深淺色時 App 搜尋框的組字字看不見，再打一字恢復
 - 「userWords 存兩份」查過不改：跟字典快取共用同一塊（COW），跟引擎那份要加接口才拿得掉，不划算
 - App 端兩項（字典頁搜尋每字排序、刪詞與回前景的主執行緒寫檔）沒動
 
