@@ -10,12 +10,12 @@ enum DictionarySync {
     /// 合併後手機裡的字典變了（字典頁要重讀）
     nonisolated static let didChangeLocal = Notification.Name("DictionarySync.didChangeLocal")
 
-    nonisolated private static let cloudKey = "dictionary.v1"
+    private nonisolated static let cloudKey = "dictionary.v1"
     /// 鍵值儲存整個 App 上限 1MB，留一點餘裕
-    nonisolated private static let maxBytes = 900_000
+    private nonisolated static let maxBytes = 900_000
     /// 刪除紀錄只留最近的這麼多筆（太舊的刪除，兩支手機早就對齊了）
     nonisolated static let maxRemoved = 3000
-    nonisolated private static var store: NSUbiquitousKeyValueStore {
+    private nonisolated static var store: NSUbiquitousKeyValueStore {
         .default
     }
 
@@ -48,7 +48,7 @@ enum DictionarySync {
         fileQueue.async(execute: syncNow)
     }
 
-    nonisolated private static func syncNow() {
+    private nonisolated static func syncNow() {
         // 排隊的時候使用者可能剛關掉同步
         guard isEnabled else { return }
         store.synchronize()
@@ -158,26 +158,26 @@ enum DictionarySync {
         }
     }
 
-    nonisolated private static let encoder: JSONEncoder = {
+    private nonisolated static let encoder: JSONEncoder = {
         let e = JSONEncoder()
         e.dateEncodingStrategy = .iso8601
         e.outputFormatting = .sortedKeys
         return e
     }()
 
-    nonisolated private static let decoder: JSONDecoder = {
+    private nonisolated static let decoder: JSONDecoder = {
         let d = JSONDecoder()
         d.dateDecodingStrategy = .iso8601
         return d
     }()
 
-    nonisolated private static func decode(_ data: Data) -> Payload? {
+    private nonisolated static func decode(_ data: Data) -> Payload? {
         guard let raw = try? (data as NSData).decompressed(using: .lzfse) as Data else { return nil }
         return try? decoder.decode(Payload.self, from: raw)
     }
 
     /// 壓縮後超過上限：先丟最舊的刪除紀錄，再丟最久沒用的自動學詞（手動加的不丟），直到放得下
-    nonisolated private static func encodeFitting(_ payload: Payload) -> Data? {
+    private nonisolated static func encodeFitting(_ payload: Payload) -> Data? {
         var p = payload
         while true {
             guard let json = try? encoder.encode(p),
