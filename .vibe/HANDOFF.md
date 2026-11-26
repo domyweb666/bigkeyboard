@@ -16,7 +16,10 @@
 
 ## 🚧 還沒做完 / 待決定
 - 1.3.1 (93) 真機待測 AV1～AV8（另外 AU1～AU17、AT1～AT12 也都還沒回）。送審時 `asc_release.py` 的 VERSION 改 1.3.1、`DROP_NOTES_FROM` 加 "1.2.2"；1.2.3、1.3.0 都沒送審，改動一起算進 1.3.1，新功能說明逐項問真機結果
-- 性能審查第 4 項（停手 3 秒整份重寫字典）和「有空再做」那幾項沒動
+- 11-26 多米說修第 4 項：分支 `perf-item4`（從 redesign-domy-sage 02803a0 開，1d22b93），沒拆檔（App 備份、還原、iCloud 同步都讀同一個 dictionary.json），改成鍵盤寫檔時檔案沒被動過就直接改快取那份寫回、學新詞不讀第二次、排序在背景。limrun 編譯、格式過；模擬器 a～e（正常寫、連續寫、App 剛改過、壞 JSON 不蓋掉、學詞後立刻排第一）都過。**沒推、沒打包**
+- 11-26 多米說修「有空再做」的小項，同一分支，兩個子代理做（沒 commit 前要主對話看過）：引擎（CandidateList 數字數、BopomofoEngine.mm 快取 NSArray、FuzzyToneLM 共用清單，只動 Engine/Bridge）；畫面（CandidateBar 內容一樣跳過、SF Symbol 快取、泡泡 shadowPath、英文預測字首快取、剪貼簿只量前一段，不截斷存的資料）。做完要一起上 limrun 編譯＋模擬器
+- 「userWords 存兩份」查過不改：跟字典快取共用同一塊（COW），跟引擎那份要加接口才拿得掉，不划算
+- App 端兩項（字典頁搜尋每字排序、刪詞與回前景的主執行緒寫檔）沒動
 
 - 多米 11-25 說打包：版本號 1.3.0，`tolerance-1.3` 快轉進 `redesign-domy-sage` 並推上（d3cab02），run 45580723556 上傳成功，build 92。**沒送審**，main 沒動
 - 真機待測：`.vibe/總測試清單.md` AU1～AU17（四項）、AT1～AT12（1.2.3）
