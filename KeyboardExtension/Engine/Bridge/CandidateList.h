@@ -37,7 +37,7 @@ struct CandidateList {
         std::unordered_set<std::string> seen;
         for (const auto &c : items) seen.insert(c.value);
         for (const auto &c : rest) {
-            if (seen.insert(c.value).second) items.push_back({c.value, splitUTF8(c.value).size(), c.rawValue});
+            if (seen.insert(c.value).second) items.push_back({c.value, countUTF8(c.value), c.rawValue});
         }
     }
 

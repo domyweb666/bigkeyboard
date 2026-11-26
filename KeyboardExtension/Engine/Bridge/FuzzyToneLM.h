@@ -49,18 +49,10 @@ public:
         lightCompletions_.clear();
     }
 
-    std::vector<Unigram> getUnigrams(const std::string &reading) override {
-        auto hit = cache_.find(reading);
-        if (hit != cache_.end()) return hit->second;
-        auto out = lookUp(reading);
-        // 打很久之後清掉，記憶體不會一直長
-        if (cache_.size() > kMaxCachedReadings || cachedUnigrams_ > kMaxCachedUnigrams) clearUnigramCache();
-        cachedUnigrams_ += out.size();
-        cache_[reading] = out;
-        return out;
-    }
+    std::vector<Unigram> getUnigrams(const std::string &reading) override { return cachedUnigrams(reading); }
 
-    bool hasUnigrams(const std::string &reading) override { return !getUnigrams(reading).empty(); }
+    // 只看有沒有詞：直接看快取裡那份，不複製整串
+    bool hasUnigrams(const std::string &reading) override { return !cachedUnigrams(reading).empty(); }
 
     bool isSyllableStart(const BPMF &syllable) { return expander_.isSyllableStart(syllable); }
 
@@ -111,6 +103,20 @@ private:
     void clearUnigramCache() {
         cache_.clear();
         cachedUnigrams_ = 0;
+    }
+
+    /// 查過的讀音直接回快取裡那份。拿到的參照在下一次查詢之前有效（查新讀音可能清掉快取）
+    const std::vector<Unigram> &cachedUnigrams(const std::string &reading) {
+        auto hit = cache_.find(reading);
+        if (hit != cache_.end()) return hit->second;
+        auto out = lookUp(reading);
+        // 打很久之後清掉，記憶體不會一直長
+        if (cache_.size() > kMaxCachedReadings || cachedUnigrams_ > kMaxCachedUnigrams) clearUnigramCache();
+        cachedUnigrams_ += out.size();
+        out.shrink_to_fit(); // 留在快取裡很久：不要帶著 push_back 多要的空間
+        auto &slot = cache_[reading];
+        slot = std::move(out);
+        return slot;
     }
 
     void consider(const Match &m, LightEntry &entry) const {

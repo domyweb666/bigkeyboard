@@ -14,6 +14,9 @@
 @implementation BopomofoEngine {
     std::unique_ptr<DouJian::ComposingSession> _session;
     std::unique_ptr<McBopomofo::AssociatedPhrasesV2> _associated;
+    // Swift 每鍵會讀好幾次 candidates、composing：轉好的留著，組字或候選可能變了（invalidateCache）才重轉
+    NSArray<NSString *> *_cachedCandidates;
+    NSString *_cachedComposing;
 }
 
 - (nullable instancetype)initWithDataPath:(NSString *)dataPath associatedPath:(nullable NSString *)associatedPath {
@@ -37,6 +40,7 @@
 - (BOOL)feedSymbol:(NSString *)symbol
       alternatives:(NSArray<NSString *> *)alternatives
              costs:(NSArray<NSNumber *> *)costs {
+    [self invalidateCache];
     DouJian::ComposingSession::Alternatives list;
     NSUInteger n = MIN(alternatives.count, costs.count);
     for (NSUInteger i = 0; i < n; i++) {
@@ -50,11 +54,13 @@
 }
 
 - (void)sealFirstTone {
+    [self invalidateCache];
     _session->sealFirstTone();
 }
 
 - (NSString *)composing {
-    return [NSString stringWithUTF8String:_session->composing().c_str()];
+    if (!_cachedComposing) _cachedComposing = [NSString stringWithUTF8String:_session->composing().c_str()];
+    return _cachedComposing;
 }
 
 - (NSInteger)composingStage {
@@ -62,12 +68,15 @@
 }
 
 - (NSArray<NSString *> *)candidates {
+    if (_cachedCandidates) return _cachedCandidates;
     const auto &list = _session->candidates();
     NSMutableArray<NSString *> *out = [NSMutableArray arrayWithCapacity:list.size()];
     for (const auto &c : list) {
         [out addObject:[NSString stringWithUTF8String:c.value.c_str()]];
     }
-    return out;
+    // 存不可變的：Swift 每次轉成 [String] 只要 retain，不用整串複製
+    _cachedCandidates = [out copy];
+    return _cachedCandidates;
 }
 
 - (NSArray<NSNumber *> *)correctedIndexes {
@@ -84,6 +93,7 @@
 }
 
 - (NSString *)selectCandidateAtIndex:(NSUInteger)index {
+    [self invalidateCache];
     return [NSString stringWithUTF8String:_session->select(index).c_str()];
 }
 
@@ -92,10 +102,12 @@
 }
 
 - (BOOL)backspace {
+    [self invalidateCache];
     return _session->backspace() ? YES : NO;
 }
 
 - (void)clear {
+    [self invalidateCache];
     _session->clear();
 }
 
@@ -120,6 +132,7 @@
 }
 
 - (void)setUserPhrasesWithReadings:(NSArray<NSString *> *)readings words:(NSArray<NSString *> *)words {
+    [self invalidateCache];
     DouJian::UserPhrases phrases;
     NSUInteger n = MIN(readings.count, words.count);
     for (NSUInteger i = 0; i < n; i++) {
@@ -131,9 +144,19 @@
 }
 
 - (void)setPreferredFollowers:(NSArray<NSString *> *)words {
+    [self invalidateCache];
     std::vector<std::string> list;
     for (NSString *w in words) list.emplace_back(w.UTF8String);
     _session->setPreferred(std::move(list));
+}
+
+// MARK: - 快取
+
+/// 會動到組字或候選的方法一開頭都要叫：feedSymbol、sealFirstTone、selectCandidateAtIndex、backspace、clear、
+/// setUserPhrases、setPreferredFollowers
+- (void)invalidateCache {
+    _cachedCandidates = nil;
+    _cachedComposing = nil;
 }
 
 @end
