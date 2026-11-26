@@ -32,12 +32,13 @@ struct CandidateList {
         items.insert(items.begin() + static_cast<std::ptrdiff_t>(at), std::move(candidate));
     }
 
-    /// 接上其餘的字與詞，已經有的不重複
+    /// 接上其餘的字與詞，已經有的不重複。佔幾個音照它在格子裡的讀音數（「ㄧ-ㄍㄜˋ」是 2），
+    /// 不照字數：1️⃣ 這種表情是三個字元，照字數算會多吃後面兩個音
     void append(const std::vector<Formosa::Gramambular2::ReadingGrid::Candidate> &rest) {
         std::unordered_set<std::string> seen;
         for (const auto &c : items) seen.insert(c.value);
         for (const auto &c : rest) {
-            if (seen.insert(c.value).second) items.push_back({c.value, countUTF8(c.value), c.rawValue});
+            if (seen.insert(c.value).second) items.push_back({c.value, splitReading(c.reading).size(), c.rawValue});
         }
     }
 

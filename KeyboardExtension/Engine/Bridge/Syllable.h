@@ -94,16 +94,6 @@ inline std::vector<std::string> splitUTF8(const std::string &s) {
     return out;
 }
 
-// 等於 splitUTF8(s).size()（同一套切法），不用真的拆出字串
-inline size_t countUTF8(const std::string &s) {
-    size_t n = 0;
-    for (size_t i = 0; i < s.size(); n++) {
-        unsigned char c = s[i];
-        i += (c < 0x80) ? 1 : (c >> 5) == 0x6 ? 2 : (c >> 4) == 0xE ? 3 : 4;
-    }
-    return n;
-}
-
 // "ㄅㄨ-ㄧㄠˋ" → {"ㄅㄨ", "ㄧㄠˋ"}
 inline std::vector<std::string> splitReading(const std::string &reading) {
     std::vector<std::string> out;

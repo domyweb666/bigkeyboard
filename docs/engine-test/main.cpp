@@ -267,6 +267,34 @@ static void speed(int argc, char **argv) {
     }
 }
 
+// 7. 佔幾個音：一個音、但不只一個字元的候選（1️⃣、全形數字以外的符號…）選了只能吃掉一個音。
+//    打「那個音＋ㄍㄜˋ」，選它之後格子要剩一個音（以前照字元數算，1️⃣ 會連 ㄍㄜˋ 一起吃掉）
+static void spanCheck() {
+    std::ifstream f(kData);
+    std::string reading, value, score;
+    size_t tried = 0, found = 0, bad = 0;
+    std::set<std::string> done;
+    ComposingSession a; a.open(kData);
+    while (f >> reading >> value >> score) {
+        if (reading.empty() || reading[0] == '_' || reading.find('-') != std::string::npos) continue;
+        if (DouJian::splitUTF8(value).size() < 2 || !done.insert(value).second) continue;
+        tried++;
+        a.clear();
+        for (auto &k : keysFor(reading, 0)) feedKey(a, k);
+        for (auto &k : keysFor("ㄍㄜˋ", 0)) feedKey(a, k);
+        const auto &list = a.candidates();
+        size_t at = list.size();
+        for (size_t i = 0; i < list.size(); i++) if (list[i].value == value) { at = i; break; }
+        if (at == list.size()) continue;
+        found++;
+        a.select(at);
+        if (a.readings().size() != 1) {
+            if (bad++ < 12) printf("   BAD %s %s: left %zu readings\n", reading.c_str(), value.c_str(), a.readings().size());
+        }
+    }
+    printf("span: tried %zu, in candidates %zu, ate too many %zu\n", tried, found, bad);
+}
+
 int main(int argc, char **argv) {
     std::string cmd = argc > 1 ? argv[1] : "";
 #ifdef TUNE
@@ -280,6 +308,7 @@ int main(int argc, char **argv) {
     else if (cmd == "last") lastOnly();
     else if (cmd == "tol") tolerance(argc, argv);
     else if (cmd == "speed") speed(argc, argv);
+    else if (cmd == "span") spanCheck();
     else if (cmd == "random") { extern int randomTest(int); return randomTest(argc > 2 ? std::atoi(argv[2]) : 2000); }
     return 0;
 }
