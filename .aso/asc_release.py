@@ -19,11 +19,11 @@ sys.stdout.reconfigure(encoding="utf-8")
 HERE = Path(__file__).parent
 API = "https://api.appstoreconnect.apple.com/v1"
 BUNDLE_ID = "org.domyweb.bigkeyboard"
-VERSION = "1.2.2"
+VERSION = "1.3.2"
 # 後台如果還留著這些版本號的草稿，直接改名成 VERSION（1.2 那次用過：1.1.1 取消，併進 1.2）
 RENAME_FROM = set()
 # 上一版的審查備註最前面如果是這些版本加的段落，先拿掉再加這次的（上限 4000 bytes，每版都往前加會放不下）
-DROP_NOTES_FROM = ("1.2", "1.2.1")
+DROP_NOTES_FROM = ("1.2", "1.2.1", "1.2.2")
 # 描述一次最多改幾行（新舊各算一行）
 DESCRIPTION_MAX_CHANGED = 4
 LOCALES = ("zh-Hant", "en-GB")
