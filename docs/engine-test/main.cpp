@@ -108,6 +108,17 @@ static void abbr(int argc, char **argv) {
         for (size_t i = 0; i < 10 && i < a.candidates().size(); i++) printf(" %s", a.candidates()[i].value.c_str());
         printf("  (span0 %zu, reading0 %s, total %zu)\n", a.candidates()[0].span, a.candidates()[0].reading.c_str(), a.candidates().size());
     }
+    // 學過聲母剛好對上的冷僻詞（1.3.2 真機：ㄒㄒㄋ 出「下雪年」、ㄨㄇ 出「外貌」），常用詞還是要排第一
+    DouJian::UserPhrases ph;
+    ph["ㄒㄧㄚˋ-ㄒㄩㄝˇ-ㄋㄧㄢˊ"] = {DouJian::Unigram("下雪年", 0)};
+    ph["ㄨㄞˋ-ㄇㄠˋ"] = {DouJian::Unigram("外貌", 0)};
+    a.setUserPhrases(ph);
+    struct Case { Strings keys; const char *want; } learnedCases[] = {{{"ㄒ","ㄒ","ㄋ"}, "謝謝你"}, {{"ㄨ","ㄇ"}, "我們"}};
+    for (auto &c : learnedCases) {
+        a.clear();
+        for (auto &k : c.keys) feedKey(a, k);
+        printf("  learned %s → %s (want %s) %s\n", a.composing().c_str(), top(a).c_str(), c.want, top(a) == c.want ? "OK" : "WRONG");
+    }
 }
 
 // 2b. 只有最後一個音只打聲母（原本就有的）：前面打完整，改前改後想要的詞排第幾

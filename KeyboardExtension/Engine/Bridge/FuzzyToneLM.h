@@ -99,6 +99,10 @@ private:
     static constexpr size_t kMaxWeakCompletions = 8;
     /// 換過鍵、或看不出是不是在打簡拼才對上的使用者詞，當成這個分數的詞庫詞（一般的雙字、三字詞）
     static constexpr double kGuessedUserScore = -5.0;
+    /// 中間有音省略（簡拼）才對上的使用者詞：學過一次不能蓋掉常用詞（學過「下雪年」，ㄒㄒㄋ 還是「謝謝你」先）。
+    /// 詞庫有這個詞就照詞庫的分數，沒有就當成這個分數的冷僻詞，再加 kAbbreviatedUserBonus
+    static constexpr double kAbbreviatedUserFloor = -6.5;
+    static constexpr double kAbbreviatedUserBonus = 0.5;
 
     void clearUnigramCache() {
         cache_.clear();
@@ -151,8 +155,7 @@ private:
             auto user = expander_.user().find(m.reading);
             if (user != expander_.user().end()) {
                 for (const auto &u : user->second) {
-                    // 「ㄔ ㄈㄢ」的 ㄔ 多半真的是 ㄔ：學過「炒飯」也不給滿分，不然會蓋掉「吃飯」
-                    const double score = m.omitted.weak() ? std::min(u.score(), kGuessedUserScore) : u.score();
+                    const double score = abbreviated(m.omitted) ? abbreviatedUserScore(u, m.rows) : u.score();
                     list.emplace_back(u.value(), score - penalty, m.reading);
                 }
             }
@@ -167,6 +170,20 @@ private:
         std::move(completed.begin(), completed.end(), std::back_inserter(out));
         sortByScore(out);
         return out;
+    }
+
+    /// 中間的音有省略（只省最後一個音的補全不算，那是 1.2 以前就有的，學過的詞照樣滿分）
+    static bool abbreviated(const Omitted &o) { return o.consonants > 0 || o.syllabics > 0; }
+
+    // 「ㄔ ㄈㄢ」的 ㄔ 多半真的是 ㄔ、「ㄒㄒㄋ」多半是謝謝你：學過的詞只比詞庫裡同一個詞多一點點
+    template <typename Rows> double abbreviatedUserScore(const Unigram &u, const Rows &rows) const {
+        double table = kAbbreviatedUserFloor;
+        expander_.table().forEach(rows, [&](std::string_view value, double score) {
+            if (value != u.value()) return true;
+            table = std::max(score, kAbbreviatedUserFloor);
+            return false;
+        });
+        return std::min(u.score(), table + kAbbreviatedUserBonus);
     }
 
     static void sortByScore(std::vector<Unigram> &list) {
